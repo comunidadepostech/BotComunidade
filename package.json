@@ -1,0 +1,21 @@
+{
+  "name": "bot-comunidade",
+  "version": "1.0.0",
+  "main": "main.js",
+  "directories": {
+    "example": "example"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@discordjs/rest": "^2.5.1",
+    "discord-api-types": "^0.38.16",
+    "discord.js": "^14.21.0",
+    "dotenv": "^17.2.0",
+    "sqlite3": "^5.1.7"
+  }
+}
