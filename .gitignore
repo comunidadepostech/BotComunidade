@@ -3,4 +3,4 @@ config.json
 test.js
 helpme.txt
 .idea
-data
+.env
