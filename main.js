@@ -1,6 +1,6 @@
 // Importa as dependencias
 const {TOKEN, ALLOWED_SERVERS_ID} = require('./config.json');
-const {Client, Events, GatewayIntentBits, SlashCommandBuilder, PermissionFlagsBits, MessageFlags, TextDisplayBuilder, PollLayoutType} = require("discord.js");
+const {Client, Events, GatewayIntentBits, SlashCommandBuilder, PermissionFlagsBits} = require("discord.js");
 const { Database } = require('sqlite3');
 const fs = require('fs');
 
@@ -44,7 +44,7 @@ client.once(Events.ClientReady, async c => {
 
     /* Cada comando é seguido pela ordem:
     *  1. Declaração (const) usando await
-    *  2. Registro nos servidores contidos em ALLOWED_SERVERS_ID
+    *  2. Registro nos servidores contidos em ALLOWED_SERVERS_ID usando o loop for
     *  !!! Lembre sempre de alterar o nome contido na segunda etapa para cada novo comando !!!
     */
 
@@ -74,8 +74,6 @@ client.once(Events.ClientReady, async c => {
                 .setDescription('Número máximo de usos (0 para ilimitado)')
                 .setRequired(false)
         )
-
-    // Registra o comando e vincula aos servidores
     for (const id of ALLOWED_SERVERS_ID) {
         try {
             client.application.commands.create(invite, id).then(_ => console.log(`${Date()} COMANDOS - invite cadastrado em: ${id}`));
