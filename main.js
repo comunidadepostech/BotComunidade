@@ -1,6 +1,5 @@
 // Importa as dependencias
 require('dotenv').config();
-const {REST} = require('@discordjs/rest');
 const {Client, Events, GatewayIntentBits, SlashCommandBuilder, PermissionFlagsBits} = require("discord.js");
 const mysql = require('mysql2');
 
