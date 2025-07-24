@@ -3,25 +3,16 @@ require('dotenv').config();
 const {Client, Events, GatewayIntentBits, SlashCommandBuilder, PermissionFlagsBits} = require("discord.js");
 const mysql = require('mysql2');
 
-/*
-// Cria o diretório data se não existir
-if (!fs.existsSync('./data')) {
-    fs.mkdirSync('./data');
-}
-// Conecta ao banco de dados principal
-const bot_db = new Database('./data/bot_data.db', (err) => {
-    if (err) {
-        console.error('Erro ao conectar ao banco de dados:', err);
-        return;
-    }
-});
-*/
-/*
+// Debug
+console.log(process.env);
+
+// Conexão com o banco de dados MySQL
 const bot_db = mysql.createConnection({
-    host: 'SEU_HOST_AQUI',
-    user: 'SEU_USUARIO',
-    password: 'SUA_SENHA',
-    database: 'NOME_DO_BANCO'
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    password1: process.env.DB_PASSWORD
 });
 
 bot_db.connect((err) => {
@@ -31,11 +22,7 @@ bot_db.connect((err) => {
     }
     console.log('Conectado ao MySQL!');
 });
-*/
 
-let bot_db;
-
-/*
 // Cria a tabela de convites, caso não exista
 bot_db.query(`CREATE TABLE IF NOT EXISTS invites (
                     invite TEXT PRIMARY KEY NOT NULL,
@@ -46,7 +33,7 @@ bot_db.query(`CREATE TABLE IF NOT EXISTS invites (
         console.error('Erro ao criar tabela:', err);
     }
 });
-*/
+
 // Define os principais acessos que o Bot precisa para poder funcionar corretamente
 const client = new Client({intents: [
         GatewayIntentBits.Guilds,
