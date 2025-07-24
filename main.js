@@ -1,9 +1,10 @@
 // Importa as dependencias
-const {TOKEN, ALLOWED_SERVERS_ID} = require('./config.json');
+require('dotenv').config();
+const {REST} = require('@discordjs/rest');
 const {Client, Events, GatewayIntentBits, SlashCommandBuilder, PermissionFlagsBits} = require("discord.js");
-const { Database } = require('sqlite3');
-const fs = require('fs');
+const mysql = require('mysql2');
 
+/*
 // Cria o diretório data se não existir
 if (!fs.existsSync('./data')) {
     fs.mkdirSync('./data');
@@ -15,8 +16,29 @@ const bot_db = new Database('./data/bot_data.db', (err) => {
         return;
     }
 });
+*/
+/*
+const bot_db = mysql.createConnection({
+    host: 'SEU_HOST_AQUI',
+    user: 'SEU_USUARIO',
+    password: 'SUA_SENHA',
+    database: 'NOME_DO_BANCO'
+});
+
+bot_db.connect((err) => {
+    if (err) {
+        console.error('Erro ao conectar no MySQL:', err);
+        return;
+    }
+    console.log('Conectado ao MySQL!');
+});
+*/
+
+let bot_db;
+
+/*
 // Cria a tabela de convites, caso não exista
-bot_db.exec(`CREATE TABLE IF NOT EXISTS invites (
+bot_db.query(`CREATE TABLE IF NOT EXISTS invites (
                     invite TEXT PRIMARY KEY NOT NULL,
                     role TEXT NOT NULL,
                     server_id TEXT NOT NULL)`,
@@ -25,7 +47,7 @@ bot_db.exec(`CREATE TABLE IF NOT EXISTS invites (
         console.error('Erro ao criar tabela:', err);
     }
 });
-
+*/
 // Define os principais acessos que o Bot precisa para poder funcionar corretamente
 const client = new Client({intents: [
         GatewayIntentBits.Guilds,
@@ -74,7 +96,7 @@ client.once(Events.ClientReady, async c => {
                 .setDescription('Número máximo de usos (0 para ilimitado)')
                 .setRequired(false)
         )
-    for (const id of ALLOWED_SERVERS_ID) {
+    for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
         try {
             client.application.commands.create(invite, id).then(_ => console.log(`${Date()} COMANDOS - invite cadastrado em: ${id}`));
         } catch (error) {
@@ -87,7 +109,7 @@ client.once(Events.ClientReady, async c => {
 		.setName('ping')
 		.setDescription('Responde com Pong!')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
-    for (const id of ALLOWED_SERVERS_ID) {
+    for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
         try {
             client.application.commands.create(ping, id).then(_ => console.log(`${Date()} COMANDOS - ping cadastrado em: ${id}`))
         } catch (error) {
@@ -109,7 +131,7 @@ client.once(Events.ClientReady, async c => {
                 .setDescription("Conteúdo da mensagem")
                 .setRequired(true)
         )
-    for (const id of ALLOWED_SERVERS_ID) {
+    for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
         try {
             client.application.commands.create(echo, id).then(_ => console.log(`${Date()} COMANDOS - echo cadastrado em: ${id}`))
         } catch (error) {
@@ -141,7 +163,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 unique: true
             });
 
-            bot_db.exec(`INSERT INTO invites (invite, role, server_id) VALUES ('${invite.code}', '${role}', '${interaction.guild.id}')`);
+            bot_db.query(`INSERT INTO invites (invite, role, server_id) VALUES ('${invite.code}', '${role}', '${interaction.guild.id}')`);
 
             // Responde com o link do convite
             await interaction.reply({
@@ -177,7 +199,7 @@ client.on(Events.GuildMemberAdd, async member => {
 
     // Busca se há algum cargo vinculado ao invite no banco de dados e adiciona ao novo membro
     try {
-        bot_db.get(
+        bot_db.query(
             "SELECT role FROM invites WHERE server_id = ?",
             [member.guild.id],
             async (err, row) => {
@@ -206,7 +228,7 @@ client.on(Events.GuildMemberAdd, async member => {
 })
 
 try {
-    client.login(TOKEN).then(_ => console.log(`${Date()}`));
+    client.login(process.env.TOKEN).then(_ => console.log(`${Date()}`));
 
 } catch (error) {
     console.log(`${Date()} ERRO - Bot não iniciado\n${error}`);
