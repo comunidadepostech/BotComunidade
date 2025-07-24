@@ -74,4 +74,4 @@ O bot automaticamente:
     - ALLOWED_SERVERS_ID: IDs dos servidores onde o bot pode ser usado
 
 ## Estrutura do Banco de Dados
-O bot utiliza SQLite3 para armazenar informações sobre convites e cargos vinculados.
+O bot utiliza MySQL2 para armazenar informações sobre convites e cargos vinculados.
