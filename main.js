@@ -1,6 +1,6 @@
 // Importa as dependencias
 require('dotenv').config();
-const {Client, Events, GatewayIntentBits, SlashCommandBuilder, PermissionFlagsBits} = require("discord.js");
+const {Client, Events, GatewayIntentBits, SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder} = require("discord.js");
 const mysql = require('mysql2');
 
 // Conexão com o banco de dados MySQL
@@ -121,6 +121,7 @@ client.once(Events.ClientReady, async c => {
         }
     }
 
+    // Display serve para exibir os convites ativos do servidor
     const display = await new SlashCommandBuilder()
         .setName("display")
         .setDescription("Exibe os convites ativos do servidor")
@@ -133,25 +134,24 @@ client.once(Events.ClientReady, async c => {
         }
     }
 
-    const poll = await new SlashCommandBuilder()
-        .setName("poll")
-        .setDescription("Cria uma enquete no servidor")
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-        .addStringOption(option =>
-            option.setName("question")
-                .setDescription("Pergunta da enquete")
-                .setRequired(true)
+    // Poll serve para criar uma enquete com embed
+    global.poll = await new EmbedBuilder()
+        .setColor(0x0099FF)
+        .setTitle('Some title')
+        .setURL('https://discord.js.org/')
+        .setAuthor({ name: 'Some name', iconURL: 'https://i.imgur.com/AfFp7pu.png', url: 'https://discord.js.org' })
+        .setDescription('Some description here')
+        .setThumbnail('https://i.imgur.com/AfFp7pu.png')
+        .addFields(
+            { name: 'Regular field title', value: 'Some value here' },
+            { name: '\u200B', value: '\u200B' },
+            { name: 'Inline field title', value: 'Some value here', inline: true },
+            { name: 'Inline field title', value: 'Some value here', inline: true },
         )
-        .addStringOption(option =>
-            option.setName("options")
-                .setDescription("Opções da enquete (separadas por vírgula)")
-                .setRequired(true)
-        )
-        .addAttachmentOption(option =>
-            option.setName("image")
-                .setDescription("Imagem da enquete")
-                .setRequired(false)
-        );
+        .addFields({ name: 'Inline field title', value: 'Some value here', inline: true })
+        .setImage('https://i.imgur.com/AfFp7pu.png')
+        .setTimestamp()
+        .setFooter({ text: 'Some footer text here', iconURL: 'https://i.imgur.com/AfFp7pu.png' });
     for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
         try {
             client.application.commands.create(poll, id).then(_ => console.log(`${Date()} COMANDOS - poll cadastrado em: ${id}`))
@@ -269,7 +269,7 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "poll":
-            break;
+            await interaction.reply({embed: [poll]})
 
         default:
             break;
