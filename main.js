@@ -175,42 +175,65 @@ client.on(Events.InteractionCreate, async interaction => {
 // Evento que é disparado quando um novo membro entra no servidor
 client.on(Events.GuildMemberAdd, async member => {
 
-    // Registra o log de entrada do membro
-    console.log(`LOG - ${(member.user.username)} entrou no serivor ${member.guild.name} com o código: ${await member.guild.invites.fetch().then(invites => invites.first().code)}`);
-
-    // Busca o canal de boas vindas e envia a mensagem de boas vindas ao novo membro
-    const welcomeChannel = await member.guild.channels.cache.find(channel => channel.name === "✨│boas-vindas");
-    await welcomeChannel.send(`Olá ${member}, seja bem-vindo(a) a comunidade!`);
-
-    // Busca se há algum cargo vinculado ao invite no banco de dados e adiciona ao novo membro
+    // Tenta buscar o invite usado pelo novo membro
     try {
+        let used_invite;
+        const cachedInvites = await member.guild.invites.fetch();
+
+        // Tenta resolver o invite diretamente
+        const resolvedInvite = await member.guild.invites.resolve(member.user.client);
+        if (resolvedInvite) {
+            used_invite = resolvedInvite.code;
+        } else {
+            // Se não conseguir resolver, pega o primeiro invite ativo
+            const activeInvite = cachedInvites.find(invite => invite.uses > 0);
+            used_invite = activeInvite ? activeInvite.code : null;
+        }
+
+        if (!used_invite) {
+            console.log(`${Date()} ERRO - Não foi possível determinar o convite usado`);
+            return;
+        }
+
+        // Registra o log de entrada do membro
+        console.log(`LOG - ${member.user.username} entrou no servidor ${member.guild.name} com o código: ${used_invite}`);
+
+        // Busca o canal de boas-vindas e envia a mensagem
+        const welcomeChannel = member.guild.channels.cache.find(channel => channel.name === "✨│boas-vindas");
+        if (welcomeChannel) {
+            await welcomeChannel.send(`Olá ${member}, seja bem-vindo(a) a comunidade!`);
+        }
+
+        // Busca o cargo vinculado ao invite no banco
         bot_db.query(
-            "SELECT role FROM invites WHERE server_id = ?",
-            [member.guild.id],
-            async (err, row) => {
+            "SELECT role FROM invites WHERE invite = ?",
+            [used_invite],
+            async (err, rows) => {
                 if (err) {
-                    console.error('ERRO - Erro na consulta SQL:', err);
+                    console.error(`${Date()} ERRO - Erro na consulta SQL:`, err);
                     return;
                 }
 
-                if (!row) {
-                    console.log('ERRO - Nenhum cargo vinculado ao convite usado');
+                // Verifica se há resultados
+                if (!rows || rows.length === 0) {
+                    console.log(`${Date()} ERRO - Nenhum cargo vinculado ao convite usado`);
                     return;
                 }
 
-                const welcome_role = await member.guild.roles.cache.find(role => role.name === row.role);
+                const welcome_role = await member.guild.roles.cache.find(role => role.name === rows[0].role);
                 if (!welcome_role) {
-                    console.log(`ERRO - Cargo ${row.name} não encontrado no servidor`);
+                    console.log(`ERRO - Cargo ${rows[0].role} não encontrado no servidor`);
                     return;
                 }
 
-                await member.roles.add(welcome_role).then(_ => console.log(`LOG - ${member.user.username} adicionado ao cargo ${welcome_role.name}`));
+                await member.roles.add(welcome_role);
+                console.log(`${Date()} LOG - ${member.user.username} adicionado ao cargo ${welcome_role.name}`);
             }
         );
     } catch (error) {
-        console.error('ERRO - Erro ao adicionar cargo:', error);
+        console.error(`${Date()} ERRO ao processar novo membro:`, error);
     }
-})
+});
 
 try {
     client.login(process.env.TOKEN).then(_ => console.log(`${Date()}`));
