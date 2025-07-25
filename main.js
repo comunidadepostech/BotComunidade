@@ -123,52 +123,126 @@ client.once(Events.ClientReady, async c => {
             console.log(`${Date()} ERRO - echo não cadastrado em: ${id}\n${error}`)
         }
     }
+
+    const display = await new SlashCommandBuilder()
+        .setName("display")
+        .setDescription("Exibe os convites ativos do servidor")
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+    for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
+        try {
+            client.application.commands.create(display, id).then(_ => console.log(`${Date()} COMANDOS - display cadastrado em: ${id}`))
+        } catch (error) {
+            console.log(`${Date()} ERRO - echo não cadastrado em: ${id}\n${error}`)
+        }
+    }
 });
 
 // Interações com os comandos
 client.on(Events.InteractionCreate, async interaction => {
-    if(!interaction.isChatInputCommand()) return;
-    
-    if(interaction.commandName === "ping"){
-        await interaction.reply({content: "pong!", ephemeral: true}).then(_ => console.log(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
-    }
+    switch (interaction.commandName) {
+        case "ping":
+            await interaction.reply({content: "pong!", ephemeral: true});
+            console.log(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
+            break;
 
-    else if(interaction.commandName === "invite") {
-        try {
-            // Pega o canal especificado ou usa o canal atual
-            const channel = interaction.options.getChannel('channel') || interaction.channel;
-            const duration = interaction.options.getInteger('duration') || 0;
-            const maxUses = interaction.options.getInteger('uses') || 0;
-            const role = interaction.options.getRole('role').name;
+        case "invite":
+            try {
+                // Pega o canal especificado ou usa o canal atual
+                const channel = interaction.options.getChannel('channel') || interaction.channel;
+                const duration = interaction.options.getInteger('duration') || 0;
+                const maxUses = interaction.options.getInteger('uses') || 0;
+                const role = interaction.options.getRole('role').name;
 
-            // Cria o convite
-            const invite = await channel.createInvite({
-                maxAge: duration * 86400, // Converte dias para segundos
-                maxUses: maxUses,
-                unique: true
-            });
+                // Cria o convite
+                const invite = await channel.createInvite({
+                    maxAge: duration * 86400, // Converte dias para segundos
+                    maxUses: maxUses,
+                    unique: true
+                });
 
-            bot_db.query(`INSERT INTO invites (invite, role, server_id) VALUES ('${invite.code}', '${role}', '${interaction.guild.id}')`);
+                bot_db.query(`INSERT INTO invites (invite, role, server_id) VALUES ('${invite.code}', '${role}', '${interaction.guild.id}')`);
 
-            // Responde com o link do convite
-            await interaction.reply({
-                content: `✅ Convite criado com sucesso!\n📨 Link: ${invite.url}\n📍 Canal: ${channel}\n⏱️ Duração: ${duration === 0 ? 'Permanente' : `${duration} dias`}\n🔢 Usos máximos: ${maxUses === 0 ? 'Ilimitado' : maxUses}\n👥 Cargo vinculado: ${role}`,
-                ephemeral: true // Faz a resposta ser visível apenas para quem executou o comando
-            }).then(_ => console.log(`${Date()} LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
-        } catch (error) {
-            console.error(`${Date()} Erro ao criar convite:`, error);
-            await interaction.reply({
-                content: '❌ Ocorreu um erro ao criar o convite. Verifique se tenho permissões suficientes.',
-                ephemeral: true
-            });
-        }
-    }
+                // Responde com o link do convite
+                await interaction.reply({
+                    content: `✅ Convite criado com sucesso!\n📨 Link: ${invite.url}\n📍 Canal: ${channel}\n⏱️ Duração: ${duration === 0 ? 'Permanente' : `${duration} dias`}\n🔢 Usos máximos: ${maxUses === 0 ? 'Ilimitado' : maxUses}\n👥 Cargo vinculado: ${role}`,
+                    ephemeral: true // Faz a resposta ser visível apenas para quem executou o comando
+                }).then(_ => console.log(`${Date()} LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
+            } catch (error) {
+                console.error(`${Date()} Erro ao criar convite:`, error);
+                await interaction.reply({
+                    content: '❌ Ocorreu um erro ao criar o convite. Verifique se tenho permissões suficientes.',
+                    ephemeral: true
+                });
+            }
+            break;
 
-    else if(interaction.commandName === "echo") {
-        const message = interaction.options.getString("Message")
-        const channel = interaction.options.getChannel("channel", true);
+        case "echo":
+            const message = interaction.options.getString("Message")
+            const channel = interaction.options.getChannel("channel", true);
+            if (!channel.isTextBased()) {
+                await interaction.reply({
+                    content: "❌ O canal especificado não é um canal de texto.",
+                    ephemeral: true
+                });
+                return;
+            } else {
+                await channel.send(message).then(_ => {
+                    interaction.reply({
+                        content: `✅ Mensagem enviada para ${channel} com sucesso!`,
+                        ephemeral: true
+                    });
+                    console.log(`${Date()} LOG - echo ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
+                }).catch(err => {
+                    console.error(`${Date()} ERRO - Falha ao enviar mensagem:`, err);
+                    interaction.reply({
+                        content: "❌ Ocorreu um erro ao enviar a mensagem.",
+                        ephemeral: true
+                    });
+                });
+            }
+            break;
+        case "display":
+            try {
+                // Busca os convites ativos do servidor
+                bot_db.query(`SELECT * FROM invites WHERE server_id = '${interaction.guild.id}'`, async (err, rows) => {
+                    if (err) {
+                        console.error(`${Date()} ERRO - Erro na consulta SQL:`, err);
+                        await interaction.reply({
+                            content: "❌ Ocorreu um erro ao buscar os convites.",
+                            ephemeral: true
+                        });
+                        return;
+                    }
 
+                    // Verifica se há convites no banco de dados
+                    if (rows.length === 0) {
+                        await interaction.reply({
+                            content: "Nenhum convite ativo encontrado.",
+                            ephemeral: true
+                        });
+                        return;
+                    }
 
+                    // Formata a resposta com os convites
+                    let response = "Convites ativos:\n";
+                    rows.forEach(invite => {
+                        response += `- **Link:** discord.gg/${invite.code} | **Usos:** ${invite.uses} | **Duração:** ${invite.maxAge === 0 ? 'Permanente' : `${Math.floor(invite.maxAge / 86400)} dias`}\n`;
+                    });
+                    await interaction.reply({
+                        content: response,
+                        ephemeral: true
+                    });
+                });
+                break;
+            } catch (error) {
+                console.error(`${Date()} ERRO - Falha ao buscar convites:`, error);
+                await interaction.reply({
+                    content: "❌ Ocorreu um erro ao buscar os convites.",
+                    ephemeral: true
+                });
+            }
+        default:
+            break;
     }
 });
 
