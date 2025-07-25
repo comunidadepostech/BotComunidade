@@ -54,7 +54,7 @@ client.once(Events.ClientReady, async c => {
 
     // Comando de invite: cria um invite que pode ser vinculado a um cargo para que
     // ele atribua o cargo vinculado a cada uso.
-    const invite = await new SlashCommandBuilder()
+    const [invite] = await Promise.all([new SlashCommandBuilder()
         .setName('invite')
         .setDescription('Cria um convite para o servidor')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
@@ -77,7 +77,7 @@ client.once(Events.ClientReady, async c => {
             option.setName('uses')
                 .setDescription('Número máximo de usos (0 para ilimitado)')
                 .setRequired(false)
-        )
+        )])
     for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
         try {
             client.application.commands.create(invite, id).then(_ => console.log(`${Date()} COMANDOS - invite cadastrado em: ${id}`));
@@ -135,23 +135,9 @@ client.once(Events.ClientReady, async c => {
     }
 
     // Poll serve para criar uma enquete com embed
-    global.poll = await new EmbedBuilder()
-        .setColor(0x0099FF)
-        .setTitle('Some title')
-        .setURL('https://discord.js.org/')
-        .setAuthor({ name: 'Some name', iconURL: 'https://i.imgur.com/AfFp7pu.png', url: 'https://discord.js.org' })
-        .setDescription('Some description here')
-        .setThumbnail('https://i.imgur.com/AfFp7pu.png')
-        .addFields(
-            { name: 'Regular field title', value: 'Some value here' },
-            { name: '\u200B', value: '\u200B' },
-            { name: 'Inline field title', value: 'Some value here', inline: true },
-            { name: 'Inline field title', value: 'Some value here', inline: true },
-        )
-        .addFields({ name: 'Inline field title', value: 'Some value here', inline: true })
-        .setImage('https://i.imgur.com/AfFp7pu.png')
-        .setTimestamp()
-        .setFooter({ text: 'Some footer text here', iconURL: 'https://i.imgur.com/AfFp7pu.png' });
+    const poll = await new SlashCommandBuilder()
+        .setName("poll")
+        .setDescription("Cria uma enquete com embed")
     for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
         try {
             client.application.commands.create(poll, id).then(_ => console.log(`${Date()} COMANDOS - poll cadastrado em: ${id}`))
@@ -269,7 +255,7 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "poll":
-            await interaction.reply({embed: [poll]})
+            await interaction.reply({poll: {question: "algo?", options: ["opção 1", "opção 2", "opção 3"]}});
 
         default:
             break;
