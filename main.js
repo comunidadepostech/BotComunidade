@@ -8,11 +8,10 @@ console.log(process.env);
 
 // Conexão com o banco de dados MySQL
 const bot_db = mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    password1: process.env.DB_PASSWORD
+    host: process.env.MYSQLHOST,
+    user: process.env.MYSQLUSER,
+    password: process.env.MYSQL_ROOT_PASSWORD,
+    database: process.env.MYSQLDATABASE
 });
 
 bot_db.connect((err) => {
