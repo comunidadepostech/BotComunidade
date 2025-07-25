@@ -1,6 +1,6 @@
 // Importa as dependencias
 require('dotenv').config();
-const {Client, Events, GatewayIntentBits, SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder} = require("discord.js");
+const {Client, Events, GatewayIntentBits, SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle} = require("discord.js");
 const mysql = require('mysql2');
 
 // Conexão com o banco de dados MySQL
@@ -37,7 +37,8 @@ const client = new Client({intents: [
 		GatewayIntentBits.MessageContent,
 		GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildScheduledEvents,
-        GatewayIntentBits.GuildInvites
+        GatewayIntentBits.GuildInvites,
+        GatewayIntentBits.GuildMessagePolls
     ]});
 
 // Define o que o bot deve fazer ao ser iniciado, no caso, imprime uma mensagem de online e cria os comandos existentes
@@ -136,9 +137,43 @@ client.once(Events.ClientReady, async c => {
 
     // Poll serve para criar uma enquete com embed
     const poll = await new SlashCommandBuilder()
-        .setName("poll")
-        .setDescription("Cria uma enquete com embed")
-    for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
+            .setName('poll')
+            .setDescription('Cria uma enquete interativa')
+            .addStringOption(option =>
+                option.setName('titulo')
+                    .setDescription('Título da enquete')
+                    .setRequired(true))
+            .addStringOption(option =>
+                option.setName('descricao')
+                    .setDescription('Descrição da enquete')
+                    .setRequired(true))
+            .addIntegerOption(option =>
+                option.setName('duracao')
+                    .setDescription('Duração da enquete em horas (padrão: 24)')
+                    .setRequired(true))
+            .addStringOption(option =>
+                option.setName('opcao1')
+                    .setDescription('Primeira opção')
+                    .setRequired(true))
+            .addStringOption(option =>
+                option.setName('opcao2')
+                    .setDescription('Segunda opção')
+                    .setRequired(true))
+            .addStringOption(option =>
+                option.setName('opcao3')
+                    .setDescription('Terceira opção')
+                    .setRequired(false))
+            .addStringOption(option =>
+                option.setName('opcao4')
+                    .setDescription('Quarta opção')
+                    .setRequired(false))
+            .addStringOption(option =>
+                option.setName('opcao5')
+                    .setDescription('Quinta opção')
+                    .setRequired(false))
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+
+        for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
         try {
             client.application.commands.create(poll, id).then(_ => console.log(`${Date()} COMANDOS - poll cadastrado em: ${id}`))
         } catch (error) {
@@ -187,7 +222,7 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "echo":
-            const message = interaction.options.getString("message")
+            let message = interaction.options.getString("message")
             const channel = interaction.options.getChannel("channel", true);
             if (!channel.isTextBased()) {
                 await interaction.reply({
@@ -255,7 +290,56 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "poll":
-            await interaction.channel.send({poll: {question: "algo?", options: ["opção 1", "opção 2", "opção 3"]}});
+            const titulo = interaction.options.getString('titulo');
+            const descricao = interaction.options.getString('descricao') || '';
+            const duracao = interaction.options.getInteger('duracao') || 24;
+
+            const options = [];
+            for (let i = 1; i <= 5; i++) {
+                const option = interaction.options.getString(`opcao${i}`);
+                if (option) options.push(option);
+            }
+
+            const endDate = new Date();
+            endDate.setHours(endDate.getHours() + duracao);
+
+            // Criar embed da enquete
+            const pollEmbed = new EmbedBuilder()
+                .setColor(0x0099FF)
+                .setTitle(`📊 ${titulo}`)
+                .setDescription(descricao)
+                .addFields(
+                    options.map((opt, index) => ({
+                        name: `Opção ${index + 1}`,
+                        value: `${opt}\nVotos: 0`,
+                        inline: true
+                    }))
+                )
+                .setFooter({
+                    text: `Enquete termina em: ${endDate.toLocaleString()}`
+                });
+
+            // Criar botões
+            const rows = [];
+            for (let i = 0; i < Math.ceil(options.length / 3); i++) {
+                const row = new ActionRowBuilder();
+                for (let j = i * 3; j < Math.min((i + 1) * 3, options.length); j++) {
+                    row.addComponents(
+                        new ButtonBuilder()
+                            .setCustomId(`poll_vote_${j}`)
+                            .setLabel(`${j + 1}`)
+                            .setStyle(ButtonStyle.Primary)
+                    );
+                }
+                rows.push(row);
+            }
+
+            // Enviar mensagem e salvar no banco
+            await interaction.channel.send({
+                embeds: [pollEmbed],
+                components: rows
+            });
+            break;
 
         default:
             break;
