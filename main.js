@@ -200,7 +200,7 @@ client.on(Events.GuildMemberAdd, async member => {
 
                 const welcome_role = await member.guild.roles.cache.find(role => role.name === row.role);
                 if (!welcome_role) {
-                    console.log('ERRO - Cargo não encontrado no servidor');
+                    console.log(`ERRO - Cargo ${row.name} não encontrado no servidor`);
                     return;
                 }
 
