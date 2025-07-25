@@ -3,18 +3,15 @@ require('dotenv').config();
 const {Client, Events, GatewayIntentBits, SlashCommandBuilder, PermissionFlagsBits} = require("discord.js");
 const mysql = require('mysql2');
 
-// Debug
-console.log(process.env);
-
 // Conexão com o banco de dados MySQL
-const bot_db = mysql.createConnection({
+const db = mysql.createConnection({
     host: process.env.MYSQLHOST,
     user: process.env.MYSQLUSER,
     password: process.env.MYSQL_ROOT_PASSWORD,
     database: process.env.MYSQLDATABASE
 });
 
-bot_db.connect((err) => {
+db.connect((err) => {
     if (err) {
         console.error('Erro ao conectar no MySQL:', err);
         return;
@@ -23,7 +20,7 @@ bot_db.connect((err) => {
 });
 
 // Cria a tabela de convites, caso não exista
-bot_db.query(`CREATE TABLE IF NOT EXISTS invites (
+db.query(`CREATE TABLE IF NOT EXISTS invites (
                     invite VARCHAR(16) PRIMARY KEY NOT NULL,
                     role VARCHAR(32) NOT NULL,
                     server_id VARCHAR(22) NOT NULL)`,
@@ -135,6 +132,33 @@ client.once(Events.ClientReady, async c => {
             console.log(`${Date()} ERRO - display não cadastrado em: ${id}\n${error}`)
         }
     }
+
+    const poll = await new SlashCommandBuilder()
+        .setName("poll")
+        .setDescription("Cria uma enquete no servidor")
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .addStringOption(option =>
+            option.setName("question")
+                .setDescription("Pergunta da enquete")
+                .setRequired(true)
+        )
+        .addStringOption(option =>
+            option.setName("options")
+                .setDescription("Opções da enquete (separadas por vírgula)")
+                .setRequired(true)
+        )
+        .addAttachmentOption(option =>
+            option.setName("image")
+                .setDescription("Imagem da enquete")
+                .setRequired(false)
+        );
+    for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
+        try {
+            client.application.commands.create(poll, id).then(_ => console.log(`${Date()} COMANDOS - poll cadastrado em: ${id}`))
+        } catch (error) {
+            console.log(`${Date()} ERRO - poll não cadastrado em: ${id}\n${error}`)
+        }
+    }
 });
 
 // Interações com os comandos
@@ -160,7 +184,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     unique: true
                 });
 
-                bot_db.query(`INSERT INTO invites (invite, role, server_id) VALUES ('${invite.code}', '${role}', '${interaction.guild.id}')`);
+                db.query(`INSERT INTO invites (invite, role, server_id) VALUES ('${invite.code}', '${role}', '${interaction.guild.id}')`);
 
                 // Responde com o link do convite
                 await interaction.reply({
@@ -201,10 +225,11 @@ client.on(Events.InteractionCreate, async interaction => {
                 });
             }
             break;
+
         case "display":
             try {
                 // Busca os convites ativos do servidor
-                bot_db.query(`SELECT * FROM invites WHERE server_id = '${interaction.guild.id}'`, async (err, rows) => {
+                db.query(`SELECT * FROM invites WHERE server_id = '${interaction.guild.id}'`, async (err, rows) => {
                     if (err) {
                         console.error(`${Date()} ERRO - Erro na consulta SQL:`, err);
                         await interaction.reply({
@@ -224,7 +249,6 @@ client.on(Events.InteractionCreate, async interaction => {
                     }
 
                     // Formata a resposta com os convites
-                    console.log(rows);
                     let response = "Convites ativos:\n";
                     rows.forEach(invite => {
                         response += `- **${invite.role}:** https://discord.gg/${invite.invite}\n`;
@@ -242,6 +266,11 @@ client.on(Events.InteractionCreate, async interaction => {
                     ephemeral: true
                 });
             }
+            break;
+
+        case "poll":
+            break;
+
         default:
             break;
     }
