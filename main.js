@@ -152,10 +152,6 @@ client.once(Events.ClientReady, async c => {
                 option.setName('duracao')
                     .setDescription('Duração da enquete em horas (padrão: 24)')
                     .setRequired(true))
-            .addAttachmentOption(option =>
-                option.setName('fundo')
-                    .setDescription('Imagem de fundo da enquete')
-                    .setRequired(false))
             .addStringOption(option =>
                 option.setName('opcao1')
                     .setDescription('Primeira opção')
@@ -175,6 +171,10 @@ client.once(Events.ClientReady, async c => {
             .addStringOption(option =>
                 option.setName('opcao5')
                     .setDescription('Quinta opção')
+                    .setRequired(false))
+            .addAttachmentOption(option =>
+                option.setName('fundo')
+                    .setDescription('Imagem de fundo da enquete')
                     .setRequired(false));
 
         for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
