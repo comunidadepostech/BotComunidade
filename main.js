@@ -255,7 +255,7 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "poll":
-            await interaction.reply({poll: {question: "algo?", options: ["opção 1", "opção 2", "opção 3"]}});
+            await interaction.channel.send({poll: {question: "algo?", options: ["opção 1", "opção 2", "opção 3"]}});
 
         default:
             break;
