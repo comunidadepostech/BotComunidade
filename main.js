@@ -177,7 +177,7 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "echo":
-            const message = interaction.options.getString("Message")
+            const message = interaction.options.getString("message")
             const channel = interaction.options.getChannel("channel", true);
             if (!channel.isTextBased()) {
                 await interaction.reply({
@@ -186,7 +186,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 });
                 return;
             } else {
-                await channel.send(`${message}`).then(_ => {
+                await channel.send(message).then(_ => {
                     interaction.reply({
                         content: `✅ Mensagem enviada para ${channel} com sucesso!`,
                         ephemeral: true
@@ -227,7 +227,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     console.log(rows);
                     let response = "Convites ativos:\n";
                     rows.forEach(invite => {
-                        response += `- **Link:** discord.gg/${rows} | **Usos:** ${invite.uses} | **Duração:** ${invite.maxAge === 0 ? 'Permanente' : `${Math.floor(invite.maxAge / 86400)} dias`}\n`;
+                        response += `- **${invite.role}:** https://discord.gg/${invite.invite}\n`;
                     });
                     await interaction.reply({
                         content: response,
