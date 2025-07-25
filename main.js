@@ -24,9 +24,9 @@ bot_db.connect((err) => {
 
 // Cria a tabela de convites, caso não exista
 bot_db.query(`CREATE TABLE IF NOT EXISTS invites (
-                    invite TEXT PRIMARY KEY NOT NULL,
-                    role TEXT NOT NULL,
-                    server_id TEXT NOT NULL)`,
+                    invite VARCHAR(16) PRIMARY KEY NOT NULL,
+                    role VARCHAR(32) NOT NULL,
+                    server_id VARCHAR(22) NOT NULL)`,
     (err) => {
     if (err) {
         console.error('Erro ao criar tabela:', err);
