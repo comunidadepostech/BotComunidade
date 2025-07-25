@@ -132,7 +132,7 @@ client.once(Events.ClientReady, async c => {
         try {
             client.application.commands.create(display, id).then(_ => console.log(`${Date()} COMANDOS - display cadastrado em: ${id}`))
         } catch (error) {
-            console.log(`${Date()} ERRO - echo não cadastrado em: ${id}\n${error}`)
+            console.log(`${Date()} ERRO - display não cadastrado em: ${id}\n${error}`)
         }
     }
 });
@@ -186,7 +186,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 });
                 return;
             } else {
-                await channel.send(message).then(_ => {
+                await channel.send(`${message}`).then(_ => {
                     interaction.reply({
                         content: `✅ Mensagem enviada para ${channel} com sucesso!`,
                         ephemeral: true
@@ -224,9 +224,10 @@ client.on(Events.InteractionCreate, async interaction => {
                     }
 
                     // Formata a resposta com os convites
+                    console.log(rows);
                     let response = "Convites ativos:\n";
                     rows.forEach(invite => {
-                        response += `- **Link:** discord.gg/${invite.code} | **Usos:** ${invite.uses} | **Duração:** ${invite.maxAge === 0 ? 'Permanente' : `${Math.floor(invite.maxAge / 86400)} dias`}\n`;
+                        response += `- **Link:** discord.gg/${rows} | **Usos:** ${invite.uses} | **Duração:** ${invite.maxAge === 0 ? 'Permanente' : `${Math.floor(invite.maxAge / 86400)} dias`}\n`;
                     });
                     await interaction.reply({
                         content: response,
