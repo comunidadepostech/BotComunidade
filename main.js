@@ -290,55 +290,66 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "poll":
-            const titulo = interaction.options.getString('titulo');
-            const descricao = interaction.options.getString('descricao') || '';
-            const duracao = interaction.options.getInteger('duracao') || 24;
+            try {
+                const titulo = interaction.options.getString('titulo');
+                const descricao = interaction.options.getString('descricao') || '';
+                const opcoes = interaction.options.getString('opcoes')
+                    .split(',')
+                    .map(opt => opt.trim())
+                    .filter(opt => opt.length > 0);
 
-            const options = [];
-            for (let i = 1; i <= 5; i++) {
-                const option = interaction.options.getString(`opcao${i}`);
-                if (option) options.push(option);
-            }
+                if (opcoes.length > 10) {
+                    return await interaction.reply({
+                        content: 'Você só pode ter no máximo 10 opções!',
+                        ephemeral: true
+                    });
+                }
 
-            const endDate = new Date();
-            endDate.setHours(endDate.getHours() + duracao);
+                if (opcoes.length < 2) {
+                    return await interaction.reply({
+                        content: 'Você precisa fornecer pelo menos 2 opções!',
+                        ephemeral: true
+                    });
+                }
 
-            // Criar embed da enquete
-            const pollEmbed = new EmbedBuilder()
-                .setColor(0x0099FF)
-                .setTitle(`📊 ${titulo}`)
-                .setDescription(descricao)
-                .addFields(
-                    options.map((opt, index) => ({
-                        name: `Opção ${index + 1}`,
-                        value: `${opt}\nVotos: 0`,
-                        inline: true
-                    }))
-                )
-                .setFooter({
-                    text: `Enquete termina em: ${endDate.toLocaleString()}`
+                // Emojis numerados de 1 a 10
+                const numberEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
+
+                // Criar o texto da enquete
+                let pollDescription = descricao ? `${descricao}\n\n` : '';
+                pollDescription += opcoes
+                    .map((opt, index) => `${numberEmojis[index]} ${opt}`)
+                    .join('\n\n');
+
+                const pollEmbed = new EmbedBuilder()
+                    .setColor(0x0099FF)
+                    .setTitle('📊 ' + titulo)
+                    .setDescription(pollDescription)
+                    .setFooter({
+                        text: `Enquete criada por ${interaction.user.username}`
+                    });
+
+                // Enviar a mensagem da enquete
+                const pollMessage = await interaction.channel.send({
+                    embeds: [pollEmbed]
                 });
 
-            // Criar botões
-            const rows = [];
-            for (let i = 0; i < Math.ceil(options.length / 3); i++) {
-                const row = new ActionRowBuilder();
-                for (let j = i * 3; j < Math.min((i + 1) * 3, options.length); j++) {
-                    row.addComponents(
-                        new ButtonBuilder()
-                            .setCustomId(`poll_vote_${j}`)
-                            .setLabel(`${j + 1}`)
-                            .setStyle(ButtonStyle.Primary)
-                    );
+                // Adicionar as reações
+                for (let i = 0; i < opcoes.length; i++) {
+                    await pollMessage.react(numberEmojis[i]);
                 }
-                rows.push(row);
-            }
 
-            // Enviar mensagem e salvar no banco
-            await interaction.channel.send({
-                embeds: [pollEmbed],
-                components: rows
-            });
+                await interaction.reply({
+                    content: 'Enquete criada com sucesso!',
+                    ephemeral: true
+                });
+
+            } catch (error) {
+                console.error('Erro ao criar enquete:', error);
+                await interaction.reply({
+                    content: 'Ocorreu um erro ao criar a enquete!',
+                    ephemeral: true
+                })}
             break;
 
         default:
