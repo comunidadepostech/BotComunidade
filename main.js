@@ -139,6 +139,7 @@ client.once(Events.ClientReady, async c => {
     const poll = await new SlashCommandBuilder()
             .setName('poll')
             .setDescription('Cria uma enquete interativa')
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
             .addStringOption(option =>
                 option.setName('titulo')
                     .setDescription('Título da enquete')
@@ -151,6 +152,10 @@ client.once(Events.ClientReady, async c => {
                 option.setName('duracao')
                     .setDescription('Duração da enquete em horas (padrão: 24)')
                     .setRequired(true))
+            .addAttachmentOption(option =>
+                option.setName('fundo')
+                    .setDescription('Imagem de fundo da enquete')
+                    .setRequired(false))
             .addStringOption(option =>
                 option.setName('opcao1')
                     .setDescription('Primeira opção')
@@ -170,8 +175,7 @@ client.once(Events.ClientReady, async c => {
             .addStringOption(option =>
                 option.setName('opcao5')
                     .setDescription('Quinta opção')
-                    .setRequired(false))
-            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+                    .setRequired(false));
 
         for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
         try {
@@ -292,34 +296,30 @@ client.on(Events.InteractionCreate, async interaction => {
         case "poll":
             try {
                 const titulo = interaction.options.getString('titulo');
-                const descricao = interaction.options.getString('descricao') || '';
-                const opcoes = interaction.options.getString('opcoes')
-                    .split(',')
-                    .map(opt => opt.trim())
-                    .filter(opt => opt.length > 0);
+                const descricao = interaction.options.getString('descricao');
+                const duracao = interaction.options.getInteger('duracao');
+                const fundo = interaction.options.getAttachment('fundo');
 
-                if (opcoes.length > 10) {
-                    return await interaction.reply({
-                        content: 'Você só pode ter no máximo 10 opções!',
-                        ephemeral: true
-                    });
+                // Coletar todas as opções não nulas
+                const opcoes = [];
+                for (let i = 1; i <= 5; i++) {
+                    const opcao = interaction.options.getString(`opcao${i}`);
+                    if (opcao) opcoes.push(opcao);
                 }
 
-                if (opcoes.length < 2) {
-                    return await interaction.reply({
-                        content: 'Você precisa fornecer pelo menos 2 opções!',
-                        ephemeral: true
-                    });
-                }
+                // Calcular data de término
+                const endDate = new Date();
+                endDate.setHours(endDate.getHours() + duracao);
 
-                // Emojis numerados de 1 a 10
-                const numberEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
+                // Emojis numerados de 1 a 5
+                const numberEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'];
 
                 // Criar o texto da enquete
-                let pollDescription = descricao ? `${descricao}\n\n` : '';
+                let pollDescription = `${descricao}\n\n`;
                 pollDescription += opcoes
                     .map((opt, index) => `${numberEmojis[index]} ${opt}`)
                     .join('\n\n');
+                pollDescription += `\n\n⏰ Termina em: ${endDate.toLocaleString()}`;
 
                 const pollEmbed = new EmbedBuilder()
                     .setColor(0x0099FF)
@@ -328,6 +328,11 @@ client.on(Events.InteractionCreate, async interaction => {
                     .setFooter({
                         text: `Enquete criada por ${interaction.user.username}`
                     });
+
+                // Adicionar imagem de fundo se fornecida
+                if (fundo) {
+                    pollEmbed.setImage(fundo.url);
+                }
 
                 // Enviar a mensagem da enquete
                 const pollMessage = await interaction.channel.send({
