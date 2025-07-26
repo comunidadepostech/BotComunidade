@@ -11,6 +11,8 @@ const {
 } = require("discord.js");
 const mysql = require('mysql2');
 
+
+
 // Conexão com o banco de dados MySQL
 const db = mysql.createConnection({
     host: process.env.MYSQLHOST,
@@ -47,6 +49,8 @@ db.query(`CREATE TABLE IF NOT EXISTS polls (
     }
 });
 
+
+
 // Define os principais acessos que o Bot precisa para poder funcionar corretamente
 const client = new Client({intents: [
         GatewayIntentBits.Guilds,
@@ -58,21 +62,68 @@ const client = new Client({intents: [
         GatewayIntentBits.GuildMessagePolls
     ]});
 
+
+
 // Define o que o bot deve fazer ao ser iniciado, no caso, imprime uma mensagem de online e cria os comandos existentes
 client.once(Events.ClientReady, async c => {
     console.log(`${Date()} LOG - Inicializando cliente ${client.user.username} com ID ${client.user.id}`);
 
-    console.log(`${Date()} LOG - Iniciando registro de comandos`);
+    // Carrega as enquetes antigas do banco de dados
+    console.log(`${Date()} LOG - Carregando enquetes antigas do banco de dados`);
+    db.query('SELECT poll_id FROM polls', async (err, rows) => {
+        if (err) {
+            console.error('Erro ao carregar cache das enquetes:', err);
+            return;
+        }
+
+        for (const row of rows) {
+            try {
+                // Buscar mensagem da enquete em todos os canais
+                const guilds = client.guilds.cache.values();
+                for (const guild of guilds) {
+                    const channels = guild.channels.cache
+                        .filter(channel => channel.type === 0) // Apenas canais de texto
+                        .values();
+
+                    for (const channel of channels) {
+                        try {
+                            await channel.messages.fetch(row.poll_id);
+                        } catch (e) {
+                            // Ignora o erro se a mensagem não for encontrada
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error(`${Date()} ERRO - Erro ao carregar enquete ${row.poll_id}:`, error);
+            }
+        }
+        console.log(`${Date()}Carregamento de enquetes antigas concluído`);
+    });
+
+
+
 
     /* Cada comando é seguido pela ordem:
     *  1. Declaração (const) usando await
-    *  2. Registro nos servidores contidos em ALLOWED_SERVERS_ID usando o loop for
+    *  2. Registro nos servidores contidos em ALLOWED_SERVERS_ID usando a função loadCommand
     *  !!! Lembre sempre de alterar o nome contido na segunda etapa para cada novo comando !!!
     */
 
     // Comando de invite: cria um invite que pode ser vinculado a um cargo para que
     // ele atribua o cargo vinculado a cada uso.
-    const [invite] = await Promise.all([new SlashCommandBuilder()
+    console.log(`${Date()} LOG - Iniciando registro de comandos`);
+
+    function loadCommand(commandName, command) {
+        for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
+            try {
+                client.application.commands.create(command, id).then(_ => console.log(`${Date()} COMANDOS - ${commandName} cadastrado em: ${id}`));
+            } catch (error) {
+                console.log(`${Date()} ERRO - ${commandName} não cadastrado em: ${id}\n${error}`);
+            }
+        }
+    }
+
+    const invite = await new SlashCommandBuilder()
         .setName('invite')
         .setDescription('Cria um convite para o servidor')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
@@ -95,32 +146,21 @@ client.once(Events.ClientReady, async c => {
             option.setName('uses')
                 .setDescription('Número máximo de usos (0 para ilimitado)')
                 .setRequired(false)
-        )])
-    for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
-        try {
-            client.application.commands.create(invite, id).then(_ => console.log(`${Date()} COMANDOS - invite cadastrado em: ${id}`));
-        } catch (error) {
-            console.log(`${Date()} ERRO - invite não cadastrado em: ${id}\n${error}`);
-        }
-    }
+        );
+    loadCommand('invite', invite);
 
     // Comando de teste, serve para saber se o ‘Bot’ está a responder para ajudar na resolução de problemas
     const ping = await new SlashCommandBuilder()
 		.setName('ping')
 		.setDescription('Responde com Pong!')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
-    for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
-        try {
-            client.application.commands.create(ping, id).then(_ => console.log(`${Date()} COMANDOS - ping cadastrado em: ${id}`))
-        } catch (error) {
-            console.log(`${Date()} ERRO - ping não cadastrado em: ${id}\n${error}`)
-        }
-    }
+    loadCommand('ping', ping);
 
     // Echo serve para replicar uma mensagem para um ou mais canais definidos pelo usuário
     const echo = await new SlashCommandBuilder()
         .setName("echo")
         .setDescription("Replica uma mensagem para determinado canal")
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addChannelOption(option =>
             option.setName("channel")
                 .setDescription("Canal no qual a mensagem deve ser enviada")
@@ -131,30 +171,20 @@ client.once(Events.ClientReady, async c => {
                 .setDescription("Conteúdo da mensagem")
                 .setRequired(true)
         )
-    for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
-        try {
-            client.application.commands.create(echo, id).then(_ => console.log(`${Date()} COMANDOS - echo cadastrado em: ${id}`))
-        } catch (error) {
-            console.log(`${Date()} ERRO - echo não cadastrado em: ${id}\n${error}`)
-        }
-    }
+    loadCommand('echo', echo);
 
     // Display serve para exibir os convites ativos do servidor
     const display = await new SlashCommandBuilder()
         .setName("display")
         .setDescription("Exibe os convites ativos do servidor")
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
-    for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
-        try {
-            client.application.commands.create(display, id).then(_ => console.log(`${Date()} COMANDOS - display cadastrado em: ${id}`))
-        } catch (error) {
-            console.log(`${Date()} ERRO - display não cadastrado em: ${id}\n${error}`)
-        }
-    }
+    loadCommand('display', display);
+
     // Poll serve para criar uma enquete com embed
     const poll = await new SlashCommandBuilder()
         .setName('poll')
         .setDescription('Cria uma enquete interativa')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addStringOption(option =>
             option.setName('question')
                 .setDescription('Pergunta da enquete')
@@ -206,15 +236,8 @@ client.once(Events.ClientReady, async c => {
         .addBooleanOption(option =>
             option.setName('allow-multiselect')
                 .setDescription('Permite múltipla seleção de opções (padrão: false)')
-                .setRequired(false))
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
-    for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
-        try {
-            client.application.commands.create(poll, id).then(_ => console.log(`${Date()} COMANDOS - poll cadastrado em: ${id}`))
-        } catch (error) {
-            console.log(`${Date()} ERRO - poll não cadastrado em: ${id}\n${error}`)
-        }
-    }
+                .setRequired(false));
+    loadCommand('poll', poll);
 });
 
 // Interações com os comandos
