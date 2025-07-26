@@ -1,6 +1,14 @@
 // Importa as dependencias
 require('dotenv').config();
-const {Client, Events, GatewayIntentBits, SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle} = require("discord.js");
+const {
+    Client,
+    Events,
+    GatewayIntentBits,
+    SlashCommandBuilder,
+    PermissionFlagsBits,
+    EmbedBuilder,
+    PollLayoutType
+} = require("discord.js");
 const mysql = require('mysql2');
 
 // Conexão com o banco de dados MySQL
@@ -134,50 +142,60 @@ client.once(Events.ClientReady, async c => {
             console.log(`${Date()} ERRO - display não cadastrado em: ${id}\n${error}`)
         }
     }
-
     // Poll serve para criar uma enquete com embed
     const poll = await new SlashCommandBuilder()
-            .setName('poll')
-            .setDescription('Cria uma enquete interativa')
-            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-            .addStringOption(option =>
-                option.setName('titulo')
-                    .setDescription('Título da enquete')
-                    .setRequired(true))
-            .addStringOption(option =>
-                option.setName('descricao')
-                    .setDescription('Descrição da enquete')
-                    .setRequired(true))
-            .addIntegerOption(option =>
-                option.setName('duracao')
-                    .setDescription('Duração da enquete em horas (padrão: 24)')
-                    .setRequired(true))
-            .addStringOption(option =>
-                option.setName('opcao1')
-                    .setDescription('Primeira opção')
-                    .setRequired(true))
-            .addStringOption(option =>
-                option.setName('opcao2')
-                    .setDescription('Segunda opção')
-                    .setRequired(true))
-            .addStringOption(option =>
-                option.setName('opcao3')
-                    .setDescription('Terceira opção')
-                    .setRequired(false))
-            .addStringOption(option =>
-                option.setName('opcao4')
-                    .setDescription('Quarta opção')
-                    .setRequired(false))
-            .addStringOption(option =>
-                option.setName('opcao5')
-                    .setDescription('Quinta opção')
-                    .setRequired(false))
-            .addAttachmentOption(option =>
-                option.setName('fundo')
-                    .setDescription('Imagem de fundo da enquete')
-                    .setRequired(false));
-
-        for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
+        .setName('poll')
+        .setDescription('Cria uma enquete interativa')
+        .addStringOption(option =>
+            option.setName('question')
+                .setDescription('Pergunta da enquete')
+                .setRequired(true))
+        .addIntegerOption(option =>
+            option.setName('duration')
+                .setDescription('Duração da enquete em horas')
+                .setRequired(true))
+        .addStringOption(option =>
+            option.setName('option1')
+                .setDescription('Primeira opção')
+                .setRequired(true))
+        .addStringOption(option =>
+            option.setName('option2')
+                .setDescription('Segunda opção')
+                .setRequired(true))
+        .addStringOption(option =>
+            option.setName('option3')
+                .setDescription('Terceira opção')
+                .setRequired(false))
+        .addStringOption(option =>
+            option.setName('option4')
+                .setDescription('Quarta opção')
+                .setRequired(false))
+        .addStringOption(option =>
+            option.setName('option5')
+                .setDescription('Quinta opção')
+                .setRequired(false))
+        .addStringOption(option =>
+            option.setName('option6')
+                .setDescription('Sexta opção')
+                .setRequired(false))
+        .addStringOption(option =>
+            option.setName('option7')
+                .setDescription('Setima opção')
+                .setRequired(false))
+        .addStringOption(option =>
+            option.setName('option8')
+                .setDescription('Oitava opção')
+                .setRequired(false))
+        .addStringOption(option =>
+            option.setName('option9')
+                .setDescription('Nona opção')
+                .setRequired(false))
+        .addStringOption(option =>
+            option.setName('option10')
+                .setDescription('Décima opção')
+                .setRequired(false))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+    for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
         try {
             client.application.commands.create(poll, id).then(_ => console.log(`${Date()} COMANDOS - poll cadastrado em: ${id}`))
         } catch (error) {
@@ -295,72 +313,58 @@ client.on(Events.InteractionCreate, async interaction => {
 
         case "poll":
             try {
-                const titulo = interaction.options.getString('titulo');
-                const descricao = interaction.options.getString('descricao');
-                const duracao = interaction.options.getInteger('duracao');
-                const fundo = interaction.options.getAttachment('fundo');
+                const question = interaction.options.getString('question');
+                const duration = interaction.options.getInteger('duration');
+                const options = [
+                    interaction.options.getString('option1'),
+                    interaction.options.getString('option2'),
+                    interaction.options.getString('option3'),
+                    interaction.options.getString('option4'),
+                    interaction.options.getString('option5'),
+                    interaction.options.getString('option5'),
+                    interaction.options.getString('option6'),
+                    interaction.options.getString('option7'),
+                    interaction.options.getString('option8'),
+                    interaction.options.getString('option9'),
+                    interaction.options.getString('option10')
+                ].filter(option => option); // Remove opções vazias
 
-                // Coletar todas as opções não nulas
-                const opcoes = [];
-                for (let i = 1; i <= 5; i++) {
-                    const opcao = interaction.options.getString(`opcao${i}`);
-                    if (opcao) opcoes.push(opcao);
-                }
+                const filteredOptions = options.filter(option => option !== null && option !== undefined);
+                const pollAnswers = filteredOptions.map(option => ({text: option}));
 
-                // Calcular data de término
-                const endDate = new Date();
-                endDate.setHours(endDate.getHours() + duracao);
-
-                // Emojis numerados de 1 a 5
-                const numberEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'];
-
-                // Criar o texto da enquete
-                let pollDescription = `${descricao}\n\n`;
-                pollDescription += opcoes
-                    .map((opt, index) => `${numberEmojis[index]} ${opt}`)
-                    .join('\n\n');
-                pollDescription += `\n\n⏰ Termina em: ${endDate.toLocaleString()}`;
-
-                const pollEmbed = new EmbedBuilder()
-                    .setColor(0x0099FF)
-                    .setTitle('📊 ' + titulo)
-                    .setDescription(pollDescription)
-                    .setFooter({
-                        text: `Enquete criada por ${interaction.user.username}`
-                    });
-
-                // Adicionar imagem de fundo se fornecida
-                if (fundo) {
-                    pollEmbed.setImage(fundo.url);
-                }
-
-                // Enviar a mensagem da enquete
-                const pollMessage = await interaction.channel.send({
-                    embeds: [pollEmbed]
+                interaction.channel.send({
+                    poll: {
+                        question: {text: question},
+                        answers: pollAnswers,
+                        allowMultiselect: true,
+                        duration: duration,
+                        layoutType: PollLayoutType.Default
+                    }
                 });
-
-                // Adicionar as reações
-                for (let i = 0; i < opcoes.length; i++) {
-                    await pollMessage.react(numberEmojis[i]);
-                }
-
-                await interaction.reply({
-                    content: 'Enquete criada com sucesso!',
-                    ephemeral: true
-                });
-
             } catch (error) {
-                console.error('Erro ao criar enquete:', error);
+                console.error(`${Date()} ERRO - Falha ao criar enquete:`, error);
                 await interaction.reply({
-                    content: 'Ocorreu um erro ao criar a enquete!',
+                    content: "❌ Ocorreu um erro ao criar a enquete.",
                     ephemeral: true
-                })}
+                });
+            }
             break;
 
         default:
             break;
     }
 });
+
+
+/*
+Client.on(Events.MessagePollVoteAdd, async interaction => {
+
+})
+
+Client.on(Events.MessagePollVoteRemove, async interaction => {
+
+})
+*/
 
 // Evento que é disparado quando um novo membro entra no servidor
 client.on(Events.GuildMemberAdd, async member => {
