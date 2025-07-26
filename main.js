@@ -381,6 +381,7 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
+/*
 // Evento que é disparado quando alguém vota em uma enquete
 Client.on(Events.MessagePollVoteAdd, async interaction => {
 
@@ -390,6 +391,7 @@ Client.on(Events.MessagePollVoteAdd, async interaction => {
 Client.on(Events.MessagePollVoteRemove, async interaction => {
 
 })
+ */
 
 // Evento que é disparado quando um novo membro entra no servidor
 client.on(Events.GuildMemberAdd, async member => {
