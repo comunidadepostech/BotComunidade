@@ -437,6 +437,13 @@ client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
     }
 });
 
+client.on('raw', async (packet) => {
+    if (['MESSAGE_POLL_VOTE_ADD', 'MESSAGE_POLL_VOTE_REMOVE'].includes(packet.t)) {
+        console.log('Raw Poll Event:', packet);
+    }
+});
+
+
 // Evento que é disparado quando alguém remove o voto de uma enquete
 client.on(Events.MessagePollVoteRemove, async (poll, user, options) => {
     console.log(poll.id);
