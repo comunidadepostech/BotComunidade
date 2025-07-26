@@ -203,7 +203,7 @@ client.once(Events.ClientReady, async c => {
             option.setName('option10')
                 .setDescription('Décima opção')
                 .setRequired(false))
-        .addIntegerOption(option =>
+        .addBooleanOption(option =>
             option.setName('allow-multiselect')
                 .setDescription('Permite múltipla seleção de opções (padrão: false)')
                 .setRequired(false))
@@ -335,7 +335,6 @@ client.on(Events.InteractionCreate, async interaction => {
                     interaction.options.getString('option3'),
                     interaction.options.getString('option4'),
                     interaction.options.getString('option5'),
-                    interaction.options.getString('option5'),
                     interaction.options.getString('option6'),
                     interaction.options.getString('option7'),
                     interaction.options.getString('option8'),
@@ -343,10 +342,10 @@ client.on(Events.InteractionCreate, async interaction => {
                     interaction.options.getString('option10')
                 ].filter(option => option); // Remove opções vazias
 
-                const filteredOptions = options.filter(option => option !== null && option !== undefined);
+                let filteredOptions = options.filter(option => option !== null && option !== undefined);
                 const pollAnswers = filteredOptions.map(option => ({text: option}));
 
-                const poll_id = interaction.channel.send({
+                const poll_id = await interaction.channel.send({
                     poll: {
                         question: {text: question},
                         answers: pollAnswers,
@@ -356,9 +355,9 @@ client.on(Events.InteractionCreate, async interaction => {
                     }
                 });
 
-                filteredOptions.map(answer => [answer, 0]) // Cria um array de respostas com o texto e a contagem de votos inicializada em 0
+                filteredOptions =  filteredOptions.map(answer => [answer, 0]) // Cria um array de respostas com o texto e a contagem de votos inicializada em 0
 
-                db.query(`INSERT INTO polls (poll_id, poll_data) VALUES ('${poll_id.id}', '${JSON.stringify({question: question, answers: pollAnswers, duration: duration})}')`, (err) => {
+                db.query(`INSERT INTO polls (poll_id, poll_data) VALUES ('${poll_id.id}', '${JSON.stringify({question: question, answers: filteredOptions, duration: duration})}')`, (err) => {
                     if (err) {
                         console.error(`${Date()} ERRO - Erro ao inserir enquete no banco de dados:`, err);
                         return interaction.reply({
@@ -366,6 +365,10 @@ client.on(Events.InteractionCreate, async interaction => {
                             ephemeral: true
                         });
                     }
+                    return interaction.reply({
+                        content: "✅ Enquete criada com sucesso!",
+                        ephemeral: true
+                    });
                 })
             } catch (error) {
                 console.error(`${Date()} ERRO - Falha ao criar enquete:`, error);
