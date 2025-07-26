@@ -410,36 +410,9 @@ client.on(Events.InteractionCreate, async interaction => {
 });
 
 // Evento que é disparado quando alguém vota em uma enquete
-client.on(Events.MessagePollVoteAdd, async (poll, user, options) => {
-    try {
-        console.log('Poll ID:', poll.id);
-        console.log('Poll Question:', poll.question?.text);
-        console.log('User:', user.username);
-        console.log('Options:', JSON.stringify(options));
-        console.log('Channel:', poll.channel?.name);
-    } catch (error) {
-        console.error('Erro ao processar voto:', error);
-    }
-
-})
-
-// Teste para verificar se o bot está recebendo eventos de depuração
-client.on('debug', (info) => {
-    if (info.includes('poll') || info.includes('POLL')) {
-        console.log('Debug Info:', info);
-    }
-});
-
-client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
-    console.log('Mensagem atualizada:', newMessage.id);
-    if (newMessage.poll) {
-        console.log('Atualização de enquete detectada');
-    }
-});
-
 client.on('raw', async (packet) => {
     if (['MESSAGE_POLL_VOTE_ADD', 'MESSAGE_POLL_VOTE_REMOVE'].includes(packet.t)) {
-        console.log('Raw Poll Event:', packet);
+        console.log('Raw Poll Event:', packet.d.message_id);
     }
 });
 
