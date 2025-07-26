@@ -13,6 +13,21 @@ const mysql = require('mysql2');
 
 
 
+// Define os principais acessos que o Bot precisa para poder funcionar corretamente
+const client = new Client({intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildScheduledEvents,
+        GatewayIntentBits.GuildInvites,
+        GatewayIntentBits.GuildMessagePolls,
+        GatewayIntentBits.GuildMessageReactions
+
+    ]});
+
+
+
 // Conexão com o banco de dados MySQL
 const db = mysql.createConnection({
     host: process.env.MYSQLHOST,
@@ -48,19 +63,6 @@ db.query(`CREATE TABLE IF NOT EXISTS polls (
         console.error('Erro ao criar tabela de enquetes:', err);
     }
 });
-
-
-
-// Define os principais acessos que o Bot precisa para poder funcionar corretamente
-const client = new Client({intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-		GatewayIntentBits.MessageContent,
-		GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildScheduledEvents,
-        GatewayIntentBits.GuildInvites,
-        GatewayIntentBits.GuildMessagePolls
-    ]});
 
 
 
@@ -409,8 +411,31 @@ client.on(Events.InteractionCreate, async interaction => {
 
 // Evento que é disparado quando alguém vota em uma enquete
 client.on(Events.MessagePollVoteAdd, async (poll, user, options) => {
-    console.log(poll.id, user, options);
+    try {
+        console.log('Poll ID:', poll.id);
+        console.log('Poll Question:', poll.question?.text);
+        console.log('User:', user.username);
+        console.log('Options:', JSON.stringify(options));
+        console.log('Channel:', poll.channel?.name);
+    } catch (error) {
+        console.error('Erro ao processar voto:', error);
+    }
+
 })
+
+// Teste para verificar se o bot está recebendo eventos de depuração
+client.on('debug', (info) => {
+    if (info.includes('poll') || info.includes('POLL')) {
+        console.log('Debug Info:', info);
+    }
+});
+
+client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
+    console.log('Mensagem atualizada:', newMessage.id);
+    if (newMessage.poll) {
+        console.log('Atualização de enquete detectada');
+    }
+});
 
 // Evento que é disparado quando alguém remove o voto de uma enquete
 client.on(Events.MessagePollVoteRemove, async (poll, user, options) => {
