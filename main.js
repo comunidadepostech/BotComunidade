@@ -357,7 +357,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
                 filteredOptions =  filteredOptions.map(answer => [answer, 0]) // Cria um array de respostas com o texto e a contagem de votos inicializada em 0
 
-                db.query(`INSERT INTO polls (poll_id, poll_data) VALUES ('${poll_id.id}', '${JSON.stringify({question: question, answers: filteredOptions, duration: duration})}')`, (err) => {
+                db.query(`INSERT INTO polls (poll_id, poll_json) VALUES ('${poll_id.id}', '${JSON.stringify({question: question, answers: filteredOptions, duration: duration})}')`, (err) => {
                     if (err) {
                         console.error(`${Date()} ERRO - Erro ao inserir enquete no banco de dados:`, err);
                         return interaction.reply({
