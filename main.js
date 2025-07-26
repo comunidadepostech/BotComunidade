@@ -29,12 +29,21 @@ db.connect((err) => {
 
 // Cria a tabela de convites, caso não exista
 db.query(`CREATE TABLE IF NOT EXISTS invites (
-                    invite VARCHAR(16) PRIMARY KEY NOT NULL,
-                    role VARCHAR(32) NOT NULL,
-                    server_id VARCHAR(22) NOT NULL)`,
-    (err) => {
+            invite VARCHAR(16) PRIMARY KEY NOT NULL,
+            role VARCHAR(32) NOT NULL,
+            server_id VARCHAR(22) NOT NULL)`, (err) => {
     if (err) {
-        console.error('Erro ao criar tabela:', err);
+        console.error('Erro ao criar tabela de invites:', err);
+    }
+});
+
+// Cria a tabela de enquetes, caso não exista
+db.query(`CREATE TABLE IF NOT EXISTS polls (
+            poll_id VARCHAR(22) PRIMARY KEY NOT NULL,
+            poll_json JSON NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`, (err) => {
+    if (err) {
+        console.error('Erro ao criar tabela de enquetes:', err);
     }
 });
 
@@ -194,6 +203,10 @@ client.once(Events.ClientReady, async c => {
             option.setName('option10')
                 .setDescription('Décima opção')
                 .setRequired(false))
+        .addIntegerOption(option =>
+            option.setName('allow-multiselect')
+                .setDescription('Permite múltipla seleção de opções (padrão: false)')
+                .setRequired(false))
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
     for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
         try {
@@ -315,6 +328,7 @@ client.on(Events.InteractionCreate, async interaction => {
             try {
                 const question = interaction.options.getString('question');
                 const duration = interaction.options.getInteger('duration');
+                const multiselect = interaction.options.getBoolean('allow-multiselect') || false;
                 const options = [
                     interaction.options.getString('option1'),
                     interaction.options.getString('option2'),
@@ -332,15 +346,27 @@ client.on(Events.InteractionCreate, async interaction => {
                 const filteredOptions = options.filter(option => option !== null && option !== undefined);
                 const pollAnswers = filteredOptions.map(option => ({text: option}));
 
-                interaction.channel.send({
+                const poll_id = interaction.channel.send({
                     poll: {
                         question: {text: question},
                         answers: pollAnswers,
-                        allowMultiselect: true,
+                        allowMultiselect: multiselect,
                         duration: duration,
                         layoutType: PollLayoutType.Default
                     }
                 });
+
+                filteredOptions.map(answer => [answer, 0]) // Cria um array de respostas com o texto e a contagem de votos inicializada em 0
+
+                db.query(`INSERT INTO polls (poll_id, poll_data) VALUES ('${poll_id.id}', '${JSON.stringify({question: question, answers: pollAnswers, duration: duration})}')`, (err) => {
+                    if (err) {
+                        console.error(`${Date()} ERRO - Erro ao inserir enquete no banco de dados:`, err);
+                        return interaction.reply({
+                            content: "❌ Ocorreu um erro ao armazenar a enquete.",
+                            ephemeral: true
+                        });
+                    }
+                })
             } catch (error) {
                 console.error(`${Date()} ERRO - Falha ao criar enquete:`, error);
                 await interaction.reply({
@@ -355,16 +381,15 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
-
-/*
+// Evento que é disparado quando alguém vota em uma enquete
 Client.on(Events.MessagePollVoteAdd, async interaction => {
 
 })
 
+// Evento que é disparado quando alguém remove o voto de uma enquete
 Client.on(Events.MessagePollVoteRemove, async interaction => {
 
 })
-*/
 
 // Evento que é disparado quando um novo membro entra no servidor
 client.on(Events.GuildMemberAdd, async member => {
