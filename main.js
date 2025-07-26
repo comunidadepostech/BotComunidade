@@ -384,17 +384,15 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
-/*
 // Evento que é disparado quando alguém vota em uma enquete
-Client.on(Events.MessagePollVoteAdd, async interaction => {
-
+client.on(Events.MessagePollVoteAdd, async (poll, user, options) => {
+    console.log(poll.id, user, options);
 })
 
 // Evento que é disparado quando alguém remove o voto de uma enquete
-Client.on(Events.MessagePollVoteRemove, async interaction => {
-
+client.on(Events.MessagePollVoteRemove, async (poll, user, options) => {
+    console.log(poll.id);
 })
- */
 
 // Evento que é disparado quando um novo membro entra no servidor
 client.on(Events.GuildMemberAdd, async member => {
