@@ -49,7 +49,7 @@ db.connect((err) => {
 async function initializeTables() {
     try {
         // Cria a tabela de convites
-        await db.query(`
+        db.query(`
             CREATE TABLE IF NOT EXISTS invites (
                 invite VARCHAR(16) PRIMARY KEY NOT NULL,
                 role VARCHAR(32) NOT NULL,
@@ -59,7 +59,7 @@ async function initializeTables() {
         console.log('Tabela de convites verificada com sucesso');
 
         // Cria a tabela de enquetes
-        await db.query(`
+        db.query(`
             CREATE TABLE IF NOT EXISTS polls (
                 poll_id VARCHAR(22) PRIMARY KEY NOT NULL,
                 poll_json JSON NOT NULL,
@@ -267,7 +267,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     unique: true
                 });
 
-                await db.query(`INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`, [invite.code, role, interaction.guild.id]);
+                db.query(`INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`, [invite.code, role, interaction.guild.id]);
 
                 // Responde com o link do convite
                 await interaction.reply({
@@ -312,7 +312,7 @@ client.on(Events.InteractionCreate, async interaction => {
         case "display":
             try {
                 // Busca os convites ativos do servidor
-                await db.query(`SELECT * FROM invites WHERE server_id = ?`, [interaction.guild.id], async (err, rows) => {
+                db.query(`SELECT * FROM invites WHERE server_id = ?`, [interaction.guild.id], async (err, rows) => {
                     if (err) {
                         console.error(`${Date()} ERRO - Erro na consulta SQL:`, err);
                         await interaction.reply({
@@ -384,7 +384,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
                 filteredOptions =  filteredOptions.map(answer => [answer, 0]) // Cria um array de respostas com o texto e a contagem de votos inicializada em 0
 
-                await db.query(`INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)`, [poll_id.id, JSON.stringify({question: question, answers: filteredOptions, duration: duration})], (err) => {
+                db.query(`INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)`, [poll_id.id, JSON.stringify({question: question, answers: filteredOptions, duration: duration})], (err) => {
                     if (err) {
                         console.error(`${Date()} ERRO - Erro ao inserir enquete no banco de dados:`, err);
                         client.channels.cache.get(interaction.channel.id).messages.delete(poll_id);
@@ -471,7 +471,7 @@ client.on(Events.GuildMemberAdd, async member => {
         }
 
         // Busca o cargo vinculado ao invite no banco
-        await db.query("SELECT role FROM invites WHERE invite = ?", [used_invite], async (err, rows) => {
+        db.query("SELECT role FROM invites WHERE invite = ?", [used_invite], async (err, rows) => {
                 if (err) {
                     console.error(`${Date()} ERRO - Erro na consulta SQL:`, err);
                     return;
