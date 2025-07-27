@@ -423,7 +423,7 @@ async function processVoteQueue(poll_id) {
     try {
         while (voteQueues.get(poll_id)?.length > 0) {
             // Obter estado atual da enquete
-            const [rows] = db.query('SELECT poll_json FROM polls WHERE poll_id = ?', [poll_id]);
+            const [rows] = await db.promise().query('SELECT poll_json FROM polls WHERE poll_id = ?', [poll_id]);
             if (!rows || !rows[0]) {
                 throw new Error('Enquete não encontrada');
             }
@@ -443,7 +443,7 @@ async function processVoteQueue(poll_id) {
             }
 
             // Atualizar banco com novo estado
-            db.query('UPDATE polls SET poll_json = ? WHERE poll_id = ?', [JSON.stringify(moment), poll_id]);
+            db.promise().query('UPDATE polls SET poll_json = ? WHERE poll_id = ?', [JSON.stringify(moment), poll_id]);
         }
     } catch (error) {
         console.error(`${Date()} ERRO - Falha ao processar fila de votos:`, error);
