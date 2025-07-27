@@ -118,7 +118,8 @@ client.once(Events.ClientReady, async c => {
     function loadCommand(commandName, command) {
         for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
             try {
-                client.application.commands.create(command, id).then(_ => console.log(`${Date()} COMANDOS - ${commandName} cadastrado em: ${id}`));
+                client.application.commands.create(command, id);
+                console.log(`${Date()} COMANDOS - ${commandName} cadastrado em: ${id}`);
             } catch (error) {
                 console.log(`${Date()} ERRO - ${commandName} não cadastrado em: ${id}\n${error}`);
             }
@@ -422,6 +423,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
 // Evento que é disparado quando alguém vota em uma enquete
 client.on('raw', async (packet) => {
+    if (!packet.t || !['MESSAGE_POLL_VOTE_ADD', 'MESSAGE_POLL_VOTE_REMOVE'].includes(packet.t)) return;
     const adder = (packet.t === 'MESSAGE_POLL_VOTE_ADD') ? 1 : -1;
 
     try {
