@@ -29,40 +29,73 @@ const client = new Client({intents: [
 
 
 // Conexão com o banco de dados MySQL
-const db = mysql.createConnection({
+const pool = mysql.createPool({
     host: process.env.MYSQLHOST,
     user: process.env.MYSQLUSER,
     password: process.env.MYSQL_ROOT_PASSWORD,
-    database: process.env.MYSQLDATABASE
+    database: process.env.MYSQLDATABASE,
+    waitForConnections: true
 });
 
-db.connect((err) => {
-    if (err) {
-        console.error('Erro ao conectar no MySQL:', err);
-        return;
+// Função helper para executar queries
+const query = (sql, params) => {
+    return new Promise((resolve, reject) => {
+        pool.query(sql, params, (error, results) => {
+            if (error) reject(error);
+            resolve(results);
+        });
+    });
+};
+
+pool.on('error', (err) => {
+    console.error('Erro inesperado no pool de conexões:', err);
+    if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+        console.log('Conexão com o banco de dados perdida. Reconectando...');
+        // O pool tentará reconectar automaticamente
     }
-    console.log('Conectado ao MySQL!');
 });
+
+process.on('SIGINT', async () => {
+    try {
+        await pool.end();
+        console.log('Pool de conexões fechado');
+        process.exit(0);
+    } catch (err) {
+        console.error('Erro ao fechar pool de conexões:', err);
+        process.exit(1);
+    }
+});
+
 
 // Cria a tabela de convites, caso não exista
-db.query(`CREATE TABLE IF NOT EXISTS invites (
-            invite VARCHAR(16) PRIMARY KEY NOT NULL,
-            role VARCHAR(32) NOT NULL,
-            server_id VARCHAR(22) NOT NULL)`, (err) => {
-    if (err) {
-        console.error('Erro ao verificar tabela de invites:', err);
-    }
-});
+async function initializeTables() {
+    try {
+        // Cria a tabela de convites
+        await query(`
+            CREATE TABLE IF NOT EXISTS invites (
+                invite VARCHAR(16) PRIMARY KEY NOT NULL,
+                role VARCHAR(32) NOT NULL,
+                server_id VARCHAR(22) NOT NULL
+            )
+        `);
+        console.log('Tabela de convites verificada com sucesso');
 
-// Cria a tabela de enquetes, caso não exista
-db.query(`CREATE TABLE IF NOT EXISTS polls (
-            poll_id VARCHAR(22) PRIMARY KEY NOT NULL,
-            poll_json JSON NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`, (err) => {
-    if (err) {
-        console.error('Erro ao verificar tabela de enquetes:', err);
+        // Cria a tabela de enquetes
+        await query(`
+            CREATE TABLE IF NOT EXISTS polls (
+                poll_id VARCHAR(22) PRIMARY KEY NOT NULL,
+                poll_json JSON NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('Tabela de enquetes verificada com sucesso');
+    } catch (err) {
+        console.error('Erro ao inicializar tabelas:', err);
+        process.exit(1); // Encerra o processo se não conseguir criar as tabelas
     }
-});
+}
+
+initializeTables();
 
 
 
@@ -110,6 +143,8 @@ client.once(Events.ClientReady, async c => {
             option.setName('duration')
                 .setDescription('Duração do convite em dias (0 para permanente)')
                 .setRequired(false)
+                .setMinValue(0)
+                .setMaxValue(365)
         )
         .addIntegerOption(option =>
             option.setName('uses')
@@ -139,6 +174,7 @@ client.once(Events.ClientReady, async c => {
             option.setName("message")
                 .setDescription("Conteúdo da mensagem")
                 .setRequired(true)
+                .setMinLength(1)
         )
     loadCommand('echo', echo);
 
@@ -202,10 +238,15 @@ client.once(Events.ClientReady, async c => {
             option.setName('option10')
                 .setDescription('Décima opção')
                 .setRequired(false))
-        .addNumberOption(option =>
+        .addIntegerOption(option =>
             option.setName('allow-multiselect')
                 .setDescription('Permite múltipla seleção de opções (padrão: 0 para false)')
-                .setRequired(false));
+                .setRequired(false)
+                .addChoices(
+                    { name: 'Sim', value: 1 },
+                    { name: 'Não', value: 0 }
+                )
+        );
     loadCommand('poll', poll);
 });
 
@@ -232,7 +273,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     unique: true
                 });
 
-                db.query(`INSERT INTO invites (invite, role, server_id) VALUES ('${invite.code}', '${role}', '${interaction.guild.id}')`);
+                await query(`INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`, [invite.code, role, interaction.guild.id]);
 
                 // Responde com o link do convite
                 await interaction.reply({
@@ -277,7 +318,7 @@ client.on(Events.InteractionCreate, async interaction => {
         case "display":
             try {
                 // Busca os convites ativos do servidor
-                db.query(`SELECT * FROM invites WHERE server_id = '${interaction.guild.id}'`, async (err, rows) => {
+                await query(`SELECT * FROM invites WHERE server_id = ?`, [interaction.guild.id], async (err, rows) => {
                     if (err) {
                         console.error(`${Date()} ERRO - Erro na consulta SQL:`, err);
                         await interaction.reply({
@@ -349,7 +390,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
                 filteredOptions =  filteredOptions.map(answer => [answer, 0]) // Cria um array de respostas com o texto e a contagem de votos inicializada em 0
 
-                db.query(`INSERT INTO polls (poll_id, poll_json) VALUES ('${poll_id.id}', '${JSON.stringify({question: question, answers: filteredOptions, duration: duration})}')`, (err) => {
+                await query(`INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)`, [poll_id.id, JSON.stringify({question: question, answers: filteredOptions, duration: duration})], (err) => {
                     if (err) {
                         console.error(`${Date()} ERRO - Erro ao inserir enquete no banco de dados:`, err);
                         client.channels.cache.get(interaction.channel.id).messages.delete(poll_id);
@@ -387,16 +428,16 @@ client.on('raw', async (packet) => {
         const poll_id = packet.d.message_id;
         const user = await client.users.fetch(packet.d.user_id);
 
-        const [rows] = await db.promise().query('SELECT poll_json FROM polls WHERE poll_id = ?',[poll_id]);
+        const [rows] = await query('SELECT poll_json FROM polls WHERE poll_id = ?', [poll_id]);
 
         const moment = rows[0].poll_json;
         moment.answers[packet.d.answer_id - 1][1] += adder;
 
-        await db.promise().query('UPDATE polls SET poll_json = ? WHERE poll_id = ?', [JSON.stringify(moment), poll_id]);
+        await query('UPDATE polls SET poll_json = ? WHERE poll_id = ?', [JSON.stringify(moment), poll_id]);
 
-        console.log(`${new Date()} LOG - ${user.username} votou em ${poll_id}`);
+        console.log(`${Date()} LOG - ${user.username} votou em ${poll_id}`);
     } catch (error) {
-        console.error(`${new Date()} ERRO - Falha ao processar voto:`, error);
+        console.error(`${Date()} ERRO - Falha ao processar voto:`, error);
     }
 });
 
@@ -435,10 +476,7 @@ client.on(Events.GuildMemberAdd, async member => {
         }
 
         // Busca o cargo vinculado ao invite no banco
-        bot_db.query(
-            "SELECT role FROM invites WHERE invite = ?",
-            [used_invite],
-            async (err, rows) => {
+        await query("SELECT role FROM invites WHERE invite = ?", [used_invite], async (err, rows) => {
                 if (err) {
                     console.error(`${Date()} ERRO - Erro na consulta SQL:`, err);
                     return;
