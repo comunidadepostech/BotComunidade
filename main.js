@@ -425,7 +425,7 @@ client.on('raw', async (packet) => {
                 moment.answers[packet.d.answer_id - 1] += (adder);
             })
             db.query(`UPDATE polls SET poll_json = '${JSON.stringify(moment)}' WHERE poll_id = '${poll_id}'`);
-            console.log(`${Date()} LOG - ${user.username} votou em ${poll_id} na opção ${vote}`);
+            console.log(`${Date()} LOG - ${user.username} votou em ${poll_id}`);
         } catch (error) {
             console.error(`${Date()} ERRO - Falha ao processar voto:`, error);
         }
