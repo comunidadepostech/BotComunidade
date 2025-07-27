@@ -50,7 +50,7 @@ db.query(`CREATE TABLE IF NOT EXISTS invites (
             role VARCHAR(32) NOT NULL,
             server_id VARCHAR(22) NOT NULL)`, (err) => {
     if (err) {
-        console.error('Erro ao criar tabela de invites:', err);
+        console.error('Erro ao verificar tabela de invites:', err);
     }
 });
 
@@ -60,7 +60,7 @@ db.query(`CREATE TABLE IF NOT EXISTS polls (
             poll_json JSON NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`, (err) => {
     if (err) {
-        console.error('Erro ao criar tabela de enquetes:', err);
+        console.error('Erro ao verificar tabela de enquetes:', err);
     }
 });
 
@@ -70,6 +70,7 @@ db.query(`CREATE TABLE IF NOT EXISTS polls (
 client.once(Events.ClientReady, async c => {
     console.log(`${Date()} LOG - Inicializando cliente ${client.user.username} com ID ${client.user.id}`);
 
+    /*
     // Carrega as enquetes antigas do banco de dados
     console.log(`${Date()} LOG - Carregando enquetes antigas do banco de dados`);
     db.query('SELECT poll_id FROM polls', async (err, rows) => {
@@ -101,8 +102,7 @@ client.once(Events.ClientReady, async c => {
         }
         console.log(`${Date()}Carregamento de enquetes antigas concluído`);
     });
-
-
+    */
 
 
     /* Cada comando é seguido pela ordem:
@@ -235,9 +235,9 @@ client.once(Events.ClientReady, async c => {
             option.setName('option10')
                 .setDescription('Décima opção')
                 .setRequired(false))
-        .addBooleanOption(option =>
+        .addNumberOption(option =>
             option.setName('allow-multiselect')
-                .setDescription('Permite múltipla seleção de opções (padrão: false)')
+                .setDescription('Permite múltipla seleção de opções (padrão: 0 para false)')
                 .setRequired(false));
     loadCommand('poll', poll);
 });
@@ -353,7 +353,7 @@ client.on(Events.InteractionCreate, async interaction => {
             try {
                 const question = interaction.options.getString('question');
                 const duration = interaction.options.getInteger('duration');
-                const multiselect = interaction.options.getBoolean('allow-multiselect') || false;
+                const multiselect = interaction.options.getInteger('allow-multiselect') || 0;
                 const options = [
                     interaction.options.getString('option1'),
                     interaction.options.getString('option2'),
@@ -385,6 +385,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 db.query(`INSERT INTO polls (poll_id, poll_json) VALUES ('${poll_id.id}', '${JSON.stringify({question: question, answers: filteredOptions, duration: duration})}')`, (err) => {
                     if (err) {
                         console.error(`${Date()} ERRO - Erro ao inserir enquete no banco de dados:`, err);
+                        client.channels.cache.get(interaction.channel.id).messages.delete(poll_id);
                         return interaction.reply({
                             content: "❌ Ocorreu um erro ao armazenar a enquete.",
                             ephemeral: true
@@ -409,18 +410,33 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
+
+
 // Evento que é disparado quando alguém vota em uma enquete
 client.on('raw', async (packet) => {
     if (['MESSAGE_POLL_VOTE_ADD', 'MESSAGE_POLL_VOTE_REMOVE'].includes(packet.t)) {
-        console.log('Raw Poll Event:', packet.d.message_id);
+        /*
+        let adder = (packet.t !== 'MESSAGE_POLL_VOTE_ADD') ? 1 : -1;
+        try{
+            const poll = await packet.d.message_id;
+            const pollData = JSON.parse(poll.content);
+            const vote = await packet.d.vote;
+            const user = await client.users.fetch(packet.d.user_id);
+
+
+            });
+
+            console.log(`${Date()} LOG - ${user.username} votou em ${poll.id} na opção ${vote}`);
+        } catch (error) {
+            console.error(`${Date()} ERRO - Falha ao processar voto:`, error);
+        }
+        console.log('Raw Poll Event:', packet.d.message_id); */
+
+        console.log(packet);
     }
 });
 
 
-// Evento que é disparado quando alguém remove o voto de uma enquete
-client.on(Events.MessagePollVoteRemove, async (poll, user, options) => {
-    console.log(poll.id);
-})
 
 // Evento que é disparado quando um novo membro entra no servidor
 client.on(Events.GuildMemberAdd, async member => {
@@ -484,6 +500,8 @@ client.on(Events.GuildMemberAdd, async member => {
         console.error(`${Date()} ERRO ao processar novo membro:`, error);
     }
 });
+
+
 
 try {
     client.login(process.env.TOKEN).then(_ => console.log(`${Date()}`));
