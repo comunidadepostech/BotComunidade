@@ -431,8 +431,9 @@ client.on('raw', async (packet) => {
             console.error(`${Date()} ERRO - Falha ao processar voto:`, error);
         }
         console.log('Raw Poll Event:', packet.d.message_id); */
-
+        console.log("__________________________");
         console.log(packet);
+        console.log("__________________________");
     }
 });
 
