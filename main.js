@@ -421,11 +421,10 @@ client.on('raw', async (packet) => {
             const poll_id = await packet.d.message_id;
             const user = await client.users.fetch(packet.d.user_id);
             db.query(`SELECT poll_json FROM polls WHERE poll_id = '${poll_id}'`, async (err, row) => {
-                console.log(row, row[0])
                 moment = JSON.parse(row[0]);
-                moment.answers[packet.d.answer_id - 1] += (adder);
+                moment.poll_json.answers[packet.d.answer_id - 1] += (adder);
             })
-            db.query(`UPDATE polls SET poll_json = '${JSON.stringify(moment)}' WHERE poll_id = '${poll_id}'`);
+            db.query(`UPDATE polls SET poll_json = '${JSON.stringify(moment.poll_json)}' WHERE poll_id = '${poll_id}'`);
             console.log(`${Date()} LOG - ${user.username} votou em ${poll_id}`);
         } catch (error) {
             console.error(`${Date()} ERRO - Falha ao processar voto:`, error);
