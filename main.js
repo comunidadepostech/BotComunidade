@@ -412,7 +412,45 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
+// Criar um Map para gerenciar as filas de votação
+const voteQueues = new Map();
+const processingLocks = new Map();
 
+async function processVoteQueue(poll_id) {
+    // Marcar enquete como em processamento
+    processingLocks.set(poll_id, true);
+
+    try {
+        while (voteQueues.get(poll_id)?.length > 0) {
+            // Obtem o estado atual da enquete
+            const [rows] = db.query('SELECT poll_json FROM polls WHERE poll_id = ?', [poll_id]);
+
+            const moment = rows[0].poll_json;
+
+            // Processa todos os votos da fila usando o mesmo estado
+            const votes = voteQueues.get(poll_id);
+            while (votes.length > 0) {
+                const vote = votes.shift();
+                moment.answers[vote.answer_id - 1][1] += vote.adder;
+                console.log(`${Date()} LOG - ${vote.user.username} votou em ${poll_id}`);
+            }
+
+            // Atualiza o banco com novo estado
+            db.query('UPDATE polls SET poll_json = ? WHERE poll_id = ?',
+                [JSON.stringify(moment), poll_id]);
+        }
+    } catch (error) {
+        console.error(`${Date()} ERRO - Falha ao processar fila de votos:`, error);
+    } finally {
+        // Liberar processamento
+        processingLocks.set(poll_id, false);
+
+        // Se novos votos chegaram durante o processamento, processar novamente
+        if (voteQueues.get(poll_id)?.length > 0) {
+            await processVoteQueue(poll_id);
+        }
+    }
+}
 
 // Evento que é disparado quando alguém vota em uma enquete
 client.on('raw', async (packet) => {
@@ -422,18 +460,26 @@ client.on('raw', async (packet) => {
     try {
         const poll_id = packet.d.message_id;
         const user = await client.users.fetch(packet.d.user_id);
+        const answer_id = packet.d.answer_id;
 
-        const [rows] = await db.promise().query('SELECT poll_json FROM polls WHERE poll_id = ?', [poll_id]);
+        // Criar objeto de voto
+        const voteData = { adder, answer_id, user };
 
-        const moment = rows[0].poll_json;
-        moment.answers[packet.d.answer_id - 1][1] += adder;
+        // Adicionar voto à fila da enquete
+        if (!voteQueues.has(poll_id)) {
+            voteQueues.set(poll_id, []);
+        }
+        voteQueues.get(poll_id).push(voteData);
 
-        await db.promise().query('UPDATE polls SET poll_json = ? WHERE poll_id = ?', [JSON.stringify(moment), poll_id]);
+        // Processar fila se não estiver sendo processada
+        if (!processingLocks.get(poll_id)) {
+            await processVoteQueue(poll_id);
+        }
 
-        console.log(`${Date()} LOG - ${user.username} votou em ${poll_id}`);
     } catch (error) {
         console.error(`${Date()} ERRO - Falha ao processar voto:`, error);
     }
+
 });
 
 
