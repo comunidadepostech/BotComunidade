@@ -23,7 +23,6 @@ const client = new Client({intents: [
         GatewayIntentBits.GuildInvites,
         GatewayIntentBits.GuildMessagePolls,
         GatewayIntentBits.GuildMessageReactions
-
     ]});
 
 
@@ -41,7 +40,7 @@ const db = mysql.createConnection({
 db.connect((err) => {
     if (err) {
         console.error('Erro ao conectar no MySQL:', err);
-        return;
+        process.exit(1); // Encerra o processo se não conseguir conectar ao banco de dados para tentar novamente
     }
 });
 
@@ -412,6 +411,8 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
+
+
 // Criar um Map para gerenciar as filas de votação
 const voteQueues = new Map();
 const processingLocks = new Map();
@@ -430,7 +431,6 @@ async function processVoteQueue(poll_id) {
 
             // Parse do JSON string para objeto
             const moment = rows[0].poll_json
-            console.log(moment, moment.type);
 
             // Processar todos os votos da fila usando o mesmo estado
             const votes = voteQueues.get(poll_id);
@@ -452,7 +452,7 @@ async function processVoteQueue(poll_id) {
         // Em caso de erro, limpar a fila para evitar loop infinito
         voteQueues.set(poll_id, []);
     } finally {
-        // Liberar processamento
+        // Libera o processo
         processingLocks.set(poll_id, false);
 
         // Se novos votos chegaram durante o processamento, processar novamente
@@ -473,16 +473,16 @@ client.on('raw', async (packet) => {
         const user = await client.users.fetch(packet.d.user_id);
         const answer_id = packet.d.answer_id;
 
-        // Criar objeto de voto
+        // Cria um objeto de voto
         const voteData = { adder, answer_id, user };
 
-        // Adicionar voto à fila da enquete
+        // Adiciona o voto à fila da enquete
         if (!voteQueues.has(poll_id)) {
             voteQueues.set(poll_id, []);
         }
         voteQueues.get(poll_id).push(voteData);
 
-        // Processar fila se não estiver sendo processada
+        // Processa a fila se não estiver sendo processada
         if (!processingLocks.get(poll_id)) {
             await processVoteQueue(poll_id);
         }
