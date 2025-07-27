@@ -68,41 +68,8 @@ db.query(`CREATE TABLE IF NOT EXISTS polls (
 
 // Define o que o bot deve fazer ao ser iniciado, no caso, imprime uma mensagem de online e cria os comandos existentes
 client.once(Events.ClientReady, async c => {
-    console.log(`${Date()} LOG - Inicializando cliente ${client.user.username} com ID ${client.user.id}`);
+    console.log(`${Date().toISOString()} LOG - Inicializando cliente ${client.user.username} com ID ${client.user.id}`);
 
-    /*
-    // Carrega as enquetes antigas do banco de dados
-    console.log(`${Date()} LOG - Carregando enquetes antigas do banco de dados`);
-    db.query('SELECT poll_id FROM polls', async (err, rows) => {
-        if (err) {
-            console.error('Erro ao carregar cache das enquetes:', err);
-            return;
-        }
-
-        for (const row of rows) {
-            try {
-                // Buscar mensagem da enquete em todos os canais
-                const guilds = client.guilds.cache.values();
-                for (const guild of guilds) {
-                    const channels = guild.channels.cache
-                        .filter(channel => channel.type === 0) // Apenas canais de texto
-                        .values();
-
-                    for (const channel of channels) {
-                        try {
-                            await channel.messages.fetch(row.poll_id);
-                        } catch (e) {
-                            // Ignora o erro se a mensagem não for encontrada
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error(`${Date()} ERRO - Erro ao carregar enquete ${row.poll_id}:`, error);
-            }
-        }
-        console.log(`${Date()}Carregamento de enquetes antigas concluído`);
-    });
-    */
 
 
     /* Cada comando é seguido pela ordem:
@@ -113,14 +80,14 @@ client.once(Events.ClientReady, async c => {
 
     // Comando de invite: cria um invite que pode ser vinculado a um cargo para que
     // ele atribua o cargo vinculado a cada uso.
-    console.log(`${Date()} LOG - Iniciando registro de comandos`);
+    console.log(`${Date().toISOString()} LOG - Iniciando registro de comandos`);
 
     function loadCommand(commandName, command) {
         for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
             try {
-                client.application.commands.create(command, id).then(_ => console.log(`${Date()} COMANDOS - ${commandName} cadastrado em: ${id}`));
+                client.application.commands.create(command, id).then(_ => console.log(`${Date().toISOString()} COMANDOS - ${commandName} cadastrado em: ${id}`));
             } catch (error) {
-                console.log(`${Date()} ERRO - ${commandName} não cadastrado em: ${id}\n${error}`);
+                console.log(`${Date().toISOString()} ERRO - ${commandName} não cadastrado em: ${id}\n${error}`);
             }
         }
     }
@@ -271,9 +238,9 @@ client.on(Events.InteractionCreate, async interaction => {
                 await interaction.reply({
                     content: `✅ Convite criado com sucesso!\n📨 Link: ${invite.url}\n📍 Canal: ${channel}\n⏱️ Duração: ${duration === 0 ? 'Permanente' : `${duration} dias`}\n🔢 Usos máximos: ${maxUses === 0 ? 'Ilimitado' : maxUses}\n👥 Cargo vinculado: ${role}`,
                     ephemeral: true // Faz a resposta ser visível apenas para quem executou o comando
-                }).then(_ => console.log(`${Date()} LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
+                }).then(_ => console.log(`${Date().toISOString()} LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
             } catch (error) {
-                console.error(`${Date()} Erro ao criar convite:`, error);
+                console.error(`${Date().toISOString()} Erro ao criar convite:`, error);
                 await interaction.reply({
                     content: '❌ Ocorreu um erro ao criar o convite. Verifique se tenho permissões suficientes.',
                     ephemeral: true
@@ -296,9 +263,9 @@ client.on(Events.InteractionCreate, async interaction => {
                         content: `✅ Mensagem enviada para ${channel} com sucesso!`,
                         ephemeral: true
                     });
-                    console.log(`${Date()} LOG - echo ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
+                    console.log(`${Date().toISOString()} LOG - echo ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
                 }).catch(err => {
-                    console.error(`${Date()} ERRO - Falha ao enviar mensagem:`, err);
+                    console.error(`${Date().toISOString()} ERRO - Falha ao enviar mensagem:`, err);
                     interaction.reply({
                         content: "❌ Ocorreu um erro ao enviar a mensagem.",
                         ephemeral: true
@@ -312,7 +279,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 // Busca os convites ativos do servidor
                 db.query(`SELECT * FROM invites WHERE server_id = '${interaction.guild.id}'`, async (err, rows) => {
                     if (err) {
-                        console.error(`${Date()} ERRO - Erro na consulta SQL:`, err);
+                        console.error(`${Date().toISOString()} ERRO - Erro na consulta SQL:`, err);
                         await interaction.reply({
                             content: "❌ Ocorreu um erro ao buscar os convites.",
                             ephemeral: true
@@ -341,7 +308,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 });
                 break;
             } catch (error) {
-                console.error(`${Date()} ERRO - Falha ao buscar convites:`, error);
+                console.error(`${Date().toISOString()} ERRO - Falha ao buscar convites:`, error);
                 await interaction.reply({
                     content: "❌ Ocorreu um erro ao buscar os convites.",
                     ephemeral: true
@@ -384,7 +351,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
                 db.query(`INSERT INTO polls (poll_id, poll_json) VALUES ('${poll_id.id}', '${JSON.stringify({question: question, answers: filteredOptions, duration: duration})}')`, (err) => {
                     if (err) {
-                        console.error(`${Date()} ERRO - Erro ao inserir enquete no banco de dados:`, err);
+                        console.error(`${Date().toISOString()} ERRO - Erro ao inserir enquete no banco de dados:`, err);
                         client.channels.cache.get(interaction.channel.id).messages.delete(poll_id);
                         return interaction.reply({
                             content: "❌ Ocorreu um erro ao armazenar a enquete.",
@@ -397,7 +364,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     });
                 })
             } catch (error) {
-                console.error(`${Date()} ERRO - Falha ao criar enquete:`, error);
+                console.error(`${Date().toISOString()} ERRO - Falha ao criar enquete:`, error);
                 await interaction.reply({
                     content: "❌ Ocorreu um erro ao criar a enquete.",
                     ephemeral: true
@@ -414,23 +381,22 @@ client.on(Events.InteractionCreate, async interaction => {
 
 // Evento que é disparado quando alguém vota em uma enquete
 client.on('raw', async (packet) => {
-    if (['MESSAGE_POLL_VOTE_ADD', 'MESSAGE_POLL_VOTE_REMOVE'].includes(packet.t)) {
-        let adder = (packet.t == 'MESSAGE_POLL_VOTE_ADD') ? 1 : -1;
-        let moment;
-        try {
-            const poll_id = await packet.d.message_id;
-            const user = await client.users.fetch(packet.d.user_id);
-            db.query(`SELECT poll_json FROM polls WHERE poll_id = '${poll_id}'`, async (err, row) => {
-                moment = row[0].poll_json;
-                console.log(moment)
-                moment.answers[packet.d.answer_id - 1][1] += (adder);
-                console.log(moment)
-            })
-            db.query(`UPDATE polls SET poll_json = '${JSON.stringify(moment)}' WHERE poll_id = '${poll_id}'`);
-            console.log(`${Date()} LOG - ${user.username} votou em ${poll_id}`);
-        } catch (error) {
-            console.error(`${Date()} ERRO - Falha ao processar voto:`, error);
-        }
+    const adder = (packet.t === 'MESSAGE_POLL_VOTE_ADD') ? 1 : -1;
+
+    try {
+        const poll_id = packet.d.message_id;
+        const user = await client.users.fetch(packet.d.user_id);
+
+        const [rows] = await db.promise().query('SELECT poll_json FROM polls WHERE poll_id = ?',[poll_id]);
+
+        const moment = rows[0].poll_json;
+        moment.answers[packet.d.answer_id - 1][1] += adder;
+
+        await db.promise().query('UPDATE polls SET poll_json = ? WHERE poll_id = ?', [JSON.stringify(moment), poll_id]);
+
+        console.log(`${new Date().toISOString()} LOG - ${user.username} votou em ${poll_id}`);
+    } catch (error) {
+        console.error(`${new Date().toISOString()} ERRO - Falha ao processar voto:`, error);
     }
 });
 
@@ -455,7 +421,7 @@ client.on(Events.GuildMemberAdd, async member => {
         }
 
         if (!used_invite) {
-            console.log(`${Date()} ERRO - Não foi possível determinar o convite usado`);
+            console.log(`${Date().toISOString()} ERRO - Não foi possível determinar o convite usado`);
             return;
         }
 
@@ -474,13 +440,13 @@ client.on(Events.GuildMemberAdd, async member => {
             [used_invite],
             async (err, rows) => {
                 if (err) {
-                    console.error(`${Date()} ERRO - Erro na consulta SQL:`, err);
+                    console.error(`${Date().toISOString()} ERRO - Erro na consulta SQL:`, err);
                     return;
                 }
 
                 // Verifica se há resultados
                 if (!rows || rows.length === 0) {
-                    console.log(`${Date()} ERRO - Nenhum cargo vinculado ao convite usado`);
+                    console.log(`${Date().toISOString()} ERRO - Nenhum cargo vinculado ao convite usado`);
                     return;
                 }
 
@@ -491,19 +457,19 @@ client.on(Events.GuildMemberAdd, async member => {
                 }
 
                 await member.roles.add(welcome_role);
-                console.log(`${Date()} LOG - ${member.user.username} adicionado ao cargo ${welcome_role.name}`);
+                console.log(`${Date().toISOString()} LOG - ${member.user.username} adicionado ao cargo ${welcome_role.name}`);
             }
         );
     } catch (error) {
-        console.error(`${Date()} ERRO ao processar novo membro:`, error);
+        console.error(`${Date().toISOString()} ERRO ao processar novo membro:`, error);
     }
 });
 
 
 
 try {
-    client.login(process.env.TOKEN).then(_ => console.log(`${Date()}`));
+    client.login(process.env.TOKEN).then(_ => console.log(`${Date().toISOString()}`));
 
 } catch (error) {
-    console.log(`${Date()} ERRO - Bot não iniciado\n${error}`);
+    console.log(`${Date().toISOString()} ERRO - Bot não iniciado\n${error}`);
 }
