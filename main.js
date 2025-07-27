@@ -415,25 +415,20 @@ client.on(Events.InteractionCreate, async interaction => {
 // Evento que é disparado quando alguém vota em uma enquete
 client.on('raw', async (packet) => {
     if (['MESSAGE_POLL_VOTE_ADD', 'MESSAGE_POLL_VOTE_REMOVE'].includes(packet.t)) {
-        /*
-        let adder = (packet.t !== 'MESSAGE_POLL_VOTE_ADD') ? 1 : -1;
-        try{
-            const poll = await packet.d.message_id;
-            const pollData = JSON.parse(poll.content);
-            const vote = await packet.d.vote;
+        let adder = (packet.t == 'MESSAGE_POLL_VOTE_ADD') ? 1 : -1;
+        let moment;
+        try {
+            const poll_id = await packet.d.message_id;
             const user = await client.users.fetch(packet.d.user_id);
-
-
-            });
-
-            console.log(`${Date()} LOG - ${user.username} votou em ${poll.id} na opção ${vote}`);
+            db.query(`SELECT poll_json FROM polls WHERE poll_id = '${poll_id}'`, async (err, row) => {
+                moment = JSON.parse(row[0]);
+                moment.answers[packet.d.answer_id - 1] += (adder);
+            })
+            db.query(`UPDATE polls SET poll_json = '${JSON.stringify(moment)}' WHERE poll_id = '${poll_id}'`);
+            console.log(`${Date()} LOG - ${user.username} votou em ${poll_id} na opção ${vote}`);
         } catch (error) {
             console.error(`${Date()} ERRO - Falha ao processar voto:`, error);
         }
-        console.log('Raw Poll Event:', packet.d.message_id); */
-        console.log("__________________________");
-        console.log(packet);
-        console.log("__________________________");
     }
 });
 
