@@ -421,7 +421,7 @@ client.on('raw', async (packet) => {
             const poll_id = await packet.d.message_id;
             const user = await client.users.fetch(packet.d.user_id);
             db.query(`SELECT poll_json FROM polls WHERE poll_id = '${poll_id}'`, async (err, row) => {
-                moment = JSON.parse(row[0].poll_json);
+                moment = row[0].poll_json;
                 moment.answers[packet.d.answer_id - 1][1] += (adder);
             })
             db.query(`UPDATE polls SET poll_json = '${JSON.stringify(moment)}' WHERE poll_id = '${poll_id}'`);
