@@ -422,25 +422,34 @@ async function processVoteQueue(poll_id) {
 
     try {
         while (voteQueues.get(poll_id)?.length > 0) {
-            // Obtem o estado atual da enquete
+            // Obter estado atual da enquete
             const [rows] = db.query('SELECT poll_json FROM polls WHERE poll_id = ?', [poll_id]);
+            if (!rows || !rows[0]) {
+                throw new Error('Enquete não encontrada');
+            }
 
-            const moment = rows[0].poll_json;
+            // Parse do JSON string para objeto
+            const moment = JSON.parse(rows[0].poll_json);
 
-            // Processa todos os votos da fila usando o mesmo estado
+            // Processar todos os votos da fila usando o mesmo estado
             const votes = voteQueues.get(poll_id);
             while (votes.length > 0) {
                 const vote = votes.shift();
-                moment.answers[vote.answer_id - 1][1] += vote.adder;
-                console.log(`${Date()} LOG - ${vote.user.username} votou em ${poll_id}`);
+                if (moment.answers && Array.isArray(moment.answers) &&
+                    vote.answer_id > 0 && vote.answer_id <= moment.answers.length) {
+                    moment.answers[vote.answer_id - 1][1] += vote.adder;
+                    console.log(`${Date()} LOG - ${vote.user.username} votou em ${poll_id}`);
+                }
             }
 
-            // Atualiza o banco com novo estado
-            db.query('UPDATE polls SET poll_json = ? WHERE poll_id = ?',
-                [JSON.stringify(moment), poll_id]);
+            // Atualizar banco com novo estado
+            db.query('UPDATE polls SET poll_json = ? WHERE poll_id = ?', [JSON.stringify(moment), poll_id]);
         }
     } catch (error) {
         console.error(`${Date()} ERRO - Falha ao processar fila de votos:`, error);
+
+        // Em caso de erro, limpar a fila para evitar loop infinito
+        voteQueues.set(poll_id, []);
     } finally {
         // Liberar processamento
         processingLocks.set(poll_id, false);
@@ -450,6 +459,7 @@ async function processVoteQueue(poll_id) {
             await processVoteQueue(poll_id);
         }
     }
+
 }
 
 // Evento que é disparado quando alguém vota em uma enquete
@@ -479,7 +489,6 @@ client.on('raw', async (packet) => {
     } catch (error) {
         console.error(`${Date()} ERRO - Falha ao processar voto:`, error);
     }
-
 });
 
 
