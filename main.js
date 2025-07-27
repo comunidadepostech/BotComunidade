@@ -429,8 +429,8 @@ async function processVoteQueue(poll_id) {
             }
 
             // Parse do JSON string para objeto
+            const moment = rows[0].poll_json
             console.log(moment, moment.type);
-            const moment = JSON.parse(rows[0].poll_json);
 
             // Processar todos os votos da fila usando o mesmo estado
             const votes = voteQueues.get(poll_id);
