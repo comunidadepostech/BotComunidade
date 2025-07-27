@@ -1,14 +1,10 @@
 {
   "name": "bot-comunidade",
-  "version": "1.0.0",
+  "version": "Undefined",
   "main": "main.js",
-  "directories": {
-    "example": "example"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
+  "directories": {},
+  "scripts": {},
+  "author": "Comunidade Pos Tech Fiap",
   "license": "ISC",
   "description": "",
   "dependencies": {
@@ -16,7 +12,6 @@
     "discord-api-types": "^0.38.16",
     "discord.js": "^14.21.0",
     "dotenv": "^17.2.1",
-    "mysql2": "^3.14.2",
-    "sqlite3": "^5.1.7"
+    "mysql2": "^3.14.2"
   }
 }
