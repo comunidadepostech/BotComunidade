@@ -28,8 +28,8 @@ Comando simples para verificar se o bot está respondendo.
 O bot responderá com "pong!" para confirmar que está funcionando.
 
 
-### `/echo` (atualmente em criação)
-Replica uma mensagem para um ou mais canais.
+### `/echo`
+Replica uma mensagem para um canal.
 **Permissão necessária**: Administrador
 **Parâmetros**:
 - `channel` (obrigatório): Canal onde a mensagem será enviada
@@ -38,13 +38,13 @@ Replica uma mensagem para um ou mais canais.
 **Exemplo de uso**: /echo ``channel: #anúncios`` ``message: Olá a todos! Bem-vindos ao servidor!``
 
 
-### `/display` (atualmente em criação)
+### `/display`
 Mostra todos os convites ativos do servidor, incluindo detalhes como canal, cargo vinculado, duração e usos restantes.
 
 **Exemplo de uso**: /display
 
 
-### `/poll` (atualmente em criação)
+### `/poll`
 Cria uma enquete interativa com opções de votação personalizadas.
 
 **Parâmetros**:
@@ -53,11 +53,11 @@ Cria uma enquete interativa com opções de votação personalizadas.
 - `duration` (opcional): Tempo que a enquete ficará ativa (em horas, padrão: 24 horas)
 - `option1` (obrigatório): Primeira opção de voto
 - `option2` (obrigatório): Segunda opção de voto
-- `option3` (opcional): Terceira opção de voto
-- `option4` (opcional): Quarta opção de voto
-- `option5` (opcional): Quinta opção de voto
+- ...
+- `option10` (opcional): Décima opção de voto
+- `multiple` (opcional): Se definido como `true`, permite que os usuários votem em várias opções (padrão: `false`)
 
-**Exemplos de uso**: /poll `title: Qual seu dia preferido para eventos?` `option1: Sábado` ``option2: Domingo``
+**Exemplos de uso**: /poll `question: Qual seu dia preferido para eventos?` `duration: 1` `option1: Sábado` ``option2: Domingo`` `allow-multiselect: Sim`
 
 
 ## Funcionalidades Automáticas
@@ -66,6 +66,10 @@ Cria uma enquete interativa com opções de votação personalizadas.
 O bot automaticamente:
 1. Envia uma mensagem de boas-vindas no canal `#✨│boas-vindas` quando um novo membro entra
 2. Atribui automaticamente o cargo vinculado ao convite usado pelo novo membro
+
+### Gerenciamento de enquetes
+1. Gerencia votos de enquetes criadas, permitindo que os usuários votem e visualizem resultados em tempo real.
+2. Gerencia multiplos votos ao mesmo tempo, usando um sistema de fila para garantir que os votos sejam contabilizados corretamente.
 
 ## Requisitos Técnicos
 - Node.js
@@ -82,12 +86,14 @@ O bot automaticamente:
 3. Configure o arquivo `.env` com:
     - TOKEN: Token do seu bot Discord
     - ALLOWED_SERVERS_ID: IDs dos servidores onde o bot pode ser usado (separados por vírgula e sem espaço)
-    - ID:
+    - ID: ID do bot
     - PUBLIC_KEY: Chave pública do bot para interações
-    - MYSQLHOST
-    - MYSQLUSER
-    - MYSQL_ROOT_PASSWORD
-    - MYSQLDATABASE
+    - MYSQLHOST: Endereço do servidor MySQL
+    - MYSQLUSER: Usuário do MySQL
+    - MYSQL_ROOT_PASSWORD: Senha do usuário MySQL
+    - MYSQLDATABASE: Nome do banco de dados MySQL
+4. Instale as dependências com `npm install`
+5. Inicie o bot com `npm start` ou `node .`
 
 ## Estrutura do Banco de Dados
-O bot utiliza MySQL2 para armazenar informações sobre convites e cargos vinculados.
+O bot utiliza MySQL2 para armazenar informações.
