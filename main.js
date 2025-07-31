@@ -48,7 +48,7 @@ db.connect((err) => {
 async function initializeTables() {
     try {
         // Cria a tabela de convites
-        db.query(`
+        await db.query(`
             CREATE TABLE IF NOT EXISTS invites (
                 invite VARCHAR(16) PRIMARY KEY NOT NULL,
                 role VARCHAR(32) NOT NULL,
@@ -58,7 +58,7 @@ async function initializeTables() {
         console.log('Tabela de convites verificada com sucesso');
 
         // Cria a tabela de enquetes
-        db.query(`
+        await db.query(`
             CREATE TABLE IF NOT EXISTS polls (
                 poll_id VARCHAR(22) PRIMARY KEY NOT NULL,
                 poll_json JSON NOT NULL,
@@ -241,6 +241,16 @@ client.once(Events.ClientReady, async c => {
                 )
         );
     loadCommand('poll', poll);
+
+    const createclass = await new SlashCommandBuilder()
+        .setName('createclass')
+        .setDescription('Cria uma nova turma')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .addStringOption(option =>
+            option.setName('name')
+                .setDescription('Nome da turma')
+                .setRequired(true));
+    //loadCommand('createclass', createclass);
 });
 
 // Interações com os comandos
@@ -406,13 +416,40 @@ client.on(Events.InteractionCreate, async interaction => {
             }
             break;
 
+        case "createclass":
+            client.channels.cache.get(interaction.channel.id).send("Criando turma...");
+            const className = interaction.options.getString('name');
+            const role = await interaction.guild.roles.create({
+                name: className,
+                color: '3447003',
+                mentionable: true,
+                permissions: [
+                    'ViewChannel',
+                    'SendMessages',
+                    'Speak',
+                    'UseVAD',
+                    'Connect',
+                    'AttachFiles'
+                ]
+            });
+            const classCategory = await interaction.guild.channels.create({
+                name: className,
+                type: 4, // Categoria
+                permissionOverwrites: [
+                    {
+                        id: role.id, // Permissões para o usuário que criou a turma
+                        allow: ['ManageMessages', 'ManageChannels'],
+                    }
+                ]
+            });
+
         default:
             break;
     }
 });
 
 
-
+/*
 // Criar um Map para gerenciar as filas de votação
 const voteQueues = new Map();
 const processingLocks = new Map();
@@ -461,35 +498,14 @@ async function processVoteQueue(poll_id) {
         }
     }
 
-}
+}*/
 
-// Evento que é disparado quando alguém vota em uma enquete
+// Evento que é disparado quando uma enquete termina
 client.on('raw', async (packet) => {
     console.log(packet);
-    if (!packet.t || !['MESSAGE_POLL_VOTE_ADD', 'MESSAGE_POLL_VOTE_REMOVE'].includes(packet.t)) return;
-    const adder = (packet.t === 'MESSAGE_POLL_VOTE_ADD') ? 1 : -1;
-
-    try {
-        const poll_id = packet.d.message_id;
-        const user = await client.users.fetch(packet.d.user_id);
-        const answer_id = packet.d.answer_id;
-
-        // Cria um objeto de voto
-        const voteData = { adder, answer_id, user };
-
-        // Adiciona o voto à fila da enquete
-        if (!voteQueues.has(poll_id)) {
-            voteQueues.set(poll_id, []);
-        }
-        voteQueues.get(poll_id).push(voteData);
-
-        // Processa a fila se não estiver sendo processada
-        if (!processingLocks.get(poll_id)) {
-            await processVoteQueue(poll_id);
-        }
-
-    } catch (error) {
-        console.error(`${Date()} ERRO - Falha ao processar voto:`, error);
+    if (!packet.t || !['MESSAGE_UPDATE'].includes(packet.t)) return;
+    if (packet.d.poll) {
+        console.log(packet.d.poll);
     }
 });
 
