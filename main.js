@@ -45,10 +45,10 @@ db.connect((err) => {
 });
 
 // Cria a tabela de convites, caso não exista
-async function initializeTables() {
+function initializeTables() {
     try {
         // Cria a tabela de convites
-        await db.query(`
+        db.query(`
             CREATE TABLE IF NOT EXISTS invites (
                 invite VARCHAR(16) PRIMARY KEY NOT NULL,
                 role VARCHAR(32) NOT NULL,
@@ -58,7 +58,7 @@ async function initializeTables() {
         console.log('Tabela de convites verificada com sucesso');
 
         // Cria a tabela de enquetes
-        await db.query(`
+        db.query(`
             CREATE TABLE IF NOT EXISTS polls (
                 poll_id VARCHAR(22) PRIMARY KEY NOT NULL,
                 poll_json JSON NOT NULL,
