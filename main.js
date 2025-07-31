@@ -465,6 +465,7 @@ async function processVoteQueue(poll_id) {
 
 // Evento que é disparado quando alguém vota em uma enquete
 client.on('raw', async (packet) => {
+    console.log(packet);
     if (!packet.t || !['MESSAGE_POLL_VOTE_ADD', 'MESSAGE_POLL_VOTE_REMOVE'].includes(packet.t)) return;
     const adder = (packet.t === 'MESSAGE_POLL_VOTE_ADD') ? 1 : -1;
 
