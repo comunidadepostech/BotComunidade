@@ -94,10 +94,10 @@ async function processPollQueue(poll_id) {
                     answer.poll_media.text,
                     poll_data.poll.results.answer_counts.map(count => count.count)[answer.answer_id - 1]
                 ]),
-                duration: d2 - d1 / 1000 / 60 / 60 // Converte de milissegundos para horas
+                duration: (d2 - d1) / 1000 / 60 / 60 // Converte de milissegundos para horas
             };
-            console.log(poll_json, d1 - d2, );
-            //db.promise().query('INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)', [poll_data.id, JSON.stringify(poll_json)]);
+            console.log(d1 - d2, );
+            db.promise().query('INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)', [poll_data.id, JSON.stringify(poll_json)]);
         }
     } catch (error) {
         console.error(`${Date()} ERRO - Falha ao processar fila de poll's:`, error);
@@ -514,7 +514,6 @@ client.on(Events.InteractionCreate, async interaction => {
 // Evento que é disparado quando uma enquete termina
 client.on('raw', async (packet) => {
     if (!packet.t || !['MESSAGE_UPDATE'].includes(packet.t)) return;
-    console.log(packet.d.poll)
     try {
         if (packet.d.poll.results.is_finalized) {
             const poll_id = packet.d.id;
