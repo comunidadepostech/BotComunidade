@@ -499,7 +499,7 @@ client.on('raw', async (packet) => {
         if (packet.d.poll.results.is_finalized) {
             const poll_id = packet.d.id;
             const poll_data = client.guilds.cache.get(packet.d.guild_id).channels.cache.get(packet.d.channel_id).messages.cache.get(packet.d.id).answers;
-            console.log(poll_data);
+            console.log(packet.d.poll.results.answer_counts, packet.d.poll.answers);
             // Adiciona a poll à fila de processamento
             if (!voteQueues.has(poll_id)) {
                 voteQueues.set(poll_id, []);
