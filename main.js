@@ -86,11 +86,14 @@ async function processPollQueue(poll_id) {
     try {
         while (pollQueues.get(poll_id)?.length > 0) {
             pollQueues.get(poll_id).shift(); // Remove o primeiro da fila
-            const d1 = new Date(poll_data.timestamp.slice(0, 23)); // Converte as datas do timestamp e expiry para Date
-            const d2 = new Date(poll_data.poll.expiry.slice(0, 23));
+            const d1 = new Date(poll_data.poll.expiry.slice(0, 23)); // Converte as datas do timestamp e expiry para Date
+            const d2 = new Date(poll_data.timestamp.slice(0, 23));
             let poll_json = { // Cria o JSON que será inserido no banco de dados
                 question: poll_data.poll.question.text,
-                answers: poll_data.poll.answers.map(answer => [answer.poll_media.text, poll_data.poll.answers.map(count => count.count)[answer.answer_id - 1]]),
+                answers: poll_data.poll.answers.map(answer => [
+                    answer.poll_media.text,
+                    poll_data.poll.results.answer_counts.map(count => count.count)[answer.answer_id - 1]
+                ]),
                 duration: d2 - d1 / 1000 / 60 / 60 // Converte de milissegundos para horas
             };
             console.log(poll_json, d1 - d2, );
