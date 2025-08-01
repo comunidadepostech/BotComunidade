@@ -509,7 +509,6 @@ client.on(Events.InteractionCreate, async interaction => {
 // Evento que é disparado quando uma enquete termina
 client.on('raw', async (packet) => {
     if (!packet.t || !['MESSAGE_UPDATE'].includes(packet.t)) return;
-    console.log(packet);
     try {
         if (packet.d.poll.results.is_finalized) {
             const poll_id = packet.d.id;
