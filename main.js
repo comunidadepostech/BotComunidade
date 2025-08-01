@@ -493,18 +493,17 @@ client.on(Events.InteractionCreate, async interaction => {
 
 // Evento que é disparado quando uma enquete termina
 client.on('raw', async (packet) => {
-    //console.log(packet);
     if (!packet.t || !['MESSAGE_UPDATE'].includes(packet.t)) return;
+    console.log(packet);
     try {
         if (packet.d.poll.results.is_finalized) {
             const poll_id = packet.d.id;
-            const poll_data = client.guilds.cache.get(packet.d.guild_id).channels.cache.get(packet.d.channel_id).messages.cache.get(packet.d.id).answers;
-            console.log(packet.d.poll.results.answer_counts, packet.d.poll.answers);
+            // console.log(packet.d.poll.results.answer_counts, packet.d.poll.answers);
             // Adiciona a poll à fila de processamento
-            if (!voteQueues.has(poll_id)) {
-                voteQueues.set(poll_id, []);
+            if (!pollQueues.has(poll_id)) {
+                pollQueues.set(poll_id, []);
             }
-            //voteQueues.get(poll_id).push(poll_data);
+            //voteQueues.get(poll_id).push(pocket.d.poll);
 
             // Processa a fila se não estiver sendo processada
             /*if (!processingLocks.get(poll_id)) {
