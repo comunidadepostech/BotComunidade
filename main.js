@@ -89,8 +89,8 @@ async function processPollQueue(poll_id) {
             const d1 = new Date(poll_data.timestamp.slice(0, 23)); // Converte as datas do timestamp e expiry para Date
             const d2 = new Date(poll_data.poll.expiry.slice(0, 23));
             let poll_json = { // Cria o JSON que será inserido no banco de dados
-                question: poll_data.question.text,
-                answers: poll_data.poll.answers.map(answer => [answer.poll_media.text, lista2.map(count => count.count)[answer.answer_id - 1]]),
+                question: poll_data.poll.question.text,
+                answers: poll_data.poll.answers.map(answer => [answer.poll_media.text, poll_data.poll.answers.map(count => count.count)[answer.answer_id - 1]]),
                 duration: d2 - d1 / 1000 / 60 / 60 // Converte de milissegundos para horas
             };
             console.log(poll_json);
@@ -229,7 +229,18 @@ client.once(Events.ClientReady, async c => {
         .addIntegerOption(option =>
             option.setName('duration')
                 .setDescription('Duração da enquete em horas')
-                .setRequired(true))
+                .setRequired(true)
+                .addChoices(
+                    { name: '1 hora', value: 1 },
+                    { name: '2 horas', value: 2 },
+                    { name: '6 horas', value: 6 },
+                    { name: '12 horas', value: 12 },
+                    { name: '1 dia', value: 24 },
+                    { name: '3 dias', value: 72 },
+                    { name: '5 dias', value: 120 },
+                    { name: '7 dias', value: 168 }
+                )
+        )
         /*.addStringOption(option =>
             option.setName('option1emoji')
                 .setDescription('Emoji da primeira opção')
