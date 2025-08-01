@@ -493,7 +493,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
 // Evento que é disparado quando uma enquete termina
 client.on('raw', async (packet) => {
-    console.log(packet);
+    //console.log(packet);
     if (!packet.t || !['MESSAGE_UPDATE'].includes(packet.t)) return;
     try {
         if (packet.d.poll.results.is_finalized) {
