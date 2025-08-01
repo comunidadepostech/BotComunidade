@@ -94,7 +94,7 @@ async function processPollQueue(poll_id) {
                     answer.poll_media.text,
                     poll_data.poll.results.answer_counts.map(count => count.count)[answer.answer_id - 1]
                 ]),
-                duration: (d2 - d1) / 1000 / 60 / 60 // Converte de milissegundos para horas
+                duration: `${((d1-d2)/1000/60/60).toFixed(0)}:${((d1 - d2)/1000/60).toFixed(0)}:${((d1 - d2)/1000).toFixed(0)}` // Converte de milissegundos para horas
             };
             console.log(d1 - d2, );
             db.promise().query('INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)', [poll_data.id, JSON.stringify(poll_json)]);
@@ -465,7 +465,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     }
                 });
 
-                await interaction.reply("✅ Enquete criada com sucesso!");
+                await interaction.reply({content: "✅ Enquete criada com sucesso!", ephemeral: true});
 
             } catch (error) {
                 console.error(`${Date()} ERRO - Falha ao criar enquete:`, error);
