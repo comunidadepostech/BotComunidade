@@ -62,7 +62,7 @@ function initializeTables() {
             CREATE TABLE IF NOT EXISTS polls (
                 poll_id VARCHAR(22) PRIMARY KEY NOT NULL,
                 poll_json JSON NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ended_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
         console.log('Tabela de enquetes verificada com sucesso');
@@ -73,6 +73,41 @@ function initializeTables() {
 }
 
 initializeTables();
+
+
+
+// Cria um Map para gerenciar as filas de poll's e locks de processamento
+const pollQueues = new Map();
+const processingLocks = new Map();
+
+async function processVoteQueue(poll_id) {
+    // Marca a enquete como em processamento
+    processingLocks.set(poll_id, true);
+    poll_json = JSON.parse(pollQueues.get(poll_id));
+    try {
+        while (pollQueues.get(poll_id)?.length > 0) {
+            pollQueues.get(poll_id).shift(); // Remove o primeiro voto da fila
+            const poll_json = {"answers": Array, "duration": Number, "question": String};
+            poll_json.question = pollQueues.get(poll_id)[0].question.text;
+            poll_json.answers = pollQueues.get(poll_id)[0].answers.map(answer => ([answer.text, answer.votes]));
+            db.promise().query('INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)', [poll_id, JSON.stringify(moment)]);
+        }
+    } catch (error) {
+        console.error(`${Date()} ERRO - Falha ao processar fila de poll's:`, error);
+
+        // Em caso de erro, limpa a fila para evitar loop infinito
+        pollQueues.set(poll_id, []);
+    } finally {
+        // Libera o processo
+        processingLocks.set(poll_id, false);
+
+        // Se novos votos chegaram durante o processamento, processa novamente
+        if (pollQueues.get(poll_id)?.length > 0) {
+            await processVoteQueue(poll_id);
+        }
+    }
+
+}
 
 
 
@@ -106,10 +141,10 @@ client.once(Events.ClientReady, async c => {
     // ele atribua o cargo vinculado a cada uso.
     console.log(`${Date()} LOG - Iniciando registro de comandos`);
 
-    function loadCommand(commandName, command) {
+    async function loadCommand(commandName, command) {
         for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
             try {
-                client.application.commands.create(command, id);
+                await client.application.commands.create(command, id);
                 console.log(`${Date()} COMANDOS - ${commandName} cadastrado em: ${id}`);
             } catch (error) {
                 console.log(`${Date()} ERRO - ${commandName} não cadastrado em: ${id}\n${error}`);
@@ -144,14 +179,14 @@ client.once(Events.ClientReady, async c => {
                 .setDescription('Número máximo de usos (0 para ilimitado)')
                 .setRequired(false)
         );
-    loadCommand('invite', invite);
+    await loadCommand('invite', invite);
 
     // Comando de teste, serve para saber se o ‘Bot’ está a responder para ajudar na resolução de problemas
     const ping = await new SlashCommandBuilder()
 		.setName('ping')
 		.setDescription('Responde com Pong!')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
-    loadCommand('ping', ping);
+    await loadCommand('ping', ping);
 
     // Echo serve para replicar uma mensagem para um ou mais canais definidos pelo usuário
     const echo = await new SlashCommandBuilder()
@@ -169,14 +204,14 @@ client.once(Events.ClientReady, async c => {
                 .setRequired(true)
                 .setMinLength(1)
         )
-    loadCommand('echo', echo);
+    await loadCommand('echo', echo);
 
     // Display serve para exibir os convites ativos do servidor
     const display = await new SlashCommandBuilder()
         .setName("display")
         .setDescription("Exibe os convites ativos do servidor")
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
-    loadCommand('display', display);
+    await loadCommand('display', display);
 
     // Poll serve para criar uma enquete com embed
     const poll = await new SlashCommandBuilder()
@@ -191,46 +226,68 @@ client.once(Events.ClientReady, async c => {
             option.setName('duration')
                 .setDescription('Duração da enquete em horas')
                 .setRequired(true))
+        /*.addStringOption(option =>
+            option.setName('option1emoji')
+                .setDescription('Emoji da primeira opção')
+                .setRequired(false)
+                .addChoices(
+                    { name: '✅', value: '✅' },
+                    { name: '❌', value: '❌' },
+                    { name: '👍', value: '👍' },
+                    { name: '👎', value: '👎' },
+                    { name: '🤷‍♂️', value: '🤷‍♂️' }
+                )
+        )*/
         .addStringOption(option =>
             option.setName('option1')
                 .setDescription('Primeira opção')
-                .setRequired(true))
+                .setRequired(true)
+                .setMaxLength(55))
         .addStringOption(option =>
             option.setName('option2')
                 .setDescription('Segunda opção')
-                .setRequired(true))
+                .setRequired(true)
+                .setMaxLength(55))
         .addStringOption(option =>
             option.setName('option3')
                 .setDescription('Terceira opção')
-                .setRequired(false))
+                .setRequired(false)
+                .setMaxLength(55))
         .addStringOption(option =>
             option.setName('option4')
                 .setDescription('Quarta opção')
-                .setRequired(false))
+                .setRequired(false)
+                .setMaxLength(55))
         .addStringOption(option =>
             option.setName('option5')
                 .setDescription('Quinta opção')
-                .setRequired(false))
+                .setRequired(false)
+                .setMaxLength(55))
         .addStringOption(option =>
             option.setName('option6')
                 .setDescription('Sexta opção')
-                .setRequired(false))
+                .setRequired(false)
+                .setMaxLength(55))
         .addStringOption(option =>
             option.setName('option7')
                 .setDescription('Setima opção')
-                .setRequired(false))
+                .setRequired(false)
+                .setMaxLength(55))
         .addStringOption(option =>
             option.setName('option8')
                 .setDescription('Oitava opção')
-                .setRequired(false))
+                .setRequired(false)
+                .setMaxLength(55))
         .addStringOption(option =>
             option.setName('option9')
                 .setDescription('Nona opção')
-                .setRequired(false))
+                .setRequired(false)
+                .setMaxLength(55))
         .addStringOption(option =>
             option.setName('option10')
                 .setDescription('Décima opção')
-                .setRequired(false))
+                .setRequired(false)
+                .setMaxLength(55))
         .addIntegerOption(option =>
             option.setName('allow-multiselect')
                 .setDescription('Permite múltipla seleção de opções (padrão: 0 para false)')
@@ -240,7 +297,7 @@ client.once(Events.ClientReady, async c => {
                     { name: 'Não', value: 0 }
                 )
         );
-    loadCommand('poll', poll);
+    await loadCommand('poll', poll);
 
     const createclass = await new SlashCommandBuilder()
         .setName('createclass')
@@ -250,7 +307,7 @@ client.once(Events.ClientReady, async c => {
             option.setName('name')
                 .setDescription('Nome da turma')
                 .setRequired(true));
-    //loadCommand('createclass', createclass);
+    //await loadCommand('createclass', createclass);
 });
 
 // Interações com os comandos
@@ -263,8 +320,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
         case "invite":
             try {
-                // Pega o canal especificado ou usa o canal atual
-                const channel = interaction.options.getChannel('channel') || interaction.channel;
+                const channel = interaction.options.getChannel('channel');
                 const duration = interaction.options.getInteger('duration') || 0;
                 const maxUses = interaction.options.getInteger('uses') || 0;
                 const role = interaction.options.getRole('role').name;
@@ -381,9 +437,9 @@ client.on(Events.InteractionCreate, async interaction => {
                 let filteredOptions = options.filter(option => option !== null && option !== undefined);
                 const pollAnswers = filteredOptions.map(option => ({text: option}));
 
-                const poll_id = await interaction.channel.send({
+                await interaction.channel.send({
                     poll: {
-                        question: {text: question},
+                        question: {text: question, unicode_emoji: "U+1FAE8"},
                         answers: pollAnswers,
                         allowMultiselect: multiselect,
                         duration: duration,
@@ -391,22 +447,6 @@ client.on(Events.InteractionCreate, async interaction => {
                     }
                 });
 
-                filteredOptions =  filteredOptions.map(answer => [answer, 0]) // Cria um array de respostas com o texto e a contagem de votos inicializada em 0
-
-                db.query(`INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)`, [poll_id.id, JSON.stringify({question: question, answers: filteredOptions, duration: duration})], (err) => {
-                    if (err) {
-                        console.error(`${Date()} ERRO - Erro ao inserir enquete no banco de dados:`, err);
-                        client.channels.cache.get(interaction.channel.id).messages.delete(poll_id);
-                        return interaction.reply({
-                            content: "❌ Ocorreu um erro ao armazenar a enquete.",
-                            ephemeral: true
-                        });
-                    }
-                    return interaction.reply({
-                        content: "✅ Enquete criada com sucesso!",
-                        ephemeral: true
-                    });
-                })
             } catch (error) {
                 console.error(`${Date()} ERRO - Falha ao criar enquete:`, error);
                 await interaction.reply({
@@ -442,6 +482,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     }
                 ]
             });
+            break;
 
         default:
             break;
@@ -449,64 +490,28 @@ client.on(Events.InteractionCreate, async interaction => {
 });
 
 
-/*
-// Criar um Map para gerenciar as filas de votação
-const voteQueues = new Map();
-const processingLocks = new Map();
-
-async function processVoteQueue(poll_id) {
-    // Marcar enquete como em processamento
-    processingLocks.set(poll_id, true);
-
-    try {
-        while (voteQueues.get(poll_id)?.length > 0) {
-            // Obter estado atual da enquete
-            const [rows] = await db.promise().query('SELECT poll_json FROM polls WHERE poll_id = ?', [poll_id]);
-            if (!rows || !rows[0]) {
-                throw new Error('Enquete não encontrada');
-            }
-
-            // Parse do JSON string para objeto
-            const moment = rows[0].poll_json
-
-            // Processar todos os votos da fila usando o mesmo estado
-            const votes = voteQueues.get(poll_id);
-            while (votes.length > 0) {
-                const vote = votes.shift();
-                if (moment.answers && Array.isArray(moment.answers) &&
-                    vote.answer_id > 0 && vote.answer_id <= moment.answers.length) {
-                    moment.answers[vote.answer_id - 1][1] += vote.adder;
-                    console.log(`${Date()} LOG - ${vote.user.username} votou em ${poll_id}`);
-                }
-            }
-
-            // Atualizar banco com novo estado
-            db.promise().query('UPDATE polls SET poll_json = ? WHERE poll_id = ?', [JSON.stringify(moment), poll_id]);
-        }
-    } catch (error) {
-        console.error(`${Date()} ERRO - Falha ao processar fila de votos:`, error);
-
-        // Em caso de erro, limpar a fila para evitar loop infinito
-        voteQueues.set(poll_id, []);
-    } finally {
-        // Libera o processo
-        processingLocks.set(poll_id, false);
-
-        // Se novos votos chegaram durante o processamento, processar novamente
-        if (voteQueues.get(poll_id)?.length > 0) {
-            await processVoteQueue(poll_id);
-        }
-    }
-
-}*/
 
 // Evento que é disparado quando uma enquete termina
 client.on('raw', async (packet) => {
     console.log(packet);
     if (!packet.t || !['MESSAGE_UPDATE'].includes(packet.t)) return;
-    if (packet.d.poll) {
-        console.log(packet.d.poll);
-    }
+    try {
+        if (packet.d.poll.results.is_finalized) {
+            const poll_id = packet.d.id;
+            const poll_data = client.guilds.cache.get(packet.d.guild_id).channels.cache.get(packet.d.channel_id).messages.cache.get(packet.d.id).answers;
+            console.log(poll_data);
+            // Adiciona a poll à fila de processamento
+            if (!voteQueues.has(poll_id)) {
+                voteQueues.set(poll_id, []);
+            }
+            //voteQueues.get(poll_id).push(poll_data);
+
+            // Processa a fila se não estiver sendo processada
+            /*if (!processingLocks.get(poll_id)) {
+                await processVoteQueue(poll_id);
+            }*/
+        }
+    } catch (error) {}
 });
 
 
