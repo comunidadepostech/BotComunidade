@@ -80,17 +80,21 @@ initializeTables();
 const pollQueues = new Map();
 const processingLocks = new Map();
 
-async function processVoteQueue(poll_id) {
-    // Marca a enquete como em processamento
-    processingLocks.set(poll_id, true);
-    poll_json = JSON.parse(pollQueues.get(poll_id));
+async function processPollQueue(poll_id) {
+    processingLocks.set(poll_id, true); // Marca a enquete como em processamento
+    let poll_data = pollQueues.get(poll_id)[0]; // Pega o primeiro item da fila
     try {
         while (pollQueues.get(poll_id)?.length > 0) {
-            pollQueues.get(poll_id).shift(); // Remove o primeiro voto da fila
-            const poll_json = {"answers": Array, "duration": Number, "question": String};
-            poll_json.question = pollQueues.get(poll_id)[0].question.text;
-            poll_json.answers = pollQueues.get(poll_id)[0].answers.map(answer => ([answer.text, answer.votes]));
-            db.promise().query('INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)', [poll_id, JSON.stringify(moment)]);
+            pollQueues.get(poll_id).shift(); // Remove o primeiro da fila
+            const d1 = new Date(poll_data.timestamp.slice(0, 23)); // Converte as datas do timestamp e expiry para Date
+            const d2 = new Date(poll_data.poll.expiry.slice(0, 23));
+            let poll_json = { // Cria o JSON que será inserido no banco de dados
+                question: poll_data.question.text,
+                answers: poll_data.poll.answers.map(answer => [answer.poll_media.text, lista2.map(count => count.count)[answer.answer_id - 1]]),
+                duration: d2 - d1 / 1000 / 60 / 60 // Converte de milissegundos para horas
+            };
+            console.log(poll_json);
+            //db.promise().query('INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)', [poll_data.id, JSON.stringify(poll_json)]);
         }
     } catch (error) {
         console.error(`${Date()} ERRO - Falha ao processar fila de poll's:`, error);
@@ -101,9 +105,9 @@ async function processVoteQueue(poll_id) {
         // Libera o processo
         processingLocks.set(poll_id, false);
 
-        // Se novos votos chegaram durante o processamento, processa novamente
+        // Se novos itens chegaram durante o processamento, processa novamente
         if (pollQueues.get(poll_id)?.length > 0) {
-            await processVoteQueue(poll_id);
+            await processPollQueue(poll_id);
         }
     }
 
@@ -213,7 +217,7 @@ client.once(Events.ClientReady, async c => {
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
     await loadCommand('display', display);
 
-    // Poll serve para criar uma enquete com embed
+    // Poll serve para criar uma enquete
     const poll = await new SlashCommandBuilder()
         .setName('poll')
         .setDescription('Cria uma enquete interativa')
@@ -498,17 +502,17 @@ client.on('raw', async (packet) => {
     try {
         if (packet.d.poll.results.is_finalized) {
             const poll_id = packet.d.id;
-            // console.log(packet.d.poll.results.answer_counts, packet.d.poll.answers);
+
             // Adiciona a poll à fila de processamento
             if (!pollQueues.has(poll_id)) {
                 pollQueues.set(poll_id, []);
             }
-            //voteQueues.get(poll_id).push(pocket.d.poll);
+            pollQueues.get(poll_id).push(packet.d);
 
             // Processa a fila se não estiver sendo processada
-            /*if (!processingLocks.get(poll_id)) {
-                await processVoteQueue(poll_id);
-            }*/
+            if (!processingLocks.get(poll_id)) {
+                await processPollQueue(poll_id);
+            }
         }
     } catch (error) {}
 });
