@@ -499,10 +499,10 @@ client.on(Events.InteractionCreate, async interaction => {
             if (createType == 'turma') {
                 const role = await interaction.guild.roles.create({
                     name: className,
-                    colors: 3447003,
+                    color: 3447003,
                     mentionable: true,
                     hoist: true,
-                    position: 7,
+                    position: 12,
                     permissions: [
                         'ChangeNickname',
                         'SendMessagesInThreads',
@@ -518,11 +518,10 @@ client.on(Events.InteractionCreate, async interaction => {
                         'UseVAD',
                         'Stream',
                         'RequestToSpeak',
-                        'UseExternalStickers',
-                        ''
+                        'UseExternalStickers'
                     ]
                 });
-                console.log("");
+                console.log(client.guilds.cache);
             } else if (createType == 'curso') {
                 const classCategory = await interaction.guild.channels.create({
                     name: className,
@@ -530,7 +529,10 @@ client.on(Events.InteractionCreate, async interaction => {
                     permissionOverwrites: [
                         {
                             id: role.id, // Permissões para o usuário que criou a turma
-                            allow: ['ManageMessages', 'ManageChannels'],
+                            allow: [
+                                'ManageMessages',
+                                'ManageChannels'
+                            ],
                         }
                     ]
                 });
