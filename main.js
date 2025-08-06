@@ -517,7 +517,6 @@ client.on(Events.InteractionCreate, async interaction => {
                         'Speak',
                         'UseVAD',
                         'Stream',
-                        'UseVoiceActivity',
                         'RequestToSpeak',
                         'UseExternalStickers',
                         ''
