@@ -502,7 +502,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     color: 3447003,
                     mentionable: true,
                     hoist: true,
-                    position: 12,
+                    position: 11,
                     permissions: [
                         'ChangeNickname',
                         'SendMessagesInThreads',
@@ -521,7 +521,7 @@ client.on(Events.InteractionCreate, async interaction => {
                         'UseExternalStickers'
                     ]
                 });
-                console.log(client.guilds.cache);
+                console.log(client.guilds.cache.get(interaction.guild.id).channels.cache);
             } else if (createType == 'curso') {
                 const classCategory = await interaction.guild.channels.create({
                     name: className,
