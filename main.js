@@ -499,17 +499,31 @@ client.on(Events.InteractionCreate, async interaction => {
             if (createType == 'turma') {
                 const role = await interaction.guild.roles.create({
                     name: className,
-                    //color: '3447003',
+                    colors: 3447003,
                     mentionable: true,
+                    hoist: true,
+                    position: 7,
                     permissions: [
-                        'ViewChannel',
+                        'ChangeNickname',
+                        'SendMessagesInThreads',
+                        'CreatePublicThreads',
+                        'AttachFiles',
+                        'EmbedLinks',
+                        'AddReactions',
+                        'UseExternalEmojis',
+                        'ReadMessageHistory',
+                        'Connect',
                         'SendMessages',
                         'Speak',
                         'UseVAD',
-                        'Connect',
-                        'AttachFiles'
+                        'Stream',
+                        'UseVoiceActivity',
+                        'RequestToSpeak',
+                        'UseExternalStickers',
+                        ''
                     ]
                 });
+                console.log("");
             } else if (createType == 'curso') {
                 const classCategory = await interaction.guild.channels.create({
                     name: className,
