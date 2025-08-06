@@ -244,18 +244,6 @@ client.once(Events.ClientReady, async c => {
                     { name: '7 dias', value: 168 }
                 )
         )
-        /*.addStringOption(option =>
-            option.setName('option1emoji')
-                .setDescription('Emoji da primeira opção')
-                .setRequired(false)
-                .addChoices(
-                    { name: '✅', value: '✅' },
-                    { name: '❌', value: '❌' },
-                    { name: '👍', value: '👍' },
-                    { name: '👎', value: '👎' },
-                    { name: '🤷‍♂️', value: '🤷‍♂️' }
-                )
-        )*/
         .addStringOption(option =>
             option.setName('option1')
                 .setDescription('Primeira opção')
@@ -317,15 +305,26 @@ client.once(Events.ClientReady, async c => {
         );
     await loadCommand('poll', poll);
 
-    const createclass = await new SlashCommandBuilder()
-        .setName('createclass')
-        .setDescription('Cria uma nova turma')
+    const create = await new SlashCommandBuilder()
+        .setName('create')
+        .setDescription('Cria uma nova turma ou curso')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .addStringOption(option =>
+            option.setName('type')
+                .setDescription('Define o que você quer criar')
+                .setRequired(true)
+                .addChoices(
+                    { name: 'Curso', value: 'curso' },
+                    { name: 'Turma', value: 'turma' }
+                )
+        )
         .addStringOption(option =>
             option.setName('name')
                 .setDescription('Nome da turma')
-                .setRequired(true));
-    //await loadCommand('createclass', createclass);
+                .setRequired(true)
+        );
+
+    await loadCommand('create', create);
 });
 
 // Interações com os comandos
@@ -414,6 +413,23 @@ client.on(Events.InteractionCreate, async interaction => {
                         return;
                     }
 
+                    // Verifica os convites existentes
+                    rows.forEach(invite => {
+                        interaction.guild.invites.fetch().then(invites => {
+                            if (!invites.has(invite.invite)) {
+                                db.query(`DELETE FROM invites WHERE invite = ?`, [invite.invite], (err) => {
+                                    if (err) {
+                                        console.error(`${Date()} ERRO - Erro ao remover convite inválido:`, err);
+                                    } else {
+                                        console.log(`${Date()} LOG - Convite inválido removido: ${invite.invite}`);
+                                    }
+                                });
+                            }
+                        }).catch(err => {
+                            console.error(`${Date()} ERRO - Falha ao buscar convites do servidor:`, err);
+                        });
+                    })
+
                     // Formata a resposta com os convites
                     let response = "Convites ativos:\n";
                     rows.forEach(invite => {
@@ -476,32 +492,46 @@ client.on(Events.InteractionCreate, async interaction => {
             }
             break;
 
-        case "createclass":
-            client.channels.cache.get(interaction.channel.id).send("Criando turma...");
+        case "create":
+            await client.channels.cache.get(interaction.channel.id).send("Criando turma...");
+            const createType = interaction.options.getString('type');
             const className = interaction.options.getString('name');
-            const role = await interaction.guild.roles.create({
-                name: className,
-                color: '3447003',
-                mentionable: true,
-                permissions: [
-                    'ViewChannel',
-                    'SendMessages',
-                    'Speak',
-                    'UseVAD',
-                    'Connect',
-                    'AttachFiles'
-                ]
-            });
-            const classCategory = await interaction.guild.channels.create({
-                name: className,
-                type: 4, // Categoria
-                permissionOverwrites: [
-                    {
-                        id: role.id, // Permissões para o usuário que criou a turma
-                        allow: ['ManageMessages', 'ManageChannels'],
-                    }
-                ]
-            });
+            if (createType == 'turma') {
+                const role = await interaction.guild.roles.create({
+                    name: className,
+                    //color: '3447003',
+                    mentionable: true,
+                    permissions: [
+                        'ViewChannel',
+                        'SendMessages',
+                        'Speak',
+                        'UseVAD',
+                        'Connect',
+                        'AttachFiles'
+                    ]
+                });
+            } else if (createType == 'curso') {
+                const classCategory = await interaction.guild.channels.create({
+                    name: className,
+                    type: 4, // Categoria
+                    permissionOverwrites: [
+                        {
+                            id: role.id, // Permissões para o usuário que criou a turma
+                            allow: ['ManageMessages', 'ManageChannels'],
+                        }
+                    ]
+                });
+            } else {
+                await interaction.reply({
+                    content: "❌ Tipo de criação inválido.",
+                    ephemeral: true
+                });
+                return;
+            }
+
+
+
+
             break;
 
         default:
@@ -558,12 +588,15 @@ client.on(Events.GuildMemberAdd, async member => {
         }
 
         // Registra o log de entrada do membro
-        console.log(`LOG - ${member.user.username} entrou no servidor ${member.guild.name} com o código: ${used_invite}`);
+        console.log(`${Date()} LOG - ${member.user.username} entrou no servidor ${member.guild.name} com o código: ${used_invite}`);
 
         // Busca o canal de boas-vindas e envia a mensagem
+        try {
         const welcomeChannel = member.guild.channels.cache.find(channel => channel.name === "✨│boas-vindas");
         if (welcomeChannel) {
             await welcomeChannel.send(`Olá ${member}, seja bem-vindo(a) a comunidade!`);
+        }} catch (error) {
+            console.error(`${Date()} ERRO - Falha ao enviar mensagem de boas-vindas:`, error);
         }
 
         // Busca o cargo vinculado ao invite no banco
