@@ -501,8 +501,14 @@ client.on(Events.InteractionCreate, async interaction => {
             await interaction.deferReply({ephemeral: true}); // Responde de forma atrasada para evitar timeout
             const createType = interaction.options.getString('type');
             const className = interaction.options.getString('name');
-            const faqChannel = interaction.options.getChannel('faq-channel').name || "📜│faq-ANO";
             if (createType == 'turma') {
+                try {const faqChannel = interaction.options.getChannel('faq-channel').name } catch (error) {
+                    await interaction.editReply({
+                        content: "❌ Para criar uma nova turma, o canal de FAQ é obrigatório.",
+                        ephemeral: true
+                    });
+                    return;
+                }
                 const role = await interaction.guild.roles.create({
                     name: className,
                     color: 3447003,
