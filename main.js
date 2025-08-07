@@ -322,6 +322,11 @@ client.once(Events.ClientReady, async c => {
             option.setName('name')
                 .setDescription('Nome da turma')
                 .setRequired(true)
+        )
+        .addChannelOption(option =>
+            option.setName('faq-channel')
+                .setDescription('Canal de faq da nova turma (obrigatório para novas turmas)')
+                .setRequired(false)
         );
 
     await loadCommand('create', create);
@@ -493,9 +498,10 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "create":
-            await client.channels.cache.get(interaction.channel.id).send("Criando turma...");
+            await interaction.deferReply({ephemeral: true}); // Responde de forma atrasada para evitar timeout
             const createType = interaction.options.getString('type');
             const className = interaction.options.getString('name');
+            const faqChannel = interaction.options.getChannel('faq-channel').name || "📜│faq-ANO";
             if (createType == 'turma') {
                 const role = await interaction.guild.roles.create({
                     name: className,
@@ -521,7 +527,31 @@ client.on(Events.InteractionCreate, async interaction => {
                         'UseExternalStickers'
                     ]
                 });
-                console.log(client.guilds.cache.get(interaction.guild.id).channels.cache);
+
+                await client.guilds.cache.get(interaction.guild.id).channels.cache.forEach(channel => {
+                    if (["✨│boas-vindas", "📃│regras", faqChannel, "📅│acontece-aqui", "🚀│talent-lab", "💻│casa-do-código"].includes(channel.name)) { // Ignora canais não especificados
+                        channel.permissionOverwrites.edit(role, {
+                            SendMessages: false,
+                            ViewChannel: true,
+                            ReadMessageHistory: true,
+                            AddReactions: true
+                        });
+                    }
+                });
+
+                const classCategory = await interaction.guild.channels.create({
+                    name: className,
+                    type: 4, // Categoria
+                    permissionOverwrites: [
+                        {
+                            id: role.id,
+                            allow: [
+                                'ManageMessages',
+                                'ManageChannels'
+                            ],
+                        }
+                    ]
+                });
             } else if (createType == 'curso') {
                 const classCategory = await interaction.guild.channels.create({
                     name: className,
