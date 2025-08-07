@@ -514,7 +514,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     color: 3447003,
                     mentionable: true,
                     hoist: true,
-                    position: 11,
+                    position: 10,
                     permissions: [
                         'ChangeNickname',
                         'SendMessagesInThreads',
