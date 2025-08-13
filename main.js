@@ -654,54 +654,58 @@ client.on(Events.InteractionCreate, async interaction => {
                         permissionOverwrites: [
                             {
                                 id: role.id,
+                                allow: classChannels.permissions,
+                                deny: classChannels.permissions_deny
+                            },
+                            {
+                                id: interaction.guild.roles.everyone,
+                                deny: [PermissionsBitField.Flags.ViewChannel]
+                            },
+                            {
+                                id: interaction.guild.roles.cache.find(roles => roles.name === "Equipe Pós-Tech")?.id,
+                                allow: [PermissionsBitField.Flags.ViewChannel]
+                            },
+                            {
+                                id: interaction.guild.roles.cache.find(role => role.name === "Gestor Acadêmico")?.id,
                                 allow: [
-                                    {
-                                        id: role.id,
-                                        allow: classChannels.permissions,
-                                        deny: classChannels.permissions_deny
-                                    },
-                                    {
-                                        id: interaction.guild.roles.everyone, // Remove a permissão de ver o canal para todos que não tenham o cargo
-                                        deny: [PermissionsBitField.Flags.ViewChannel]
-                                    },
-                                    {
-                                        id: interaction.guild.roles.cache.get("Equipe Pós-Tech").id,
-                                        allow: [PermissionsBitField.Flags.ViewChannel]
-                                    },
-                                    {
-                                        id: interaction.guild.roles.cache.get("Gestor Acadêmico").id,
-                                        allow: [
-                                            PermissionsBitField.Flags.ViewChannel,
-                                            PermissionsBitField.Flags.SendMessages,
-                                            PermissionsBitField.Flags.SendMessages,
-                                            PermissionsBitField.Flags.CreatePublicThreads,
-                                            PermissionsBitField.Flags.EmbedLinks,
-                                            PermissionsBitField.Flags.AttachFiles,
-                                            PermissionsBitField.Flags.AddReactions,
-                                            PermissionsBitField.Flags.MentionEveryone,
-                                            PermissionsBitField.Flags.ReadMessageHistory,
-                                            PermissionsBitField.Flags.SendPolls
-                                        ]
-                                    },
-                                    {
-                                        id: interaction.guild.roles.cache.get("Coordenação").id,
-                                        allow: [
-                                            PermissionsBitField.Flags.ViewChannel,
-                                            PermissionsBitField.Flags.SendMessages,
-                                            PermissionsBitField.Flags.SendMessages,
-                                            PermissionsBitField.Flags.CreatePublicThreads,
-                                            PermissionsBitField.Flags.EmbedLinks,
-                                            PermissionsBitField.Flags.AttachFiles,
-                                            PermissionsBitField.Flags.AddReactions,
-                                            PermissionsBitField.Flags.MentionEveryone,
-                                            PermissionsBitField.Flags.ReadMessageHistory,
-                                            PermissionsBitField.Flags.SendPolls
-                                        ]
-                                    },
-                                    {
-                                        id: interaction.guild.roles.cache.get("Professores").id,
-                                        allow: [PermissionsBitField.Flags.ViewChannel,]
-                                    }]
+                                    PermissionsBitField.Flags.ViewChannel,
+                                    PermissionsBitField.Flags.SendMessages,
+                                    PermissionsBitField.Flags.CreatePublicThreads,
+                                    PermissionsBitField.Flags.EmbedLinks,
+                                    PermissionsBitField.Flags.AttachFiles,
+                                    PermissionsBitField.Flags.AddReactions,
+                                    PermissionsBitField.Flags.MentionEveryone,
+                                    PermissionsBitField.Flags.ReadMessageHistory,
+                                    PermissionsBitField.Flags.SendPolls
+                                ]
+                            },
+                            {
+                                id: interaction.guild.roles.cache.find(role => role.name === "Coordenação")?.id,
+                                allow: [
+                                    PermissionsBitField.Flags.ViewChannel,
+                                    PermissionsBitField.Flags.SendMessages,
+                                    PermissionsBitField.Flags.CreatePublicThreads,
+                                    PermissionsBitField.Flags.EmbedLinks,
+                                    PermissionsBitField.Flags.AttachFiles,
+                                    PermissionsBitField.Flags.AddReactions,
+                                    PermissionsBitField.Flags.MentionEveryone,
+                                    PermissionsBitField.Flags.ReadMessageHistory,
+                                    PermissionsBitField.Flags.SendPolls
+                                ]
+                            },
+                            {
+                                id: interaction.guild.roles.cache.find(role => role.name === "Professores")?.id,
+                                allow: [
+                                    PermissionsBitField.Flags.ViewChannel,
+                                    PermissionsBitField.Flags.SendMessages,
+                                    PermissionsBitField.Flags.CreatePublicThreads,
+                                    PermissionsBitField.Flags.EmbedLinks,
+                                    PermissionsBitField.Flags.AttachFiles,
+                                    PermissionsBitField.Flags.AddReactions,
+                                    PermissionsBitField.Flags.MentionEveryone,
+                                    PermissionsBitField.Flags.ReadMessageHistory,
+                                    PermissionsBitField.Flags.SendPolls
+                                ]
                             }
                         ]
                     });
@@ -712,14 +716,14 @@ client.on(Events.InteractionCreate, async interaction => {
                             type: channel.type,
                             parent: classCategory.id // Define a categoria da turma
                             //permissionOverwrites: []
-                            }).then(async (target) => {
-                                if (channel.name === "❓│dúvidas") {
-                                    await target.setAvailableTags(["Geral", "Tech Challenge", "Fase 1", "Fase 2", "Fase 3", "Fase 4", "Fase 5", "Alura", "Beneficios", "Financeiro", "Atividade presencial", "Lives", "Notas", "Eventos"]);
-                                    await target.threads.create({
-                                        name: "titulo teste",
-                                        message: {content: "Conteúdo teste"},
-                                    })
-                                }
+                        }).then(async (target) => {
+                            if (channel.name === "❓│dúvidas") {
+                                await target.setAvailableTags(["Geral", "Tech Challenge", "Fase 1", "Fase 2", "Fase 3", "Fase 4", "Fase 5", "Alura", "Beneficios", "Financeiro", "Atividade presencial", "Lives", "Notas", "Eventos"]);
+                                await target.threads.create({
+                                    name: "titulo teste",
+                                    message: {content: "Conteúdo teste"},
+                                })
+                            }
                         })
                     }
                 } catch (error) {
