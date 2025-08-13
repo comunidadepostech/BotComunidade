@@ -613,7 +613,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 try {
                     const faqChannel = interaction.options.getChannel('faq-channel').name
 
-                    const role = await interaction.guild.roles.create({
+                    const classRole = await interaction.guild.roles.create({
                         name: `Estudantes ${className}`,
                         color: 3447003,
                         mentionable: true, // Permite que o cargo seja mencionado
@@ -639,7 +639,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
                     await client.guilds.cache.get(interaction.guild.id).channels.cache.forEach(channel => {
                         if (["✨│boas-vindas", "📃│regras", faqChannel, "📅│acontece-aqui", "🚀│talent-lab", "💻│casa-do-código"].includes(channel.name)) { // Ignora canais não especificados
-                            channel.permissionOverwrites.edit(role, {
+                            channel.permissionOverwrites.edit(classRole, {
                                 SendMessages: true,
                                 ViewChannel: true,
                                 ReadMessageHistory: true,
@@ -648,14 +648,14 @@ client.on(Events.InteractionCreate, async interaction => {
                         }
                     });
 
-                    console.log(interaction.guild.roles.cache)
+                    const roles = interaction.guild.roles.fetch()
 
                     const classCategory = await interaction.guild.channels.create({
                         name: className,
                         type: 4, // Categoria
                         permissionOverwrites: [
                             {
-                                id: role.id,
+                                id: classRole.id,
                                 allow: classChannels.permissions,
                                 deny: classChannels.permissions_deny
                             },
@@ -664,11 +664,11 @@ client.on(Events.InteractionCreate, async interaction => {
                                 deny: [PermissionsBitField.Flags.ViewChannel]
                             },
                             {
-                                id: interaction.guild.roles.cache.find(roles => roles.name === "Equipe Pós-Tech")?.id,
+                                id: roles.find(role => role.name === "Equipe Pós-Tech").id,
                                 allow: [PermissionsBitField.Flags.ViewChannel]
                             },
                             {
-                                id: interaction.guild.roles.cache.find(role => role.name === "Gestor Acadêmico")?.id,
+                                id: roles.find(role => role.name === "Gestor Acadêmico").id,
                                 allow: [
                                     PermissionsBitField.Flags.ViewChannel,
                                     PermissionsBitField.Flags.SendMessages,
@@ -682,7 +682,7 @@ client.on(Events.InteractionCreate, async interaction => {
                                 ]
                             },
                             {
-                                id: interaction.guild.roles.cache.find(role => role.name === "Coordenação")?.id,
+                                id: roles.find(role => role.name === "Coordenação").id,
                                 allow: [
                                     PermissionsBitField.Flags.ViewChannel,
                                     PermissionsBitField.Flags.SendMessages,
@@ -696,7 +696,7 @@ client.on(Events.InteractionCreate, async interaction => {
                                 ]
                             },
                             {
-                                id: interaction.guild.roles.cache.find(role => role.name === "Professores")?.id,
+                                id: roles.find(role => role.name === "Professores").id,
                                 allow: [
                                     PermissionsBitField.Flags.ViewChannel,
                                     PermissionsBitField.Flags.SendMessages,
