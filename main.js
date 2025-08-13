@@ -650,6 +650,8 @@ client.on(Events.InteractionCreate, async interaction => {
 
                     const roles = interaction.guild.roles.fetch()
 
+                    console.log(roles)
+
                     const classCategory = await interaction.guild.channels.create({
                         name: className,
                         type: 4, // Categoria
