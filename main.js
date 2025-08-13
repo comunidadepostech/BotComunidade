@@ -650,8 +650,8 @@ client.on(Events.InteractionCreate, async interaction => {
 
                     const roles = await interaction.guild.roles.fetch()
 
-                    console.log(roles)
-
+                    console.log(roles.find(role => role.name === "Equipe Pós-Tech").name)
+                    /*
                     const classCategory = await interaction.guild.channels.create({
                         name: className,
                         type: 4, // Categoria
@@ -666,7 +666,7 @@ client.on(Events.InteractionCreate, async interaction => {
                                 deny: [PermissionsBitField.Flags.ViewChannel]
                             },
                             {
-                                id: roles.find(role => role.name === "Equipe Pós-Tech").id,
+                                id: roles.find(role => role.name === "Equipe Pós-Tech")?.id,
                                 allow: [PermissionsBitField.Flags.ViewChannel]
                             },
                             {
@@ -730,6 +730,7 @@ client.on(Events.InteractionCreate, async interaction => {
                             }
                         })
                     }
+                    */
                 } catch (error) {
                     console.error(error);
                     await interaction.editReply({
