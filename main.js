@@ -723,6 +723,7 @@ client.on(Events.InteractionCreate, async interaction => {
                         })
                     }
                 } catch (error) {
+                    console.error(error);
                     await interaction.editReply({
                         content: `❌ Erro ao criar ${className}\n` + "```" + error + "```",
                         ephemeral: true
