@@ -650,7 +650,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
                     const roles = await interaction.guild.roles.fetch()
 
-                    console.log(roles.find(role => role.name === "Equipe Pós-Tech").name)
+                    console.log(roles.find(role => role.name === "Equipe Pós-Tech")?.id)
                     /*
                     const classCategory = await interaction.guild.channels.create({
                         name: className,
