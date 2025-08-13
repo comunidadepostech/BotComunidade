@@ -7,7 +7,8 @@ const {
     SlashCommandBuilder,
     PermissionFlagsBits,
     EmbedBuilder,
-    PollLayoutType
+    PollLayoutType,
+    PermissionsBitField, TextChannel, ForumChannel
 } = require("discord.js");
 const mysql = require('mysql2');
 
@@ -129,6 +130,111 @@ process.on('SIGINT', () => {
         process.exit(0);
     })
 })
+
+
+
+// Define os canais que serão criados para cada turma ou curso
+// Cada canal é um objeto com o nome, permissões e tipo:
+// GUILD_TEXT (0): A standard text channel within a server.
+// GUILD_VOICE (2): A voice channel within a server.
+// GUILD_CATEGORY (4): A category used to organize channels.
+// GUILD_NEWS (5): A channel that broadcasts messages to other servers.
+// GUILD_STAGE_VOICE (13): A stage channel, often used for events and presentations.
+// GUILD_FORUM (15): A channel for organizing discussions.
+//
+// Lembre-se o cargo já tem permiossões definidas no comando create, então não é necessário definir novamente aqui a não ser que queira adicionar mais permissões
+classChannels = [
+    {
+        name: "🙋‍♂️│apresente-se",
+        permissions: [
+            PermissionsBitField.Flags.ViewChannel,
+            PermissionsBitField.Flags.ReadMessageHistory
+        ],
+        permissions_deny: [
+            PermissionsBitField.Flags.CreateInstantInvite
+        ],
+        type: 0
+    },
+    {
+        name: "🚨│avisos",
+        permissions: [
+            PermissionsBitField.Flags.ViewChannel,
+            PermissionsBitField.Flags.ReadMessageHistory
+        ],
+        permissions_deny: [
+            PermissionsBitField.Flags.SendMessages,
+            PermissionsBitField.Flags.CreateInstantInvite
+        ],
+        type: 0
+    },
+    {
+        name: "💬│bate-papo",
+        permissions: [
+            PermissionsBitField.Flags.ViewChannel,
+            PermissionsBitField.Flags.ReadMessageHistory
+        ],
+        permissions_deny: [
+            PermissionsBitField.Flags.CreateInstantInvite
+        ],
+        type: 0
+    },
+    {
+        name: "🧑‍💻│grupos-tech-challenge",
+        permissions: [
+            PermissionsBitField.Flags.ViewChannel,
+            PermissionsBitField.Flags.ReadMessageHistory
+        ],
+        permissions_deny: [
+            PermissionsBitField.Flags.CreateInstantInvite
+        ],
+        type: 0
+    },
+    {
+        name: "🎥│gravações",
+        permissions: [
+            PermissionsBitField.Flags.ViewChannel,
+            PermissionsBitField.Flags.ReadMessageHistory
+        ],
+        permissions_deny: [
+            PermissionsBitField.Flags.SendMessages,
+            PermissionsBitField.Flags.CreateInstantInvite
+        ],
+        type: 0
+    },
+    {
+        name: "❓│dúvidas",
+        permissions: [
+            PermissionsBitField.Flags.ViewChannel,
+            PermissionsBitField.Flags.ReadMessageHistory
+        ],
+        permissions_deny: [
+            PermissionsBitField.Flags.CreateInstantInvite
+        ],
+        type: 15
+    },
+    {
+        name: "🎙️│Dinâmica ao vivo",
+        permissions: [
+            PermissionsBitField.Flags.ViewChannel
+        ],
+        permissions_deny: [
+            PermissionsBitField.Flags.CreateInstantInvite
+        ],
+        type: 13
+    },
+    {
+        name: "📒│Sala de estudo [turma]",
+        permissions: [
+            PermissionsBitField.Flags.ViewChannel
+        ],
+        permissions_deny: [
+            PermissionsBitField.Flags.CreateInstantInvite
+        ],
+        type: 2
+    }
+]
+
+
 
 
 
@@ -332,6 +438,8 @@ client.once(Events.ClientReady, async c => {
     await loadCommand('create', create);
 });
 
+
+
 // Interações com os comandos
 client.on(Events.InteractionCreate, async interaction => {
     switch (interaction.commandName) {
@@ -364,7 +472,7 @@ client.on(Events.InteractionCreate, async interaction => {
             } catch (error) {
                 console.error(`${Date()} Erro ao criar convite:`, error);
                 await interaction.reply({
-                    content: '❌ Ocorreu um erro ao criar o convite. Verifique se tenho permissões suficientes.',
+                    content: `❌ Ocorreu um erro ao criar o convite. Verifique se tenho permissões suficientes.\n` + "```" + error + "```",
                     ephemeral: true
                 });
             }
@@ -372,24 +480,24 @@ client.on(Events.InteractionCreate, async interaction => {
 
         case "echo":
             let message = interaction.options.getString("message")
-            const channel = interaction.options.getChannel("channel", true);
-            if (!channel.isTextBased()) {
+            const echoChannel = interaction.options.getChannel("channel", true);
+            if (!echoChannel.isTextBased()) {
                 await interaction.reply({
                     content: "❌ O canal especificado não é um canal de texto.",
                     ephemeral: true
                 });
                 return;
             } else {
-                await channel.send(message).then(_ => {
+                await echoChannel.send(message).then(_ => {
                     interaction.reply({
-                        content: `✅ Mensagem enviada para ${channel} com sucesso!`,
+                        content: `✅ Mensagem enviada para ${echoChannel} com sucesso!`,
                         ephemeral: true
                     });
                     console.log(`${Date()} LOG - echo ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
-                }).catch(err => {
-                    console.error(`${Date()} ERRO - Falha ao enviar mensagem:`, err);
+                }).catch(error => {
+                    console.error(`${Date()} ERRO - Falha ao enviar mensagem:`, error);
                     interaction.reply({
-                        content: "❌ Ocorreu um erro ao enviar a mensagem.",
+                        content: "❌ Ocorreu um erro ao enviar a mensagem.\n" + "```" + error + "```",
                         ephemeral: true
                     });
                 });
@@ -449,7 +557,7 @@ client.on(Events.InteractionCreate, async interaction => {
             } catch (error) {
                 console.error(`${Date()} ERRO - Falha ao buscar convites:`, error);
                 await interaction.reply({
-                    content: "❌ Ocorreu um erro ao buscar os convites.",
+                    content: "❌ Ocorreu um erro ao buscar os convites.\n"  + "```" + error + "```",
                     ephemeral: true
                 });
             }
@@ -491,7 +599,7 @@ client.on(Events.InteractionCreate, async interaction => {
             } catch (error) {
                 console.error(`${Date()} ERRO - Falha ao criar enquete:`, error);
                 await interaction.reply({
-                    content: "❌ Ocorreu um erro ao criar a enquete.",
+                    content: "❌ Ocorreu um erro ao criar a enquete.\n" + error,
                     ephemeral: true
                 });
             }
@@ -502,62 +610,125 @@ client.on(Events.InteractionCreate, async interaction => {
             const createType = interaction.options.getString('type');
             const className = interaction.options.getString('name');
             if (createType == 'turma') {
-                try {const faqChannel = interaction.options.getChannel('faq-channel').name } catch (error) {
+                try {
+                    const faqChannel = interaction.options.getChannel('faq-channel').name
+
+                    const role = await interaction.guild.roles.create({
+                        name: `Estudantes ${className}`,
+                        color: 3447003,
+                        mentionable: true, // Permite que o cargo seja mencionado
+                        hoist: true, // Exibe o cargo na lista de membros
+                        permissions: [
+                            'ChangeNickname',
+                            'SendMessagesInThreads',
+                            'CreatePublicThreads',
+                            'AttachFiles',
+                            'EmbedLinks',
+                            'AddReactions',
+                            'UseExternalEmojis',
+                            'ReadMessageHistory',
+                            'Connect',
+                            'SendMessages',
+                            'Speak',
+                            'UseVAD',
+                            'Stream',
+                            'RequestToSpeak',
+                            'UseExternalStickers'
+                        ]
+                    });
+
+                    await client.guilds.cache.get(interaction.guild.id).channels.cache.forEach(channel => {
+                        if (["✨│boas-vindas", "📃│regras", faqChannel, "📅│acontece-aqui", "🚀│talent-lab", "💻│casa-do-código"].includes(channel.name)) { // Ignora canais não especificados
+                            channel.permissionOverwrites.edit(role, {
+                                SendMessages: true,
+                                ViewChannel: true,
+                                ReadMessageHistory: true,
+                                AddReactions: true
+                            });
+                        }
+                    });
+
+                    const classCategory = await interaction.guild.channels.create({
+                        name: className,
+                        type: 4, // Categoria
+                        permissionOverwrites: [
+                            {
+                                id: role.id,
+                                allow: [
+                                    {
+                                        id: role.id,
+                                        allow: classChannels.permissions,
+                                        deny: classChannels.permissions_deny
+                                    },
+                                    {
+                                        id: interaction.guild.roles.everyone, // Remove a permissão de ver o canal para todos que não tenham o cargo
+                                        deny: [PermissionsBitField.Flags.ViewChannel]
+                                    },
+                                    {
+                                        id: interaction.guild.roles.cache.get("Equipe Pós-Tech").id,
+                                        allow: [PermissionsBitField.Flags.ViewChannel]
+                                    },
+                                    {
+                                        id: interaction.guild.roles.cache.get("Gestor Acadêmico").id,
+                                        allow: [
+                                            PermissionsBitField.Flags.ViewChannel,
+                                            PermissionsBitField.Flags.SendMessages,
+                                            PermissionsBitField.Flags.SendMessages,
+                                            PermissionsBitField.Flags.CreatePublicThreads,
+                                            PermissionsBitField.Flags.EmbedLinks,
+                                            PermissionsBitField.Flags.AttachFiles,
+                                            PermissionsBitField.Flags.AddReactions,
+                                            PermissionsBitField.Flags.MentionEveryone,
+                                            PermissionsBitField.Flags.ReadMessageHistory,
+                                            PermissionsBitField.Flags.SendPolls
+                                        ]
+                                    },
+                                    {
+                                        id: interaction.guild.roles.cache.get("Coordenação").id,
+                                        allow: [
+                                            PermissionsBitField.Flags.ViewChannel,
+                                            PermissionsBitField.Flags.SendMessages,
+                                            PermissionsBitField.Flags.SendMessages,
+                                            PermissionsBitField.Flags.CreatePublicThreads,
+                                            PermissionsBitField.Flags.EmbedLinks,
+                                            PermissionsBitField.Flags.AttachFiles,
+                                            PermissionsBitField.Flags.AddReactions,
+                                            PermissionsBitField.Flags.MentionEveryone,
+                                            PermissionsBitField.Flags.ReadMessageHistory,
+                                            PermissionsBitField.Flags.SendPolls
+                                        ]
+                                    },
+                                    {
+                                        id: interaction.guild.roles.cache.get("Professores").id,
+                                        allow: [PermissionsBitField.Flags.ViewChannel,]
+                                    }]
+                            }
+                        ]
+                    });
+
+                    for (const channel of classChannels) {
+                        await interaction.guild.channels.create({
+                            name: channel.name,
+                            type: channel.type,
+                            parent: classCategory.id // Define a categoria da turma
+                            //permissionOverwrites: []
+                            }).then(async (target) => {
+                                if (channel.name === "❓│dúvidas") {
+                                    await target.setAvailableTags(["Geral", "Tech Challenge", "Fase 1", "Fase 2", "Fase 3", "Fase 4", "Fase 5", "Alura", "Beneficios", "Financeiro", "Atividade presencial", "Lives", "Notas", "Eventos"]);
+                                    await target.threads.create({
+                                        name: "titulo teste",
+                                        message: {content: "Conteúdo teste"},
+                                    })
+                                }
+                        })
+                    }
+                } catch (error) {
                     await interaction.editReply({
-                        content: "❌ Para criar uma nova turma, o canal de FAQ é obrigatório.",
+                        content: `❌ Erro ao criar ${className}\n` + "```" + error + "```",
                         ephemeral: true
                     });
                     return;
                 }
-                const role = await interaction.guild.roles.create({
-                    name: className,
-                    color: 3447003,
-                    mentionable: true,
-                    hoist: true,
-                    position: 10,
-                    permissions: [
-                        'ChangeNickname',
-                        'SendMessagesInThreads',
-                        'CreatePublicThreads',
-                        'AttachFiles',
-                        'EmbedLinks',
-                        'AddReactions',
-                        'UseExternalEmojis',
-                        'ReadMessageHistory',
-                        'Connect',
-                        'SendMessages',
-                        'Speak',
-                        'UseVAD',
-                        'Stream',
-                        'RequestToSpeak',
-                        'UseExternalStickers'
-                    ]
-                });
-
-                await client.guilds.cache.get(interaction.guild.id).channels.cache.forEach(channel => {
-                    if (["✨│boas-vindas", "📃│regras", faqChannel, "📅│acontece-aqui", "🚀│talent-lab", "💻│casa-do-código"].includes(channel.name)) { // Ignora canais não especificados
-                        channel.permissionOverwrites.edit(role, {
-                            SendMessages: false,
-                            ViewChannel: true,
-                            ReadMessageHistory: true,
-                            AddReactions: true
-                        });
-                    }
-                });
-
-                const classCategory = await interaction.guild.channels.create({
-                    name: className,
-                    type: 4, // Categoria
-                    permissionOverwrites: [
-                        {
-                            id: role.id,
-                            allow: [
-                                'ManageMessages',
-                                'ManageChannels'
-                            ],
-                        }
-                    ]
-                });
             } else if (createType == 'curso') {
                 const classCategory = await interaction.guild.channels.create({
                     name: className,
