@@ -655,11 +655,6 @@ client.on(Events.InteractionCreate, async interaction => {
                         type: 4, // Categoria
                         permissionOverwrites: [
                             {
-                                id: classRole,
-                                allow: classChannels.permissions,
-                                deny: classChannels.permissions_deny
-                            },
-                            {
                                 id: interaction.guild.roles.everyone,
                                 deny: [PermissionsBitField.Flags.ViewChannel]
                             },
@@ -743,7 +738,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     type: 4, // Categoria
                     permissionOverwrites: [
                         {
-                            id: classRole.id, // Permissões para o usuário que criou a turma
+                            id: classRole, // Permissões para o usuário que criou a turma
                             allow: [
                                 'ManageMessages',
                                 'ManageChannels'
