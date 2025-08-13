@@ -668,7 +668,7 @@ client.on(Events.InteractionCreate, async interaction => {
                                 allow: [PermissionsBitField.Flags.ViewChannel]
                             },
                             {
-                                id: roles.find(role => role.name === "Gestor Acadêmico").id,
+                                id: roles.find(role => role.name === "Gestor Acadêmico")?.id,
                                 allow: [
                                     PermissionsBitField.Flags.ViewChannel,
                                     PermissionsBitField.Flags.SendMessages,
@@ -682,7 +682,7 @@ client.on(Events.InteractionCreate, async interaction => {
                                 ]
                             },
                             {
-                                id: roles.find(role => role.name === "Coordenação").id,
+                                id: roles.find(role => role.name === "Coordenação")?.id,
                                 allow: [
                                     PermissionsBitField.Flags.ViewChannel,
                                     PermissionsBitField.Flags.SendMessages,
@@ -696,7 +696,7 @@ client.on(Events.InteractionCreate, async interaction => {
                                 ]
                             },
                             {
-                                id: roles.find(role => role.name === "Professores").id,
+                                id: roles.find(role => role.name === "Professores")?.id,
                                 allow: [
                                     PermissionsBitField.Flags.ViewChannel,
                                     PermissionsBitField.Flags.SendMessages,
