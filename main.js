@@ -648,6 +648,8 @@ client.on(Events.InteractionCreate, async interaction => {
                         }
                     });
 
+                    console.log(interaction.guild.roles.cache)
+
                     const classCategory = await interaction.guild.channels.create({
                         name: className,
                         type: 4, // Categoria
