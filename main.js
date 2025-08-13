@@ -648,7 +648,7 @@ client.on(Events.InteractionCreate, async interaction => {
                         }
                     });
 
-                    const roles = interaction.guild.roles.fetch()
+                    const roles = await interaction.guild.roles.fetch()
 
                     console.log(roles)
 
