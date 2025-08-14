@@ -621,7 +621,7 @@ client.on(Events.GuildMemberAdd, async member => {
             const canvas = createCanvas(1401, 571);
             const context = canvas.getContext('2d');
 
-            const background = await readFile('./data/wallpaper.jpg');
+            const background = await readFile('./data/wallpaper.png');
             const backgroundImage = new Image();
             backgroundImage.src = background;
             context.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
