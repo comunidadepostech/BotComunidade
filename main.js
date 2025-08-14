@@ -670,6 +670,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
                     // Insere o convite no banco de dados
                     db.query(`INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`, [invite.code, targetRole, interaction.guild.id]);
+
                     return invite.url;
                 } catch (error) {
                     console.error(`${Date()} ERRO - Não foi possível criar o convite\n${error}`);
@@ -706,7 +707,7 @@ client.on(Events.InteractionCreate, async interaction => {
                         ]
                     });
 
-                    const serverChannels = await client.guilds.cache.get(interaction.guild.id).channels.fetch()
+                    const serverChannels = await interaction.guild.channels.fetch()
                     for (const channel of serverChannels) {
                         if (["✨│boas-vindas", "📃│regras", faqChannel, "📅│acontece-aqui", "🚀│talent-lab", "💻│casa-do-código"].includes(channel.name)) { // Ignora canais não especificados
                             await channel.permissionOverwrites.edit(classRole, {
