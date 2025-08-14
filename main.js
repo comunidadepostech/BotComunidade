@@ -709,7 +709,14 @@ client.on(Events.InteractionCreate, async interaction => {
 
                     const serverChannels = await interaction.guild.channels.fetch()
                     for (const channel of serverChannels.values()) {
-                        if (["✨│boas-vindas", "📃│regras", faqChannel, "📅│acontece-aqui", "🚀│talent-lab", "💻│casa-do-código"].includes(channel.name)) { // Ignora canais não especificados
+                        if (["✨│boas-vindas", "📃│regras", faqChannel].includes(channel.name)) { // Ignora canais não especificados
+                            await channel.permissionOverwrites.edit(classRole, {
+                                SendMessages: false,
+                                ViewChannel: true,
+                                ReadMessageHistory: true,
+                                AddReactions: true
+                            });
+                        } else if (["📅│acontece-aqui", "🚀│talent-lab", "💻│casa-do-código"].includes(channel.name)) {
                             await channel.permissionOverwrites.edit(classRole, {
                                 SendMessages: true,
                                 ViewChannel: true,
