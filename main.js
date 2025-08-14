@@ -673,6 +673,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     return invite.url
                 } catch (error) {
                     await interaction.editReply("❌ Erro ao criar convite\n" + "```" + error + "```");
+                    break;
                 }
             }
 
@@ -818,16 +819,16 @@ client.on(Events.InteractionCreate, async interaction => {
                         } else if (channel.name === "🎥│gravações" || channel.name === "🚨│avisos") {
                             await target.edit({permissionOverwrites: [{id: classRole, deny: ["SendMessages"], allow: ["ViewChannel"]}]})
                         }
-
-                        // Cria o convite
-                        const inviteUrl = await createInvite(classRole, inviteChannel);
-
-                        // Responde com o link do invite e outras informações
-                        await interaction.editReply({
-                            content: `✅ Turma ${className} criado com sucesso!\n📨 Link: ${inviteUrl}\n👥 Cargo vinculado: ${classRole}`,
-                            ephemeral: false
-                        }).then(_ => console.log(`${Date()} LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
                     }
+
+                    // Cria o convite
+                    const inviteUrl = await createInvite(classRole, inviteChannel);
+
+                    // Responde com o link do invite e outras informações
+                    await interaction.editReply({
+                        content: `✅ Turma ${className} criado com sucesso!\n📨 Link: ${inviteUrl}\n👥 Cargo vinculado: ${classRole}`,
+                        ephemeral: false
+                    }).then(_ => console.log(`${Date()} LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
                 } catch (error) {
                     console.error(error);
                     await interaction.editReply({
