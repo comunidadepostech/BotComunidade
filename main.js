@@ -510,6 +510,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     unique: true
                 });
 
+                // Insere o convite no banco de dados
                 db.query(`INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`, [invite.code, role, interaction.guild.id]);
 
                 // Responde com o link do convite
@@ -796,7 +797,7 @@ client.on(Events.InteractionCreate, async interaction => {
                         }
 
                         // Cria o convite
-                        const invite = await channel.createInvite({
+                        const invite = await inviteChannel.createInvite({
                             maxAge: 0, // Converte dias para segundos
                             maxUses: 0,
                             unique: true
