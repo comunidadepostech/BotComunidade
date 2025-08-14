@@ -784,8 +784,8 @@ client.on(Events.InteractionCreate, async interaction => {
                         type: 4, // Categoria
                         permissionOverwrites: [
                             {
-                                id: interaction.guild.roles.everyone.id,
-                                deny: [PermissionsBitField.Flags.ViewChannel]
+                                id: interaction.guild.roles.everyone,
+                                deny: ["ViewChannel"]
                             }]/*
                             {
                                 id: roles.find(role => role.name === "Equipe Pós-Tech")?.id,
