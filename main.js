@@ -8,7 +8,8 @@ const {
     PermissionFlagsBits,
     EmbedBuilder,
     PollLayoutType,
-    PermissionsBitField, TextChannel, ForumChannel
+    TextChannel,
+    ForumChannel
 } = require("discord.js");
 const mysql = require('mysql2');
 
@@ -135,6 +136,7 @@ process.on('SIGINT', () => {
 
 // Define os canais que serão criados para cada turma ou curso
 // Cada canal é um objeto com o nome, permissões e tipo:
+//
 // GUILD_TEXT (0): A standard text channel within a server.
 // GUILD_VOICE (2): A voice channel within a server.
 // GUILD_CATEGORY (4): A category used to organize channels.
@@ -144,96 +146,18 @@ process.on('SIGINT', () => {
 //
 // Lembre-se o cargo já tem permiossões definidas no comando create, então não é necessário definir novamente aqui a não ser que queira adicionar mais permissões
 classChannels = [
-    {
-        name: "🙋‍♂️│apresente-se",
-        permissions: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.ReadMessageHistory
-        ],
-        permissions_deny: [
-            PermissionsBitField.Flags.CreateInstantInvite
-        ],
-        type: 0
-    },
-    {
-        name: "🚨│avisos",
-        permissions: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.ReadMessageHistory
-        ],
-        permissions_deny: [
-            PermissionsBitField.Flags.SendMessages,
-            PermissionsBitField.Flags.CreateInstantInvite
-        ],
-        type: 0
-    },
-    {
-        name: "💬│bate-papo",
-        permissions: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.ReadMessageHistory
-        ],
-        permissions_deny: [
-            PermissionsBitField.Flags.CreateInstantInvite
-        ],
-        type: 0
-    },
-    {
-        name: "🧑‍💻│grupos-tech-challenge",
-        permissions: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.ReadMessageHistory
-        ],
-        permissions_deny: [
-            PermissionsBitField.Flags.CreateInstantInvite
-        ],
-        type: 0
-    },
-    {
-        name: "🎥│gravações",
-        permissions: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.ReadMessageHistory
-        ],
-        permissions_deny: [
-            PermissionsBitField.Flags.SendMessages,
-            PermissionsBitField.Flags.CreateInstantInvite
-        ],
-        type: 0
-    },
-    {
-        name: "❓│dúvidas",
-        permissions: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.ReadMessageHistory
-        ],
-        permissions_deny: [
-            PermissionsBitField.Flags.CreateInstantInvite
-        ],
-        type: 15
-    },
-    {
-        name: "🎙️│Dinâmica ao vivo",
-        permissions: [
-            PermissionsBitField.Flags.ViewChannel
-        ],
-        permissions_deny: [
-            PermissionsBitField.Flags.CreateInstantInvite
-        ],
-        type: 13
-    },
-    {
-        name: "📒│Sala de estudo [turma]",
-        permissions: [
-            PermissionsBitField.Flags.ViewChannel
-        ],
-        permissions_deny: [
-            PermissionsBitField.Flags.CreateInstantInvite
-        ],
-        type: 2
-    }
+    {name: "🙋‍♂️│apresente-se", type: 0},
+    {name: "🚨│avisos", type: 0},
+    {name: "💬│bate-papo", type: 0},
+    {name: "🧑‍💻│grupos-tech-challenge", type: 0},
+    {name: "🎥│gravações", type: 0},
+    {name: "❓│dúvidas", type: 15},
+    {name: "🎙️│Dinâmica ao vivo", type: 13},
+    {name: "📒│Sala de estudo [turma]", type: 2}
 ]
 
+// Certifique-se de primeiro testar a mensagem no discord e depois clique no icone de copiar mensagem (não dê Ctrl+C) e cole dentro de uma String vazia
+// Evite menções de cargo (deve ser ajustado futuramente)
 classActivations = [
     {
         title: "Integração Calendário",
@@ -359,8 +283,6 @@ classActivations = [
             "P.S.: Se você não conseguiu acessar a caixa de e-mail por conta de algum erro, ou está com dúvidas, entre em contato com o time de HelpDesk para receber o suporte adequado. Eles terão os acessos necessários para corrigir eventuais falhas.\n"
     }
 ]
-
-
 
 
 
@@ -774,19 +696,12 @@ client.on(Events.InteractionCreate, async interaction => {
                         }
                     });
 
-                    //const roles = (await interaction.guild.roles.fetch()).map(role => [].includes(role.name)? role.id : null).filter(role => role !== null);
                     const roles = await interaction.guild.roles.fetch();
-                    //console.log(roles)
-                    //interaction.guild.roles.everyone.id
 
                     const classCategory = await interaction.guild.channels.create({
                         name: className,
                         type: 4, // Categoria
                         permissionOverwrites: [
-                            {
-                                id: interaction.guild.roles.everyone,
-                                deny: ["ViewChannel"]
-                            },
                             {
                                 id: roles.find(role => role.name === "Equipe Pós-Tech")?.id,
                                 allow: ["ViewChannel"]
@@ -836,90 +751,50 @@ client.on(Events.InteractionCreate, async interaction => {
                                     "ReadMessageHistory",
                                     "SendPolls"
                                 ]
+                            },
+                            {
+                                id: classRole,
+                                allow: ["ViewChannel"]
                             }
                         ]
                     });
 
                     for (const channel of classChannels) {
-                        await interaction.guild.channels.create({
+                        const target = await interaction.guild.channels.create({
                             name: channel.name,
                             type: channel.type,
                             parent: classCategory.id // Define a categoria da turma
                             //permissionOverwrites: []
-                        }).then(async (target) => {
-                            if (channel.name === "❓│dúvidas") {
-                                await target.setAvailableTags(
-                                    [
-                                        {
-                                            name: "Geral",
-                                            moderated: false
-                                        },
-                                        {
-                                            name: "Tech Challenge",
-                                            moderated: false
-                                        },
-                                        {
-                                            name: "Fase 1",
-                                            moderated: false
-                                        },
-                                        {
-                                            name: "Fase 2",
-                                            moderated: false
-                                        },
-                                        {
-                                            name:"Fase 3",
-                                            moderated: false
-                                        },
-                                        {
-                                            name: "Fase 4",
-                                            moderated: false
-                                        },
-                                        {
-                                            name: "Fase 5",
-                                            moderated: false
-                                        },
-                                        {
-                                            name: "Alura",
-                                            moderated: false
-                                        },
-                                        {
-                                            name: "Beneficios",
-                                            moderated: false
-                                        },
-                                        {
-                                            name: "Financeiro",
-                                            moderated: false
-                                        },
-                                        {
-                                            name: "Atividade presencial",
-                                            moderated: false
-                                        },
-                                        {
-                                            name: "Lives",
-                                            moderated: false
-                                        },
-                                        {
-                                            name: "Notas",
-                                            moderated: false
-                                        },
-                                        {
-                                            name: "Eventos",
-                                            moderated: false
-                                        }
-                                    ]
-                                );
-                                for (activate of classActivations) {
-                                    await target.threads.create(
-                                        {
-                                            name: activate.title,
-                                            message: {content: activate.content}
-                                        }
-                                    )
-                                }
-                            }
                         })
+                        if (channel.name === "❓│dúvidas") {
+                            await target.setAvailableTags(
+                                [
+                                    {name: "Geral", moderated: false},
+                                    {name: "Tech Challenge", moderated: false},
+                                    {name: "Fase 1", moderated: false},
+                                    {name: "Fase 2", moderated: false},
+                                    {name:"Fase 3", moderated: false},
+                                    {name: "Fase 4", moderated: false},
+                                    {name: "Fase 5", moderated: false},
+                                    {name: "Alura", moderated: false},
+                                    {name: "Beneficios", moderated: false},
+                                    {name: "Financeiro", moderated: false},
+                                    {name: "Atividade presencial", moderated: false},
+                                    {name: "Lives", moderated: false},
+                                    {name: "Notas", moderated: false},
+                                    {name: "Eventos", moderated: false}
+                                ]
+                            );
+                            for (activate of classActivations) {
+                                await target.threads.create({
+                                    name: activate.title,
+                                    message: {content: activate.content}
+                                });
+                            }
+                        } else if (channel.name === "🎥│gravações" || channel.name === "🚨│avisos") {
+                            target.edit({permissionOverwrites: [{deny: ["SendMessages"]}]})
+                        }
                     }
-
                 } catch (error) {
                     console.error(error);
                     await interaction.editReply({
