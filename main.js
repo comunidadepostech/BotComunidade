@@ -17,8 +17,8 @@ import mysql from 'mysql2'
 import {somePermissionsChannels, allPermissionsChannels, classActivations, classChannels} from "./data/classPatterns.mjs"
 import {slashCommands} from "./data/slashCommands.mjs"
 import {Canvas, createCanvas, Image} from '@napi-rs/canvas'
-import request  from 'undici'
-import readFile from 'fs/promises'
+import {request}  from 'undici'
+import {readFile} from 'fs/promises'
 
 
 // Define os principais acessos que o Bot precisa para poder funcionar corretamente
@@ -618,7 +618,7 @@ client.on(Events.GuildMemberAdd, async member => {
         };
 
         async function sendWelcome(profile, targetChannel){
-            const canvas = createCanvas(700, 250);
+            const canvas = createCanvas(1401, 571);
             const context = canvas.getContext('2d');
 
             const background = await readFile('./data/wallpaper.jpg');
