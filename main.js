@@ -12,8 +12,8 @@ const {
     ForumChannel
 } = require("discord.js");
 const mysql = require('mysql2');
-import {somePermissionsChannels, allPermissionsChannels, classActivations, classChannels} from "./data/classPatterns";
-import {slashCommands} from "./data/slashCommands";
+const {somePermissionsChannels, allPermissionsChannels, classActivations, classChannels} = require("./data/classPatterns");
+const {slashCommands} = require("./data/slashCommands");
 
 
 // Define os principais acessos que o Bot precisa para poder funcionar corretamente
