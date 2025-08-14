@@ -781,12 +781,12 @@ client.on(Events.InteractionCreate, async interaction => {
 
                     const classCategory = await interaction.guild.channels.create({
                         name: className,
-                        type: 4 // Categoria
-                        /*permissionOverwrites: [
+                        type: 4, // Categoria
+                        permissionOverwrites: [
                             {
                                 id: interaction.guild.roles.everyone.id,
                                 deny: [PermissionsBitField.Flags.ViewChannel]
-                            },
+                            }]/*
                             {
                                 id: roles.find(role => role.name === "Equipe Pós-Tech")?.id,
                                 allow: [PermissionsBitField.Flags.ViewChannel]
