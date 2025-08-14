@@ -18,6 +18,8 @@ import {somePermissionsChannels, allPermissionsChannels, classActivations, class
 import {slashCommands} from "./data/slashCommands.mjs"
 import Canvas from '@napi-rs/canvas'
 import request  from 'undici'
+import File from "fetch-blob"
+global.File = File;
 
 
 // Define os principais acessos que o Bot precisa para poder funcionar corretamente
