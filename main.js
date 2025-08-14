@@ -792,7 +792,11 @@ client.on(Events.InteractionCreate, async interaction => {
                                 allow: ["ViewChannel"]
                             },
                             {
-                                id: roles.find(role => role.name === "Gestor Acadêmico")?.id,
+                                id: roles.find(role => role.name === "Talent Lab")?.id,
+                                allow: ["ViewChannel"]
+                            },
+                            {
+                                id: roles.find(role => role.name === "Gestor acadêmico")?.id,
                                 allow: [
                                     "ViewChannel",
                                     "SendMessages",
