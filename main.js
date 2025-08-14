@@ -648,21 +648,17 @@ client.on(Events.InteractionCreate, async interaction => {
                         }
                     });
 
-                    const roles = (await interaction.guild.roles.fetch()).map(role => [].includes(role.name)? role.id : null).filter(role => role !== null);
+                    //const roles = (await interaction.guild.roles.fetch()).map(role => [].includes(role.name)? role.id : null).filter(role => role !== null);
+                    const roles = await interaction.guild.roles.fetch();
+                    //console.log(roles)
+                    //interaction.guild.roles.everyone.id
 
-                    console.log(roles)
-                    /*
                     const classCategory = await interaction.guild.channels.create({
                         name: className,
                         type: 4, // Categoria
                         permissionOverwrites: [
                             {
-                                id: classRole,
-                                allow: classChannels.permissions,
-                                deny: classChannels.permissions_deny
-                            },
-                            {
-                                id: interaction.guild.roles.everyone,
+                                id: interaction.guild.roles.everyone.id,
                                 deny: [PermissionsBitField.Flags.ViewChannel]
                             },
                             {
@@ -730,7 +726,7 @@ client.on(Events.InteractionCreate, async interaction => {
                             }
                         })
                     }
-                    */
+
                 } catch (error) {
                     console.error(error);
                     await interaction.editReply({
