@@ -831,7 +831,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
                             await Promise.all(classActivations.map(async (activate) => {
                                 if (activate.content.includes("{mention}")) {
-                                    activate.content = activate.content.replace("{mention}", `<@${classRole}>`);
+                                    activate.content = activate.content.replace("{mention}", `${classRole}`);
                                 }
                                 await target.threads.create({
                                     name: activate.title,
