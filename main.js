@@ -657,8 +657,8 @@ client.on(Events.InteractionCreate, async interaction => {
         case "create":
             await interaction.deferReply({ephemeral: true}); // Responde de forma atrasada para evitar timeout
 
-            const createType = await interaction.options.getString('type');
-            const className = await interaction.options.getString('name');
+            const createType = interaction.options.getString('type');
+            const className = interaction.options.getString('name');
 
             async function createInvite(targetRole, targetChannel) {
                 try{
@@ -669,7 +669,16 @@ client.on(Events.InteractionCreate, async interaction => {
                     });
 
                     // Insere o convite no banco de dados
-                    db.query(`INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`, [invite.code, targetRole, interaction.guild.id]);
+                    await new Promise((resolve, reject) => {
+                        db.query(
+                            `INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`,
+                            [invite.code, targetRole, interaction.guild.id],
+                            (err, result) => {
+                                if (err) return reject(err);
+                                resolve(result);
+                            }
+                        );
+                    });
 
                     return invite.url;
                 } catch (error) {
@@ -835,7 +844,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     }
 
                     // Cria o convite
-                    const inviteUrl = await createInvite(classRole, inviteChannel);
+                    const inviteUrl = await createInvite(classRole.id, inviteChannel);
 
                     // Responde com o link do invite e outras informações
                     await interaction.editReply({
