@@ -792,7 +792,7 @@ client.on(Events.InteractionCreate, async interaction => {
                                 });
                             }
                         } else if (channel.name === "🎥│gravações" || channel.name === "🚨│avisos") {
-                            target.edit({permissionOverwrites: [{deny: ["SendMessages"]}]})
+                            await target.edit({permissionOverwrites: [{id: classRole, deny: ["SendMessages"]}]})
                         }
                     }
                 } catch (error) {
