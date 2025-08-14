@@ -166,24 +166,11 @@ const create = await new SlashCommandBuilder()
             .setRequired(false)
     );
 
-
-const deleteclass = await new SlashCommandBuilder()
-    .setName("detele")
-    .setDescription("Detela um cargo especifico por completo do servidor")
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addStringOption(option =>
-        option.setName("role")
-            .setDescription("Cargo a ser deletado")
-            .setRequired(true)
-    )
-
-
 export const slashCommands = [
     {name: "invite", commandBuild: invite},
     {name: "ping", commandBuild: ping},
     {name: "echo", commandBuild: echo},
     {name: "display", commandBuild: display},
     {name: "poll", commandBuild: poll},
-    {name: "create", commandBuild: create},
-    {name: "delete", commandBuild: deleteclass}
+    {name: "create", commandBuild: create}
 ]

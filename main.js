@@ -372,8 +372,6 @@ client.on(Events.InteractionCreate, async interaction => {
 
             if (createType == 'turma') {
                 try {
-                    somePermissionsChannels.join(interaction.options.getChannel('faq-channel').name)
-
                     const classRole = await interaction.guild.roles.create({
                         name: `Estudantes ${className}`,
                         color: 3447003,
@@ -400,7 +398,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
                     const serverChannels = await interaction.guild.channels.fetch()
                     for (const channel of serverChannels.values()) {
-                        if (somePermissionsChannels.includes(channel.name)) { // Ignora canais não especificados
+                        if ([...somePermissionsChannels, interaction.options.getChannel('faq-channel').name].includes(channel.name)) { // Ignora canais não especificados
                             await channel.permissionOverwrites.edit(classRole, {
                                 SendMessages: false,
                                 ViewChannel: true,
@@ -564,22 +562,6 @@ client.on(Events.InteractionCreate, async interaction => {
             }
             break;
 
-        case "delete":
-            const deletedRole = interaction.options.getString('role');
-            await interaction.deferReply({ephemeral: true}); // Responde de forma atrasada para evitar timeout
-            try {
-                const guildChannels = await interaction.guild.channels.fetch();
-                guildChannels
-                    .filter(channel => channel.name && channel.parent.name === deletedRole)
-                    .forEach(channel => channel.delete());
-            } catch (error) {
-                console.error();
-                await interaction.editReply({
-                    content: "",
-                    ephemeral: true
-                })
-            }
-            break;
         default:
             break;
     }
