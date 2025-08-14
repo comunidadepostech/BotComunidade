@@ -673,7 +673,6 @@ client.on(Events.InteractionCreate, async interaction => {
                     return invite.url
                 } catch (error) {
                     await interaction.editReply("❌ Erro ao criar convite\n" + "```" + error + "```");
-                    break;
                 }
             }
 
