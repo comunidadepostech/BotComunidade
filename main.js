@@ -646,7 +646,9 @@ client.on(Events.GuildMemberAdd, async member => {
 
             const attachment = new AttachmentBuilder(canvas.toBuffer('image/png'), { name: 'profile-image.png' });
 
-            targetChannel.send({ files: [attachment] });
+            targetChannel.send(
+                {files: [{attachment: attachment, name: "profile-image.png"}] }
+            );
         }
 
         let used_invite;
