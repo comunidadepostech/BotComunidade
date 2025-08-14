@@ -178,7 +178,7 @@ const deleteclass = await new SlashCommandBuilder()
     )
 
 
-const slashCommands = [
+export const slashCommands = [
     {name: "invite", commandBuild: invite},
     {name: "ping", commandBuild: ping},
     {name: "echo", commandBuild: echo},
@@ -187,7 +187,3 @@ const slashCommands = [
     {name: "create", commandBuild: create},
     {name: "delete", commandBuild: deleteclass}
 ]
-
-module.exports = {
-    slashCommands
-}
