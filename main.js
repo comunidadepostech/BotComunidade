@@ -18,7 +18,7 @@ import {somePermissionsChannels, allPermissionsChannels, classActivations, class
 import {slashCommands} from "./data/slashCommands.mjs"
 import Canvas from '@napi-rs/canvas'
 import request  from 'undici'
-import File from "fetch-blob"
+import {File, Blob} from "fetch-blob"
 global.File = File;
 
 
