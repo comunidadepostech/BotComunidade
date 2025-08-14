@@ -146,14 +146,14 @@ process.on('SIGINT', () => {
 //
 // Lembre-se o cargo já tem permiossões definidas no comando create, então não é necessário definir novamente aqui a não ser que queira adicionar mais permissões
 classChannels = [
-    {name: "🙋‍♂️│apresente-se", type: 0},
-    {name: "🚨│avisos", type: 0},
-    {name: "💬│bate-papo", type: 0},
-    {name: "🧑‍💻│grupos-tech-challenge", type: 0},
-    {name: "🎥│gravações", type: 0},
-    {name: "❓│dúvidas", type: 15},
-    {name: "🎙️│Dinâmica ao vivo", type: 13},
-    {name: "📒│Sala de estudo ", type: 2} // Deixar o espaço no final para colocar a sigla da turma quando o comando /create for utilizado
+    {name: "🙋‍♂️│apresente-se", type: 0, position: 0},
+    {name: "🚨│avisos", type: 0, position: 1},
+    {name: "💬│bate-papo", type: 0, position: 2},
+    {name: "🧑‍💻│grupos-tech-challenge", type: 0, position: 3},
+    {name: "🎥│gravações", type: 0, position: 4},
+    {name: "❓│dúvidas", type: 15, position: 5},
+    {name: "🎙️│Dinâmica ao vivo", type: 13, position: 6},
+    {name: "📒│Sala de estudo ", type: 2, position: 7} // Deixar o espaço no final para colocar a sigla da turma quando o comando /create for utilizado
 ]
 
 // Certifique-se de primeiro testar a mensagem no discord e depois clique no icone de copiar mensagem (não dê Ctrl+C) e cole dentro de uma String vazia
@@ -670,9 +670,11 @@ client.on(Events.InteractionCreate, async interaction => {
 
                     // Insere o convite no banco de dados
                     db.query(`INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`, [invite.code, targetRole, interaction.guild.id]);
-                    return invite.url
+                    return invite.url;
                 } catch (error) {
+                    console.error(`${Date()} ERRO - Não foi possível criar o convite\n${error}`);
                     await interaction.editReply("❌ Erro ao criar convite\n" + "```" + error + "```");
+                    return;
                 }
             }
 
@@ -717,7 +719,8 @@ client.on(Events.InteractionCreate, async interaction => {
                     };
 
                     const roles = await interaction.guild.roles.fetch();
-                    const inviteChannel = (await interaction.guild.channels.fetch()).find(channel => channel.name === "✨│boas-vindas")?.id;
+                    let inviteChannel = await interaction.guild.channels.fetch();
+                    inviteChannel = inviteChannel.find(channel => channel.name === "✨│boas-vindas")
 
                     const classCategory = await interaction.guild.channels.create({
                         name: className,
@@ -785,6 +788,7 @@ client.on(Events.InteractionCreate, async interaction => {
                         const target = await interaction.guild.channels.create({
                             name: channel.name,
                             type: channel.type,
+                            position: channel.position,
                             parent: classCategory.id // Define a categoria da turma
                         })
 
@@ -829,7 +833,7 @@ client.on(Events.InteractionCreate, async interaction => {
                         ephemeral: false
                     }).then(_ => console.log(`${Date()} LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
                 } catch (error) {
-                    console.error(error);
+                    console.error(`${Date()} ERRO - Não foi possivel criar a turma\n${error}`);
                     await interaction.editReply({
                         content: `❌ Erro ao criar ${className}\n` + "```" + error + "```",
                         ephemeral: true
