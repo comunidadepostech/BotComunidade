@@ -657,12 +657,12 @@ client.on(Events.InteractionCreate, async interaction => {
         case "create":
             await interaction.deferReply({ephemeral: true}); // Responde de forma atrasada para evitar timeout
 
-            const createType = interaction.options.getString('type');
-            const className = interaction.options.getString('name');
+            const createType = await interaction.options.getString('type');
+            const className = await interaction.options.getString('name');
 
-            function createInvite(targetRole, targetChannel) {
+            async function createInvite(targetRole, targetChannel) {
                 try{
-                    const invite = targetChannel.createInvite({
+                    const invite = await targetChannel.createInvite({
                         maxAge: 0, // Converte dias para segundos
                         maxUses: 0,
                         unique: true
@@ -670,9 +670,9 @@ client.on(Events.InteractionCreate, async interaction => {
 
                     // Insere o convite no banco de dados
                     db.query(`INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`, [invite.code, targetRole, interaction.guild.id]);
-                    return invite.url;
+                    return invite.url
                 } catch (error) {
-                    interaction.editReply("❌ Erro ao criar convite\n" + "```" + error + "```");
+                    await interaction.editReply("❌ Erro ao criar convite\n" + "```" + error + "```");
                 }
             }
 
@@ -704,16 +704,17 @@ client.on(Events.InteractionCreate, async interaction => {
                         ]
                     });
 
-                    await client.guilds.cache.get(interaction.guild.id).channels.cache.forEach(channel => {
+                    const serverChannels = await client.guilds.cache.get(interaction.guild.id).channels.fetch()
+                    for (const channel of serverChannels) {
                         if (["✨│boas-vindas", "📃│regras", faqChannel, "📅│acontece-aqui", "🚀│talent-lab", "💻│casa-do-código"].includes(channel.name)) { // Ignora canais não especificados
-                            channel.permissionOverwrites.edit(classRole, {
+                            await channel.permissionOverwrites.edit(classRole, {
                                 SendMessages: true,
                                 ViewChannel: true,
                                 ReadMessageHistory: true,
                                 AddReactions: true
                             });
                         }
-                    });
+                    };
 
                     const roles = await interaction.guild.roles.fetch();
                     const inviteChannel = (await interaction.guild.channels.fetch()).find(channel => channel.name === "✨│boas-vindas")?.id;
@@ -778,6 +779,7 @@ client.on(Events.InteractionCreate, async interaction => {
                             }
                         ]
                     });
+
                     for (const channel of classChannels) {
                         if (channel.name === "Turma ") {channel.name += className}
                         const target = await interaction.guild.channels.create({
@@ -785,6 +787,7 @@ client.on(Events.InteractionCreate, async interaction => {
                             type: channel.type,
                             parent: classCategory.id // Define a categoria da turma
                         })
+
                         if (channel.name === "❓│dúvidas") {
                             await target.setAvailableTags(
                                 [
@@ -804,6 +807,7 @@ client.on(Events.InteractionCreate, async interaction => {
                                     {name: "Eventos", moderated: false}
                                 ]
                             );
+
                             for (activate of classActivations) {
                                 if (activate.content.includes("{mention}")) {activate.content = activate.content.replace("{mention}", `<@${classRole.id}>`)} // Substitui o {mention} para a real menção do cargo
                                 await target.threads.create({
@@ -816,10 +820,10 @@ client.on(Events.InteractionCreate, async interaction => {
                         }
 
                         // Cria o convite
-                        const inviteUrl = createInvite(classRole, inviteChannel);
+                        const inviteUrl = await createInvite(classRole, inviteChannel);
 
                         // Responde com o link do invite e outras informações
-                        interaction.editReply({
+                        await interaction.editReply({
                             content: `✅ Turma ${className} criado com sucesso!\n📨 Link: ${inviteUrl}\n👥 Cargo vinculado: ${classRole}`,
                             ephemeral: false
                         }).then(_ => console.log(`${Date()} LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
