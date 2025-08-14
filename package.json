@@ -3,6 +3,7 @@
   "version": "Undefined",
   "main": "main.js",
   "directories": {},
+  "type": "module",
   "scripts": {},
   "author": "Comunidade Pos Tech Fiap",
   "license": "ISC",

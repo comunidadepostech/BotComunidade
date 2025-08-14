@@ -1,6 +1,7 @@
 // Importa as dependencias
-require('dotenv').config();
-const {
+import dotenv from 'dotenv'
+dotenv.config();
+import {
     Client,
     Events,
     GatewayIntentBits,
@@ -10,10 +11,10 @@ const {
     PollLayoutType,
     TextChannel,
     ForumChannel
-} = require("discord.js");
-const mysql = require('mysql2');
-const {somePermissionsChannels, allPermissionsChannels, classActivations, classChannels} = require("./data/classPatterns.mjs");
-const {slashCommands} = require("./data/slashCommands.mjs");
+} from "discord.js"
+import mysql from 'mysql2'
+import {somePermissionsChannels, allPermissionsChannels, classActivations, classChannels} from "./data/classPatterns.mjs"
+import {slashCommands} from "./data/slashCommands.mjs"
 
 
 // Define os principais acessos que o Bot precisa para poder funcionar corretamente

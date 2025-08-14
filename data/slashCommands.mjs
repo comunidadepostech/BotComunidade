@@ -1,4 +1,4 @@
-const {SlashCommandBuilder, PermissionFlagsBits} = require("discord.js")
+import {SlashCommandBuilder, PermissionFlagsBits} from "discord.js"
 
 // Comando de invite, cria um convite que pode ser vinculado a um cargo e a um canal específico.
 const invite = await new SlashCommandBuilder()
