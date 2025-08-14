@@ -820,13 +820,15 @@ client.on(Events.InteractionCreate, async interaction => {
                                 ]
                             );
 
-                            for (activate of classActivations) {
-                                if (activate.content.includes("{mention}")) {activate.content = activate.content.replace("{mention}", `<@${classRole.id}>`)} // Substitui o {mention} para a real menção do cargo
+                            await Promise.all(classActivations.map(async (activate) => {
+                                if (activate.content.includes("{mention}")) {
+                                    activate.content = activate.content.replace("{mention}", `<@${classRole}>`);
+                                }
                                 await target.threads.create({
                                     name: activate.title,
                                     message: {content: activate.content}
                                 });
-                            }
+                            }));
                         } else if (channel.name === "🎥│gravações" || channel.name === "🚨│avisos") {
                             await target.edit({permissionOverwrites: [{id: classRole, deny: ["SendMessages"], allow: ["ViewChannel"]}]})
                         }
