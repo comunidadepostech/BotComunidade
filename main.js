@@ -786,12 +786,12 @@ client.on(Events.InteractionCreate, async interaction => {
                             {
                                 id: interaction.guild.roles.everyone,
                                 deny: ["ViewChannel"]
-                            }]/*
-                            {
-                                id: roles.find(role => role.name === "Equipe Pós-Tech")?.id,
-                                allow: [PermissionsBitField.Flags.ViewChannel]
                             },
                             {
+                                id: roles.find(role => role.name === "Equipe Pós-Tech")?.id,
+                                allow: ["ViewChannel"]
+                            }]
+                            /*{
                                 id: roles.find(role => role.name === "Gestor Acadêmico")?.id,
                                 allow: [
                                     PermissionsBitField.Flags.ViewChannel,
