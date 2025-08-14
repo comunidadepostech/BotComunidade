@@ -10,7 +10,7 @@
 // GUILD_FORUM (15): A channel for organizing discussions.
 //
 // Lembre-se o cargo já tem permiossões definidas no comando create, então não é necessário definir novamente aqui a não ser que queira adicionar mais permissões
-export const classChannels = [
+const classChannels = [
     {name: "🙋‍♂️│apresente-se", type: 0, position: 0},
     {name: "🚨│avisos", type: 0, position: 1},
     {name: "💬│bate-papo", type: 0, position: 2},
@@ -24,7 +24,7 @@ export const classChannels = [
 
 // Certifique-se de primeiro testar a mensagem no discord e depois clique no icone de copiar mensagem (não dê Ctrl+C) e cole dentro de uma String vazia
 // Para marcar o cargo basta adicionar {mention} em qualquer parte da String
-export const classActivations = [
+const classActivations = [
     {
         title: "Integração Calendário",
         content: "# 📢 Integração Calendário + Discord\n" +
@@ -150,5 +150,7 @@ export const classActivations = [
     }
 ]
 
-export const somePermissionsChannels = ["✨│boas-vindas", "📃│regras"] // incluir faq-channel no código
-export const allPermissionsChannels = ["📅│acontece-aqui", "🚀│talent-lab", "💻│casa-do-código"]
+const somePermissionsChannels = ["✨│boas-vindas", "📃│regras"] // incluir faq-channel no código
+const allPermissionsChannels = ["📅│acontece-aqui", "🚀│talent-lab", "💻│casa-do-código"]
+
+module.exports = {somePermissionsChannels, allPermissionsChannels, classActivations, classChannels}
