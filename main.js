@@ -790,50 +790,50 @@ client.on(Events.InteractionCreate, async interaction => {
                             {
                                 id: roles.find(role => role.name === "Equipe Pós-Tech")?.id,
                                 allow: ["ViewChannel"]
-                            }]
-                            /*{
+                            },
+                            {
                                 id: roles.find(role => role.name === "Gestor Acadêmico")?.id,
                                 allow: [
-                                    PermissionsBitField.Flags.ViewChannel,
-                                    PermissionsBitField.Flags.SendMessages,
-                                    PermissionsBitField.Flags.CreatePublicThreads,
-                                    PermissionsBitField.Flags.EmbedLinks,
-                                    PermissionsBitField.Flags.AttachFiles,
-                                    PermissionsBitField.Flags.AddReactions,
-                                    PermissionsBitField.Flags.MentionEveryone,
-                                    PermissionsBitField.Flags.ReadMessageHistory,
-                                    PermissionsBitField.Flags.SendPolls
+                                    "ViewChannel",
+                                    "SendMessages",
+                                    "CreatePublicThreads",
+                                    "EmbedLinks",
+                                    "AttachFiles",
+                                    "AddReactions",
+                                    "MentionEveryone",
+                                    "ReadMessageHistory",
+                                    "SendPolls"
                                 ]
                             },
                             {
                                 id: roles.find(role => role.name === "Coordenação")?.id,
                                 allow: [
-                                    PermissionsBitField.Flags.ViewChannel,
-                                    PermissionsBitField.Flags.SendMessages,
-                                    PermissionsBitField.Flags.CreatePublicThreads,
-                                    PermissionsBitField.Flags.EmbedLinks,
-                                    PermissionsBitField.Flags.AttachFiles,
-                                    PermissionsBitField.Flags.AddReactions,
-                                    PermissionsBitField.Flags.MentionEveryone,
-                                    PermissionsBitField.Flags.ReadMessageHistory,
-                                    PermissionsBitField.Flags.SendPolls
+                                    "ViewChannel",
+                                    "SendMessages",
+                                    "CreatePublicThreads",
+                                    "EmbedLinks",
+                                    "AttachFiles",
+                                    "AddReactions",
+                                    "MentionEveryone",
+                                    "ReadMessageHistory",
+                                    "SendPolls"
                                 ]
                             },
                             {
                                 id: roles.find(role => role.name === "Professores")?.id,
                                 allow: [
-                                    PermissionsBitField.Flags.ViewChannel,
-                                    PermissionsBitField.Flags.SendMessages,
-                                    PermissionsBitField.Flags.CreatePublicThreads,
-                                    PermissionsBitField.Flags.EmbedLinks,
-                                    PermissionsBitField.Flags.AttachFiles,
-                                    PermissionsBitField.Flags.AddReactions,
-                                    PermissionsBitField.Flags.MentionEveryone,
-                                    PermissionsBitField.Flags.ReadMessageHistory,
-                                    PermissionsBitField.Flags.SendPolls
+                                    "ViewChannel",
+                                    "SendMessages",
+                                    "CreatePublicThreads",
+                                    "EmbedLinks",
+                                    "AttachFiles",
+                                    "AddReactions",
+                                    "MentionEveryone",
+                                    "ReadMessageHistory",
+                                    "SendPolls"
                                 ]
                             }
-                        ]*/
+                        ]
                     });
 
                     for (const channel of classChannels) {
