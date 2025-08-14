@@ -718,7 +718,70 @@ client.on(Events.InteractionCreate, async interaction => {
                             //permissionOverwrites: []
                         }).then(async (target) => {
                             if (channel.name === "❓│dúvidas") {
-                                await target.setAvailableTags(["Geral", "Tech Challenge", "Fase 1", "Fase 2", "Fase 3", "Fase 4", "Fase 5", "Alura", "Beneficios", "Financeiro", "Atividade presencial", "Lives", "Notas", "Eventos"]);
+                                await target.setAvailableTags(
+                                    [
+                                        {
+                                            name: "Geral",
+                                            moderated: false
+                                        },
+                                        {
+                                            name: "Tech Challenge",
+                                            moderated: false
+                                        },
+                                        {
+                                            name: "Fase 1",
+                                            moderated: false
+                                        },
+                                        {
+                                            name: "Fase 2",
+                                            moderated: false
+                                        },
+                                        {
+                                            name:"Fase 3",
+                                            moderated: false
+                                        },
+                                        {
+                                            name: "Fase 4",
+                                            moderated: false
+                                        },
+                                        {
+                                            name: "Fase 5",
+                                            moderated: false
+                                        },
+                                        {
+                                            name: "Alura",
+                                            moderated: false
+                                        },
+                                        {
+                                            name: "Beneficios",
+                                            moderated: false
+                                        },
+                                        {
+                                            name: "Financeiro",
+                                            moderated: false
+                                        },
+                                        {
+                                            name: "Atividade presencial",
+                                            moderated: false
+                                        },
+                                        {
+                                            name: "Lives",
+                                            moderated: false
+                                        },
+                                        {
+                                            name: "Notas",
+                                            moderated: false
+                                        },
+                                        {
+                                            name: "Eventos",
+                                            moderated: false
+                                        }
+                                    ]
+                                );
+                                await target.threads.create({
+                                    name: "titulo teste",
+                                    message: {content: "Conteúdo teste"},
+                                })
                                 await target.threads.create({
                                     name: "titulo teste",
                                     message: {content: "Conteúdo teste"},
