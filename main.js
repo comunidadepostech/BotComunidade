@@ -697,6 +697,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     });
 
                     const roles = await interaction.guild.roles.fetch();
+                    const inviteChannel = (await interaction.guild.channels.fetch()).find(channel => channel.name === "✨│boas-vindas")?.id;
 
                     const classCategory = await interaction.guild.channels.create({
                         name: className,
@@ -758,7 +759,6 @@ client.on(Events.InteractionCreate, async interaction => {
                             }
                         ]
                     });
-
                     for (const channel of classChannels) {
                         const target = await interaction.guild.channels.create({
                             name: channel.name,
@@ -794,6 +794,22 @@ client.on(Events.InteractionCreate, async interaction => {
                         } else if (channel.name === "🎥│gravações" || channel.name === "🚨│avisos") {
                             await target.edit({permissionOverwrites: [{id: classRole, deny: ["SendMessages"], allow: ["ViewChannel"]}]})
                         }
+
+                        // Cria o convite
+                        const invite = await channel.createInvite({
+                            maxAge: 0, // Converte dias para segundos
+                            maxUses: 0,
+                            unique: true
+                        });
+
+                        // Insere o convite no banco de dados
+                        db.query(`INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`, [invite.code, classRole, interaction.guild.id]);
+
+                        // Responde com o link do invite e outras informações
+                        interaction.editReply({
+                            content: `✅ Turma criada com sucesso!\nTurma ${className} criado com sucesso!\n📨 Link: ${invite.url}\n📍 Canal: ${channel}\n⏱️ Duração: Permanente\n🔢 Usos máximos: Ilimitado\n👥 Cargo vinculado: ${classRole}`,
+                            ephemeral: true
+                        }).then(_ => console.log(`${Date()} LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
                     }
                 } catch (error) {
                     console.error(error);
