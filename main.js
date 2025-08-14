@@ -10,11 +10,14 @@ import {
     EmbedBuilder,
     PollLayoutType,
     TextChannel,
-    ForumChannel
+    ForumChannel,
+    AttachmentBuilder
 } from "discord.js"
 import mysql from 'mysql2'
 import {somePermissionsChannels, allPermissionsChannels, classActivations, classChannels} from "./data/classPatterns.mjs"
 import {slashCommands} from "./data/slashCommands.mjs"
+import Canvas from '@napi-rs/canvas'
+import request  from 'undici'
 
 
 // Define os principais acessos que o Bot precisa para poder funcionar corretamente
@@ -597,6 +600,49 @@ client.on(Events.GuildMemberAdd, async member => {
 
     // Tenta buscar o invite usado pelo novo membro
     try {
+        const applyText = (canvas, text) => {
+            const context = canvas.getContext('2d');
+
+            // Declare a base size of the font
+            let fontSize = 70;
+
+            do {
+                // Assign the font to the context and decrement it so it can be measured again
+                context.font = `${fontSize -= 10}px sans-serif`;
+                // Compare pixel width of the text to the canvas minus the approximate avatar size
+            } while (context.measureText(text).width > canvas.width - 300);
+
+            // Return the result to use in the actual canvas
+            return context.font;
+        };
+
+        async function sendWelcome(profile, targetChannel){
+            const canvas = Canvas.createCanvas(1401, 571);
+            const context = canvas.getContext('2d');
+            const background = await Canvas.loadImage('./data/wallpaper.png');
+            context.drawImage(background, 0, 0, canvas.width, canvas.height);
+            const attachment = new AttachmentBuilder(await canvas.encode('png'), { name: 'profile-image.png' });
+
+            const { body } = await request(profile.displayAvatarURL({ extension: 'jpg' }));
+            const avatar = await Canvas.loadImage(await body.arrayBuffer());
+
+            context.drawImage(avatar, 25, 25, 200, 200);
+            context.beginPath();
+            context.arc(125, 125, 100, 0, Math.PI * 2, true);
+            context.closePath();
+            context.clip();
+
+            context.font = '28px sans-serif';
+            context.fillStyle = '#ffffff';
+            context.fillText('Profile', canvas.width / 2.5, canvas.height / 3.5);
+
+            context.font = applyText(canvas, profile.displayName);
+            context.fillStyle = '#ffffff';
+            context.fillText(profile.displayName, canvas.width / 2.5, canvas.height / 1.8);
+
+            targetChannel.send({ files: [attachment] });
+        }
+
         let used_invite;
         const cachedInvites = await member.guild.invites.fetch();
 
@@ -622,7 +668,8 @@ client.on(Events.GuildMemberAdd, async member => {
         try {
         const welcomeChannel = member.guild.channels.cache.find(channel => channel.name === "✨│boas-vindas");
         if (welcomeChannel) {
-            await welcomeChannel.send(`Olá ${member}, seja bem-vindo(a) a comunidade!`);
+            //await welcomeChannel.send(`Olá ${member}, seja bem-vindo(a) a comunidade!`);
+            await sendWelcome(member, welcomeChannel);
         }} catch (error) {
             console.error(`${Date()} ERRO - Falha ao enviar mensagem de boas-vindas:`, error);
         }
