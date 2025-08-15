@@ -623,6 +623,11 @@ client.on(Events.GuildMemberAdd, async member => {
 
             const background = await loadImage('./data/wallpaper.png');
 
+            const { body } = await request(profile.displayAvatarURL({ extension: 'jpg' }));
+            const avatar = await loadImage(await body.arrayBuffer());
+
+            context.drawImage(avatar, 25, 0, 200, canvas.height);
+
             context.drawImage(background, 0, 0, canvas.width, canvas.height);
 
             const attachment = new AttachmentBuilder(await canvas.encode('png'), { name: 'profile-image.png' });
