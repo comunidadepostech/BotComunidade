@@ -639,11 +639,11 @@ client.on(Events.GuildMemberAdd, async member => {
 
             context.font = '28px sans-serif';
             context.fillStyle = '#ffffff';
-            context.fillText('Profile', 334, canvas.height / 2);
+            context.fillText('Profile', 0, 0);
 
             context.font = applyText(canvas, `${profile.displayName}!`);
             context.fillStyle = '#ffffff';
-            context.fillText(`${profile.displayName}!`, 334, canvas.height / 2);
+            context.fillText(`${profile.displayName}!`, 0, 0);
 
             const pngBuffer = Buffer.from(await canvas.encode('png'));
             const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
