@@ -631,7 +631,7 @@ client.on(Events.GuildMemberAdd, async member => {
             context.drawImage(background, 0, 0, canvas.width, canvas.height);
             context.save();
             context.beginPath();
-            context.arc(314, 314, 256, 0, Math.PI * 2, true);
+            context.arc(285, 285, 256, 0, Math.PI * 2, true);
             context.closePath();
             context.clip();
             context.drawImage(avatar, 29, 29, 512, 512);
@@ -639,11 +639,11 @@ client.on(Events.GuildMemberAdd, async member => {
 
             context.font = '28px sans-serif';
             context.fillStyle = '#ffffff';
-            context.fillText('Profile', canvas.width / 2.5, canvas.height / 3.5);
+            context.fillText('Profile', 334, canvas.height / 2);
 
             context.font = applyText(canvas, `${profile.displayName}!`);
             context.fillStyle = '#ffffff';
-            context.fillText(`${profile.displayName}!`, canvas.width / 2.5, canvas.height / 1.8);
+            context.fillText(`${profile.displayName}!`, 334, canvas.height / 2);
 
             const pngBuffer = Buffer.from(await canvas.encode('png'));
             const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
