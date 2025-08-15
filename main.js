@@ -623,13 +623,27 @@ client.on(Events.GuildMemberAdd, async member => {
 
             const background = await loadImage('./data/wallpaper.png');
 
-            const avatarUrl = profile.displayAvatarURL({ extension: 'png', size: 256 });
+            const avatarUrl = profile.displayAvatarURL({ extension: 'png', size: 512 });
             const { body } = await request(avatarUrl);
             const avatarBuffer = Buffer.from(await body.arrayBuffer());
             const avatar = await loadImage(avatarBuffer);
 
             context.drawImage(background, 0, 0, canvas.width, canvas.height);
-            context.drawImage(avatar, 25, 0, 200, 200);
+            context.save();
+            context.beginPath();
+            context.arc(125, 125, 256, 0, Math.PI * 2, true);
+            context.closePath();
+            context.clip();
+            context.drawImage(avatar, 25, 0, 512, 512);
+            context.restore();
+
+            context.font = '28px sans-serif';
+            context.fillStyle = '#ffffff';
+            context.fillText('Profile', canvas.width / 2.5, canvas.height / 3.5);
+
+            context.font = applyText(canvas, `${profile.displayName}!`);
+            context.fillStyle = '#ffffff';
+            context.fillText(`${profile.displayName}!`, canvas.width / 2.5, canvas.height / 1.8);
 
             const pngBuffer = Buffer.from(await canvas.encode('png'));
             const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
