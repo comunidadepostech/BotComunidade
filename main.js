@@ -628,14 +628,14 @@ client.on(Events.GuildMemberAdd, async member => {
             const avatarBuffer = Buffer.from(await body.arrayBuffer());
             const avatar = await loadImage(avatarBuffer);
 
-            context.drawImage(background, 0, 0, canvas.width, canvas.height);
+            /*context.drawImage(background, 0, 0, canvas.width, canvas.height);
             context.save();
             context.beginPath();
             context.arc(285, 285, 256, 0, Math.PI * 2, true);
             context.closePath();
             context.clip();
             context.drawImage(avatar, 29, 29, 512, 512);
-            context.restore();
+            context.restore();*/
 
             context.font = '28px sans-serif';
             context.fillStyle = '#ffffff';
