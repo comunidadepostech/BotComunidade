@@ -617,22 +617,24 @@ client.on(Events.GuildMemberAdd, async member => {
             return context.font;
         };
 
-        async function sendWelcome(profile, targetChannel){
+        async function sendWelcome(profile, targetChannel) {
             const canvas = createCanvas(1401, 571);
             const context = canvas.getContext('2d');
 
             const background = await loadImage('./data/wallpaper.png');
 
-            const { body } = await request(profile.displayAvatarURL({ extension: 'jpg' }));
-            const avatar = await loadImage(await body.arrayBuffer());
-
-            context.drawImage(avatar, 25, 0, 200, 200);
+            const avatarUrl = profile.displayAvatarURL({ extension: 'png', size: 256 });
+            const { body } = await request(avatarUrl);
+            const avatarBuffer = Buffer.from(await body.arrayBuffer());
+            const avatar = await loadImage(avatarBuffer);
 
             context.drawImage(background, 0, 0, canvas.width, canvas.height);
+            context.drawImage(avatar, 25, 0, 200, 200);
 
-            const attachment = new AttachmentBuilder(await canvas.encode('png'), { name: 'profile-image.png' });
+            const pngBuffer = Buffer.from(await canvas.encode('png'));
+            const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
 
-            targetChannel.send({files: [attachment]});
+            targetChannel.send({ files: [attachment] });
         }
 
         let used_invite;
