@@ -177,8 +177,39 @@ client.once(Events.ClientReady, async c => {
 client.on(Events.InteractionCreate, async interaction => {
     switch (interaction.commandName) {
         case "ping":
-            await interaction.reply({content: "pong!", ephemeral: true});
+            //await interaction.reply({content: "pong!", ephemeral: true});
             console.log(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
+
+            const applyText = (canvas, text) => {
+                const context = canvas.getContext('2d');
+
+                // Declare a base size of the font
+                let fontSize = 70;
+
+                do {
+                    // Assign the font to the context and decrement it so it can be measured again
+                    context.font = `${fontSize -= 10}px sans-serif`;
+                    // Compare pixel width of the text to the canvas minus the approximate avatar size
+                } while (context.measureText(text).width > canvas.width - 300);
+
+                // Return the result to use in the actual canvas
+                return context.font;
+            };
+
+            async function sendWelcome(profile, targetChannel) {
+                const canvas = createCanvas(1401, 571);
+                const context = canvas.getContext('2d');
+
+                context.font = '28px sans-serif';
+                context.fillStyle = '#ff0000';
+                context.fillText('Profile', 0, 200);
+
+
+                const pngBuffer = Buffer.from(await canvas.encode('png'));
+                const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
+
+                targetChannel.send({ files: [attachment] });
+            }
             break;
 
         case "invite":
