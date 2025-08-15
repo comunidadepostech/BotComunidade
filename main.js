@@ -20,6 +20,8 @@ import {Canvas, createCanvas, Image, loadImage, GlobalFonts} from '@napi-rs/canv
 import {request}  from 'undici'
 import {readFile} from 'fs/promises'
 
+GlobalFonts.registerFromPath("./data/Coolvetica Hv Comp.otf", "normalFont")
+
 console.info(GlobalFonts.families)
 
 // Define os principais acessos que o Bot precisa para poder funcionar corretamente
