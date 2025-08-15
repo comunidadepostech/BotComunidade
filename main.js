@@ -16,11 +16,11 @@ import {
 import mysql from 'mysql2'
 import {somePermissionsChannels, allPermissionsChannels, classActivations, classChannels} from "./data/classPatterns.mjs"
 import {slashCommands} from "./data/slashCommands.mjs"
-import {Canvas, createCanvas, Image, loadImage} from '@napi-rs/canvas'
+import {Canvas, createCanvas, Image, loadImage, GlobalFonts} from '@napi-rs/canvas'
 import {request}  from 'undici'
 import {readFile} from 'fs/promises'
 
-
+console.info(GlobalFonts.families)
 
 // Define os principais acessos que o Bot precisa para poder funcionar corretamente
 const client = new Client({intents: [
@@ -208,6 +208,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 context.fillStyle = '#ff0000';
                 context.fillText('Profile', 0, 200);
 
+                context.strokeText("abc", 20, 200)
 
                 const pngBuffer = Buffer.from(await canvas.encode('png'));
                 const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
