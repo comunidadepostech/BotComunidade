@@ -172,38 +172,8 @@ client.once(Events.ClientReady, async c => {
 client.on(Events.InteractionCreate, async interaction => {
     switch (interaction.commandName) {
         case "ping":
-            //await interaction.reply({content: "pong!", ephemeral: true});
+            await interaction.reply({content: "pong!", ephemeral: true});
             console.log(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
-            const applyText = (canvas, text) => {
-                const context = canvas.getContext('2d');
-
-                // Declare a base size of the font
-                let fontSize = 70;
-
-                do {
-                    // Assign the font to the context and decrement it so it can be measured again
-                    context.font = `${fontSize -= 10}px sans-serif`;
-                    // Compare pixel width of the text to the canvas minus the approximate avatar size
-                } while (context.measureText(text).width > canvas.width - 300);
-
-                // Return the result to use in the actual canvas
-                return context.font;
-            };
-
-            async function sendWelcome(profile) {
-                const canvas = createCanvas(1401, 571);
-                const context = canvas.getContext('2d');
-
-                context.font = '28px normalFont';
-                context.fillStyle = '#ff0000';
-                context.fillText('Profile', 0, 200);
-
-                const pngBuffer = Buffer.from(await canvas.encode('png'));
-                const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
-
-                interaction.channel.send({ files: [attachment] });
-            }
-            await sendWelcome()
             break;
 
         case "invite":
@@ -625,22 +595,6 @@ client.on(Events.GuildMemberAdd, async member => {
 
     // Tenta buscar o invite usado pelo novo membro
     try {
-        const applyText = (canvas, text) => {
-            const context = canvas.getContext('2d');
-
-            // Declare a base size of the font
-            let fontSize = 70;
-
-            do {
-                // Assign the font to the context and decrement it so it can be measured again
-                context.font = `${fontSize -= 10}px sans-serif`;
-                // Compare pixel width of the text to the canvas minus the approximate avatar size
-            } while (context.measureText(text).width > canvas.width - 300);
-
-            // Return the result to use in the actual canvas
-            return context.font;
-        };
-
         async function sendWelcome(profile, targetChannel) {
             const canvas = createCanvas(1401, 571);
             const context = canvas.getContext('2d');
@@ -652,22 +606,21 @@ client.on(Events.GuildMemberAdd, async member => {
             const avatarBuffer = Buffer.from(await body.arrayBuffer());
             const avatar = await loadImage(avatarBuffer);
 
-            /*context.drawImage(background, 0, 0, canvas.width, canvas.height);
+            // Insere o fundo e corta a foto de perfil do usuário em formato de círculo
+            context.drawImage(background, 0, 0, canvas.width, canvas.height);
             context.save();
             context.beginPath();
             context.arc(285, 285, 256, 0, Math.PI * 2, true);
             context.closePath();
             context.clip();
             context.drawImage(avatar, 29, 29, 512, 512);
-            context.restore();*/
+            context.restore();
 
-            context.font = '28px sans-serif';
+            // Insere uma mensagem de boas-vindas que utiliza o nome do usuário
+            context.font = '100px normalFont';
             context.fillStyle = '#ffffff';
-            context.fillText('Profile', 0, 20);
-
-            context.font = applyText(canvas, `${profile.displayName}!`);
-            context.fillStyle = '#ffffff';
-            context.fillText(`${profile.displayName}!`, 0, 20);
+            context.fillText('Bem vindo!', 0, 150);
+            context.fillText(`${profile.displayName}`, 0, 250);
 
             const pngBuffer = Buffer.from(await canvas.encode('png'));
             const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
