@@ -626,7 +626,7 @@ client.on(Events.GuildMemberAdd, async member => {
             const { body } = await request(profile.displayAvatarURL({ extension: 'jpg' }));
             const avatar = await loadImage(await body.arrayBuffer());
 
-            context.drawImage(avatar, 25, 0, 200, canvas.height);
+            context.drawImage(avatar, 25, 0, 200, 200);
 
             context.drawImage(background, 0, 0, canvas.width, canvas.height);
 
