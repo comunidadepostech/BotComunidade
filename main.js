@@ -20,6 +20,8 @@ import {Canvas, createCanvas, Image, loadImage} from '@napi-rs/canvas'
 import {request}  from 'undici'
 import {readFile} from 'fs/promises'
 
+
+
 // Define os principais acessos que o Bot precisa para poder funcionar corretamente
 const client = new Client({intents: [
         GatewayIntentBits.Guilds,
@@ -33,25 +35,28 @@ const client = new Client({intents: [
     ]});
 
 
-
 // Conexão com o banco de dados MySQL
-const db = mysql.createConnection({
-    host: process.env.MYSQLHOST,
-    user: process.env.MYSQLUSER,
-    password: process.env.MYSQL_ROOT_PASSWORD,
-    database: process.env.MYSQLDATABASE,
-    waitForConnections: true
-});
+async function dbConnect(database) {
+    global.db = database.createConnection({
+        host: process.env.MYSQLHOST,
+        user: process.env.MYSQLUSER,
+        password: process.env.MYSQL_ROOT_PASSWORD,
+        database: process.env.MYSQLDATABASE,
+        waitForConnections: true
+    });
 
-db.connect((err) => {
-    if (err) {
-        console.error('Erro ao conectar no MySQL:', err);
-        process.exit(1); // Encerra o processo se não conseguir conectar ao banco de dados para tentar novamente
-    }
-});
+    db.connect((err) => {
+        if (err) {
+            console.error('Erro ao conectar no MySQL:', err);
+            process.exit(1); // Encerra o processo se não conseguir conectar ao banco de dados para tentar novamente
+        }
+    });
+}
+
+await dbConnect(mysql);
 
 // Cria a tabela de convites, caso não exista
-function initializeTables() {
+async function initializeTables() {
     try {
         // Cria a tabela de convites
         db.query(`
@@ -78,7 +83,7 @@ function initializeTables() {
     }
 }
 
-initializeTables();
+await initializeTables();
 
 
 
@@ -179,7 +184,7 @@ client.on(Events.InteractionCreate, async interaction => {
         case "ping":
             //await interaction.reply({content: "pong!", ephemeral: true});
             console.log(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
-
+            const targetChannel = interaction.channel;
             const applyText = (canvas, text) => {
                 const context = canvas.getContext('2d');
 
