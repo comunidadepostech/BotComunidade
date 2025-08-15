@@ -200,7 +200,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 return context.font;
             };
 
-            async function sendWelcome(profile, targetChannel) {
+            async function sendWelcome(profile) {
                 const canvas = createCanvas(1401, 571);
                 const context = canvas.getContext('2d');
 
@@ -212,10 +212,9 @@ client.on(Events.InteractionCreate, async interaction => {
                 const pngBuffer = Buffer.from(await canvas.encode('png'));
                 const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
 
-                targetChannel.send({ files: [attachment] });
+                interaction.channel.send({ files: [attachment] });
             }
-
-            await sendWelcome(interaction.channel)
+            await sendWelcome()
             break;
 
         case "invite":
