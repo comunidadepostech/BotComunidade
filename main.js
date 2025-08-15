@@ -184,7 +184,6 @@ client.on(Events.InteractionCreate, async interaction => {
         case "ping":
             //await interaction.reply({content: "pong!", ephemeral: true});
             console.log(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
-            const targetChannel = interaction.channel;
             const applyText = (canvas, text) => {
                 const context = canvas.getContext('2d');
 
@@ -215,6 +214,8 @@ client.on(Events.InteractionCreate, async interaction => {
 
                 targetChannel.send({ files: [attachment] });
             }
+
+            await sendWelcome(interaction.channel)
             break;
 
         case "invite":
