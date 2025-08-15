@@ -16,7 +16,7 @@ import {
 import mysql from 'mysql2'
 import {somePermissionsChannels, allPermissionsChannels, classActivations, classChannels} from "./data/classPatterns.mjs"
 import {slashCommands} from "./data/slashCommands.mjs"
-import {Canvas, createCanvas, Image} from '@napi-rs/canvas'
+import {Canvas, createCanvas, Image, loadImage} from '@napi-rs/canvas'
 import {request}  from 'undici'
 import {readFile} from 'fs/promises'
 
@@ -621,7 +621,7 @@ client.on(Events.GuildMemberAdd, async member => {
             const canvas = createCanvas(1401, 571);
             const context = canvas.getContext('2d');
 
-            const background = await Canvas.loadImage('./wallpaper.jpg');
+            const background = await loadImage('./wallpaper.jpg');
 
             context.drawImage(background, 0, 0, canvas.width, canvas.height);
 
