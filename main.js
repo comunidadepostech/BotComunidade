@@ -621,34 +621,13 @@ client.on(Events.GuildMemberAdd, async member => {
             const canvas = createCanvas(1401, 571);
             const context = canvas.getContext('2d');
 
-            const background = await readFile('./data/wallpaper.png');
-            const backgroundImage = new Image();
-            backgroundImage.src = background;
-            context.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+            const background = await Canvas.loadImage('./wallpaper.jpg');
 
-            context.font = '28px sans-serif';
-            context.fillStyle = '#ffffff';
-            context.fillText('Profile', canvas.width / 2.5, canvas.height / 3.5);
+            context.drawImage(background, 0, 0, canvas.width, canvas.height);
 
-            context.font = applyText(canvas, `${profile.displayName}!`);
-            context.fillStyle = '#ffffff';
-            context.fillText(`${profile.displayName}!`, canvas.width / 2.5, canvas.height / 1.8);
+            const attachment = new AttachmentBuilder(await canvas.encode('png'), { name: 'profile-image.png' });
 
-            context.beginPath();
-            context.arc(125, 125, 100, 0, Math.PI * 2, true);
-            context.closePath();
-            context.clip();
-
-            const { body } = await request(profile.displayAvatarURL({ format: 'jpg' }));
-            const avatar = new Image();
-            avatar.src = Buffer.from(await body.arrayBuffer());
-            context.drawImage(avatar, 25, 25, 200, 200);
-
-            const attachment = new AttachmentBuilder(canvas.toBuffer('image/png'), { name: 'profile-image.png' });
-
-            targetChannel.send(
-                {files: [{attachment: attachment, name: "profile-image.png"}] }
-            );
+            targetChannel.send({files: [attachment]});
         }
 
         let used_invite;
