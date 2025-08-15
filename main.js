@@ -21,7 +21,6 @@ import {request}  from 'undici'
 import {readFile} from 'fs/promises'
 
 GlobalFonts.registerFromPath("./data/Coolvetica Hv Comp.otf", "normalFont")
-
 console.info(GlobalFonts.families)
 
 // Define os principais acessos que o Bot precisa para poder funcionar corretamente
@@ -68,7 +67,7 @@ async function initializeTables() {
                 server_id VARCHAR(22) NOT NULL
             )
         `);
-        console.log('Tabela de convites verificada com sucesso');
+        console.info('Tabela de convites verificada com sucesso');
 
         // Cria a tabela de enquetes
         db.query(`
@@ -78,7 +77,7 @@ async function initializeTables() {
                 ended_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        console.log('Tabela de enquetes verificada com sucesso');
+        console.info('Tabela de enquetes verificada com sucesso');
     } catch (err) {
         console.error('Erro ao inicializar tabelas:', err);
         process.exit(1); // Encerra o processo se não conseguir criar as tabelas
@@ -109,7 +108,6 @@ async function processPollQueue(poll_id) {
                 ]),
                 duration: `${((d1-d2)/1000/60/60).toFixed(0)}:${((d1 - d2)/1000/60).toFixed(0)}:${((d1 - d2)/1000).toFixed(0)}` // Converte de milissegundos para horas
             };
-            console.log(d1 - d2, );
             db.promise().query('INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)', [poll_data.id, JSON.stringify(poll_json)]);
         }
     } catch (error) {
@@ -137,7 +135,7 @@ process.on('SIGINT', () => {
         if (err) {
             console.error('Erro ao fechar a conexão com o MySQL:', err);
         } else {
-            console.log('Conexão com o MySQL fechada');
+            console.info('Conexão com o MySQL fechada');
         }
         process.exit(0);
     })
@@ -147,16 +145,16 @@ process.on('SIGINT', () => {
 
 // Define o que o bot deve fazer ao ser iniciado, no caso, imprime uma mensagem de online e cria os comandos existentes
 client.once(Events.ClientReady, async c => {
-    console.log(`${Date()} LOG - Inicializando cliente ${client.user.username} com ID ${client.user.id}`);
+    console.info(`${Date()} LOG - Inicializando cliente ${client.user.username} com ID ${client.user.id}`);
 
-    console.log(`${Date()} LOG - Iniciando registro de comandos`);
+    console.info(`${Date()} LOG - Iniciando registro de comandos`);
     async function loadCommand(commandName, command) {
         for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
             try {
                 await client.application.commands.create(command, id);
-                console.log(`${Date()} COMANDOS - ${commandName} cadastrado em: ${id}`);
+                console.info(`${Date()} COMANDOS - ${commandName} cadastrado em: ${id}`);
             } catch (error) {
-                console.log(`${Date()} ERRO - ${commandName} não cadastrado em: ${id}\n${error}`);
+                console.info(`${Date()} ERRO - ${commandName} não cadastrado em: ${id}\n${error}`);
             }
         }
     }
@@ -173,7 +171,7 @@ client.on(Events.InteractionCreate, async interaction => {
     switch (interaction.commandName) {
         case "ping":
             await interaction.reply({content: "pong!", ephemeral: true});
-            console.log(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
+            console.info(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
             break;
 
         case "invite":
@@ -197,7 +195,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 await interaction.reply({
                     content: `✅ Convite criado com sucesso!\n📨 Link: ${invite.url}\n📍 Canal: ${channel}\n⏱️ Duração: ${duration === 0 ? 'Permanente' : `${duration} dias`}\n🔢 Usos máximos: ${maxUses === 0 ? 'Ilimitado' : maxUses}\n👥 Cargo vinculado: ${role}`,
                     ephemeral: true // Faz a resposta ser visível apenas para quem executou o comando
-                }).then(_ => console.log(`${Date()} LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
+                }).then(_ => console.info(`${Date()} LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
             } catch (error) {
                 console.error(`${Date()} Erro ao criar convite:`, error);
                 await interaction.reply({
@@ -222,7 +220,7 @@ client.on(Events.InteractionCreate, async interaction => {
                         content: `✅ Mensagem enviada para ${echoChannel} com sucesso!`,
                         ephemeral: true
                     });
-                    console.log(`${Date()} LOG - echo ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
+                    console.info(`${Date()} LOG - echo ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
                 }).catch(error => {
                     console.error(`${Date()} ERRO - Falha ao enviar mensagem:`, error);
                     interaction.reply({
@@ -263,7 +261,7 @@ client.on(Events.InteractionCreate, async interaction => {
                                     if (err) {
                                         console.error(`${Date()} ERRO - Erro ao remover convite inválido:`, err);
                                     } else {
-                                        console.log(`${Date()} LOG - Convite inválido removido: ${invite.invite}`);
+                                        console.info(`${Date()} LOG - Convite inválido removido: ${invite.invite}`);
                                     }
                                 });
                             }
@@ -528,7 +526,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     await interaction.editReply({
                         content: `✅ Turma ${className} criado com sucesso!\n📨 Link: ${inviteUrl}\n👥 Cargo vinculado: ${classRole}`,
                         ephemeral: false
-                    }).then(_ => console.log(`${Date()} LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
+                    }).then(_ => console.info(`${Date()} LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
                 } catch (error) {
                     console.error(`${Date()} ERRO - Não foi possivel criar a turma\n${error}`);
                     await interaction.editReply({
@@ -619,8 +617,8 @@ client.on(Events.GuildMemberAdd, async member => {
             // Insere uma mensagem de boas-vindas que utiliza o nome do usuário
             context.font = '100px normalFont';
             context.fillStyle = '#ffffff';
-            context.fillText('Bem vindo!', 562, 200);
-            context.fillText(`${profile.displayName}`, 562, 300);
+            context.fillText('Bem vindo!', 612, 250);
+            context.fillText(`${profile.displayName}`, 612, 350);
 
             const pngBuffer = Buffer.from(await canvas.encode('png'));
             const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
@@ -642,12 +640,12 @@ client.on(Events.GuildMemberAdd, async member => {
         }
 
         if (!used_invite) {
-            console.log(`${Date()} ERRO - Não foi possível determinar o convite usado`);
+            console.error(`${Date()} ERRO - Não foi possível determinar o convite usado`);
             return;
         }
 
         // Registra o log de entrada do membro
-        console.log(`${Date()} LOG - ${member.user.username} entrou no servidor ${member.guild.name} com o código: ${used_invite}`);
+        console.info(`${Date()} LOG - ${member.user.username} entrou no servidor ${member.guild.name} com o código: ${used_invite}`);
 
         // Busca o canal de boas-vindas e envia a mensagem
         try {
@@ -668,18 +666,18 @@ client.on(Events.GuildMemberAdd, async member => {
 
                 // Verifica se há resultados
                 if (!rows || rows.length === 0) {
-                    console.log(`${Date()} ERRO - Nenhum cargo vinculado ao convite usado`);
+                    console.error(`${Date()} ERRO - Nenhum cargo vinculado ao convite usado`);
                     return;
                 }
 
                 const welcome_role = await member.guild.roles.cache.find(role => role.name === rows[0].role);
                 if (!welcome_role) {
-                    console.log(`ERRO - Cargo ${rows[0].role} não encontrado no servidor`);
+                    console.error(`ERRO - Cargo ${rows[0].role} não encontrado no servidor`);
                     return;
                 }
 
                 await member.roles.add(welcome_role);
-                console.log(`${Date()} LOG - ${member.user.username} adicionado ao cargo ${welcome_role.name}`);
+                console.info(`${Date()} LOG - ${member.user.username} adicionado ao cargo ${welcome_role.name}`);
             }
         );
     } catch (error) {
@@ -690,8 +688,8 @@ client.on(Events.GuildMemberAdd, async member => {
 
 
 try {
-    client.login(process.env.TOKEN).then(_ => console.log(`${Date()}`));
+    client.login(process.env.TOKEN).then(_ => console.info(`${Date()}`));
 
 } catch (error) {
-    console.log(`${Date()} ERRO - Bot não iniciado\n${error}`);
+    console.error(`${Date()} ERRO - Bot não iniciado\n${error}`);
 }
