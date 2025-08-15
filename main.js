@@ -16,13 +16,9 @@ import {
 import mysql from 'mysql2'
 import {somePermissionsChannels, allPermissionsChannels, classActivations, classChannels} from "./data/classPatterns.mjs"
 import {slashCommands} from "./data/slashCommands.mjs"
-import {Canvas, createCanvas, Image, loadImage, GlobalFonts } from '@napi-rs/canvas'
+import {Canvas, createCanvas, Image, loadImage} from '@napi-rs/canvas'
 import {request}  from 'undici'
 import {readFile} from 'fs/promises'
-
-
-GlobalFonts.registerFromPath('./data/Coolvetica Hv Comp.otf', 'normalFont');
-
 
 // Define os principais acessos que o Bot precisa para poder funcionar corretamente
 const client = new Client({intents: [
@@ -612,7 +608,7 @@ client.on(Events.GuildMemberAdd, async member => {
 
             do {
                 // Assign the font to the context and decrement it so it can be measured again
-                context.font = `${fontSize -= 10}px normalFont`;
+                context.font = `${fontSize -= 10}px sans-serif`;
                 // Compare pixel width of the text to the canvas minus the approximate avatar size
             } while (context.measureText(text).width > canvas.width - 300);
 
@@ -640,7 +636,7 @@ client.on(Events.GuildMemberAdd, async member => {
             context.drawImage(avatar, 29, 29, 512, 512);
             context.restore();*/
 
-            context.font = 'normalFont';
+            context.font = '28px sans-serif';
             context.fillStyle = '#ffffff';
             context.fillText('Profile', 0, 20);
 
