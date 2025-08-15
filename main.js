@@ -149,18 +149,7 @@ process.on('SIGINT', () => {
 client.once(Events.ClientReady, async c => {
     console.log(`${Date()} LOG - Inicializando cliente ${client.user.username} com ID ${client.user.id}`);
 
-
-
-    /* Cada comando é seguido pela ordem:
-    *  1. Declaração (const) usando await
-    *  2. Registro nos servidores contidos em ALLOWED_SERVERS_ID usando a função loadCommand
-    *  !!! Lembre sempre de alterar o nome contido na segunda etapa para cada novo comando !!!
-    */
-
-    // Comando de invite: cria um invite que pode ser vinculado a um cargo para que
-    // ele atribua o cargo vinculado a cada uso.
     console.log(`${Date()} LOG - Iniciando registro de comandos`);
-
     async function loadCommand(commandName, command) {
         for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
             try {
@@ -171,7 +160,6 @@ client.once(Events.ClientReady, async c => {
             }
         }
     }
-
 
     for (const command of slashCommands) {
         await loadCommand(command.name, command.commandBuild)
@@ -206,11 +194,9 @@ client.on(Events.InteractionCreate, async interaction => {
                 const canvas = createCanvas(1401, 571);
                 const context = canvas.getContext('2d');
 
-                context.font = '28px sans-serif';
+                context.font = '28px normalFont';
                 context.fillStyle = '#ff0000';
                 context.fillText('Profile', 0, 200);
-
-                context.strokeText("abc", 20, 200)
 
                 const pngBuffer = Buffer.from(await canvas.encode('png'));
                 const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
