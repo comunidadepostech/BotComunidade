@@ -539,8 +539,8 @@ client.on(Events.GuildMemberAdd, async member => {
             // Insere uma mensagem de boas-vindas que utiliza o nome do usuário
             context.font = '150px normalFont';
             context.fillStyle = '#ffffff';
-            context.fillText('Bem vindo!', 612, 250);
-            context.fillText(`${profile.displayName}`, 612, 400);
+            context.fillText('Bem vindo!', 400, (canvas.height - 150+150)/2);
+            context.fillText(`${profile.displayName}`, 400, (canvas.height - 150+150)/2+150);
 
             const pngBuffer = Buffer.from(await canvas.encode('png'));
             const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
