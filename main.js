@@ -16,6 +16,8 @@ import {
 import mysql from 'mysql2'
 import {somePermissionsChannels, allPermissionsChannels, classActivations, classChannels} from "./data/classPatterns.mjs"
 import {slashCommands} from "./data/slashCommands.mjs"
+import {defaultRoles} from "./data/defaultRoles.mjs"
+import {defaultTags} from "./data/defaultTags.mjs";
 import {Canvas, createCanvas, Image, loadImage, GlobalFonts} from '@napi-rs/canvas'
 import {request}  from 'undici'
 import {readFile} from 'fs/promises'
@@ -341,7 +343,7 @@ client.on(Events.InteractionCreate, async interaction => {
             async function createInvite(targetRole, targetChannel) {
                 try{
                     const invite = await targetChannel.createInvite({
-                        maxAge: 0, // Converte dias para segundos
+                        maxAge: 0,
                         maxUses: 0,
                         unique: true
                     });
@@ -362,7 +364,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 } catch (error) {
                     console.error(`${Date()} ERRO - Não foi possível criar o convite\n${error}`);
                     await interaction.editReply("❌ Erro ao criar convite\n" + "```" + error + "```");
-                    return;
+                    break;
                 }
             }
 
@@ -409,7 +411,7 @@ client.on(Events.InteractionCreate, async interaction => {
                                 AddReactions: true
                             });
                         }
-                    };
+                    }
 
                     const roles = await interaction.guild.roles.fetch();
                     let inviteChannel = await interaction.guild.channels.fetch();
@@ -419,91 +421,22 @@ client.on(Events.InteractionCreate, async interaction => {
                         name: className,
                         type: 4, // Categoria
                         permissionOverwrites: [
-                            {
-                                id: roles.find(role => role.name === "Equipe Pós-Tech")?.id,
-                                allow: ["ViewChannel"]
-                            },
-                            {
-                                id: roles.find(role => role.name === "Talent Lab")?.id,
-                                allow: ["ViewChannel"]
-                            },
-                            {
-                                id: roles.find(role => role.name === "Gestor acadêmico")?.id,
-                                allow: [
-                                    "ViewChannel",
-                                    "SendMessages",
-                                    "CreatePublicThreads",
-                                    "EmbedLinks",
-                                    "AttachFiles",
-                                    "AddReactions",
-                                    "MentionEveryone",
-                                    "ReadMessageHistory",
-                                    "SendPolls"
-                                ]
-                            },
-                            {
-                                id: roles.find(role => role.name === "Coordenação")?.id,
-                                allow: [
-                                    "ViewChannel",
-                                    "SendMessages",
-                                    "CreatePublicThreads",
-                                    "EmbedLinks",
-                                    "AttachFiles",
-                                    "AddReactions",
-                                    "MentionEveryone",
-                                    "ReadMessageHistory",
-                                    "SendPolls"
-                                ]
-                            },
-                            {
-                                id: roles.find(role => role.name === "Professores")?.id,
-                                allow: [
-                                    "ViewChannel",
-                                    "SendMessages",
-                                    "CreatePublicThreads",
-                                    "EmbedLinks",
-                                    "AttachFiles",
-                                    "AddReactions",
-                                    "MentionEveryone",
-                                    "ReadMessageHistory",
-                                    "SendPolls"
-                                ]
-                            },
-                            {
-                                id: classRole,
-                                allow: ["ViewChannel"]
-                            }
+
                         ]
                     });
 
                     for (const channel of classChannels) {
                         if (channel.name === "Turma ") {channel.name += className}
-                        const target = await interaction.guild.channels.create({
-                            name: channel.name,
-                            type: channel.type,
-                            position: channel.position,
-                            parent: classCategory.id // Define a categoria da turma
+                            const target = await interaction.guild.channels.create({
+                                name: channel.name,
+                                type: channel.type,
+                                position: channel.position,
+                                parent: classCategory.id, // Define a categoria da turma
+                                permissionOverwrites: defaultRoles.rolesForNewClasses
                         })
 
                         if (channel.name === "❓│dúvidas") {
-                            await target.setAvailableTags(
-                                [
-                                    {name: "Geral", moderated: false},
-                                    {name: "Tech Challenge", moderated: false},
-                                    {name: "Fase 1", moderated: false},
-                                    {name: "Fase 2", moderated: false},
-                                    {name:"Fase 3", moderated: false},
-                                    {name: "Fase 4", moderated: false},
-                                    {name: "Fase 5", moderated: false},
-                                    {name: "Alura", moderated: false},
-                                    {name: "Beneficios", moderated: false},
-                                    {name: "Financeiro", moderated: false},
-                                    {name: "Atividade presencial", moderated: false},
-                                    {name: "Lives", moderated: false},
-                                    {name: "Notas", moderated: false},
-                                    {name: "Eventos", moderated: false}
-                                ]
-                            );
+                            await target.setAvailableTags(defaultTags);
 
                             await Promise.all(classActivations.map(async (activate) => {
                                 if (activate.content.includes("{mention}")) {
@@ -514,8 +447,10 @@ client.on(Events.InteractionCreate, async interaction => {
                                     message: {content: activate.content}
                                 });
                             }));
-                        } else if (channel.name === "🎥│gravações" || channel.name === "🚨│avisos") {
+                        } else if ([classChannels[1].name, classChannels[5].name].includes(channel.name)) {
                             await target.edit({permissionOverwrites: [{id: classRole, deny: ["SendMessages"], allow: ["ViewChannel"]}]})
+                        } else if ([classChannels[6].name, classChannels[7].name].includes(channel.name)) {
+                            await target.edit({name: channel.name+className})
                         }
                     }
 
@@ -536,19 +471,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     return;
                 }
             } else if (createType == 'curso') {
-                const classCategory = await interaction.guild.channels.create({
-                    name: className,
-                    type: 4, // Categoria
-                    permissionOverwrites: [
-                        {
-                            id: classRole, // Permissões para o usuário que criou a turma
-                            allow: [
-                                'ManageMessages',
-                                'ManageChannels'
-                            ],
-                        }
-                    ]
-                });
+                return;
             } else {
                 await interaction.reply({
                     content: "❌ Tipo de criação inválido.",
@@ -590,8 +513,6 @@ client.on('raw', async (packet) => {
 
 // Evento que é disparado quando um novo membro entra no servidor
 client.on(Events.GuildMemberAdd, async member => {
-
-    // Tenta buscar o invite usado pelo novo membro
     try {
         async function sendWelcome(profile, targetChannel) {
             const canvas = createCanvas(1401, 571);
@@ -599,6 +520,7 @@ client.on(Events.GuildMemberAdd, async member => {
 
             const background = await loadImage('./data/wallpaper.png');
 
+            // Cria um buffer com a imagem do usuário
             const avatarUrl = profile.displayAvatarURL({ extension: 'png', size: 512 });
             const { body } = await request(avatarUrl);
             const avatarBuffer = Buffer.from(await body.arrayBuffer());
@@ -644,19 +566,6 @@ client.on(Events.GuildMemberAdd, async member => {
             return;
         }
 
-        // Registra o log de entrada do membro
-        console.info(`${Date()} LOG - ${member.user.username} entrou no servidor ${member.guild.name} com o código: ${used_invite}`);
-
-        // Busca o canal de boas-vindas e envia a mensagem
-        try {
-        const welcomeChannel = member.guild.channels.cache.find(channel => channel.name === "✨│boas-vindas");
-        if (welcomeChannel) {
-            //await welcomeChannel.send(`Olá ${member}, seja bem-vindo(a) a comunidade!`);
-            await sendWelcome(member, welcomeChannel);
-        }} catch (error) {
-            console.error(`${Date()} ERRO - Falha ao enviar mensagem de boas-vindas:`, error);
-        }
-
         // Busca o cargo vinculado ao invite no banco
         db.query("SELECT role FROM invites WHERE invite = ?", [used_invite], async (err, rows) => {
                 if (err) {
@@ -680,6 +589,19 @@ client.on(Events.GuildMemberAdd, async member => {
                 console.info(`${Date()} LOG - ${member.user.username} adicionado ao cargo ${welcome_role.name}`);
             }
         );
+
+        // Registra o log de entrada do membro
+        console.info(`${Date()} LOG - ${member.user.username} entrou no servidor ${member.guild.name} com o código: ${used_invite}`);
+
+        // Busca o canal de boas-vindas e envia a mensagem
+        try {
+            const welcomeChannel = member.guild.channels.cache.find(channel => channel.name === "✨│boas-vindas");
+            if (welcomeChannel) {
+                //await welcomeChannel.send(`Olá ${member}, seja bem-vindo(a) a comunidade!`);
+                await sendWelcome(member, welcomeChannel);
+            }} catch (error) {
+            console.error(`${Date()} ERRO - Falha ao enviar mensagem de boas-vindas:`, error);
+        }
     } catch (error) {
         console.error(`${Date()} ERRO ao processar novo membro:`, error);
     }
