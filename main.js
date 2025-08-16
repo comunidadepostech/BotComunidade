@@ -533,7 +533,7 @@ client.on(Events.GuildMemberAdd, async member => {
             context.arc(285, 285, 256, 0, Math.PI * 2, true);
             context.closePath();
             context.clip();
-            context.drawImage(avatar, canvas.height-512, canvas.height-512, 512, 512);
+            context.drawImage(avatar, 29, 29, 512, 512);
             context.restore();
 
             // Insere uma mensagem de boas-vindas que utiliza o nome do usuário
