@@ -363,8 +363,8 @@ client.on(Events.InteractionCreate, async interaction => {
                     return invite.url;
                 } catch (error) {
                     console.error(`${Date()} ERRO - Não foi possível criar o convite\n${error}`);
-                    await interaction.editReply("❌ Erro ao criar convite\n" + "```" + error + "```");
-                    break;
+                    //await interaction.editReply("❌ Erro ao criar convite\n" + "```" + error + "```");
+                    return "";
                 }
             }
 
@@ -455,7 +455,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     }
 
                     // Cria o convite
-                    const inviteUrl = await createInvite(classRole.id, inviteChannel);
+                    const inviteUrl = await createInvite(classRole.id, inviteChannel) || "Erro no momento de criação do invite";
 
                     // Responde com o link do invite e outras informações
                     await interaction.editReply({
