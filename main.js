@@ -533,14 +533,14 @@ client.on(Events.GuildMemberAdd, async member => {
             context.arc(285, 285, 256, 0, Math.PI * 2, true);
             context.closePath();
             context.clip();
-            context.drawImage(avatar, 29, 29, 512, 512);
+            context.drawImage(avatar, canvas.height-512, canvas.height-512, 512, 512);
             context.restore();
 
             // Insere uma mensagem de boas-vindas que utiliza o nome do usuário
             context.font = '150px normalFont';
             context.fillStyle = '#ffffff';
-            context.fillText('Bem vindo!', 400, (canvas.height - 150+150)/2);
-            context.fillText(`${profile.displayName}`, 400, (canvas.height - 150+150)/2+150);
+            context.fillText('Bem vindo!', 512+100, (canvas.height - 150+150)/2);
+            context.fillText(`${profile.displayName}`, 512+100, (canvas.height - 150+150)/2+150);
 
             const pngBuffer = Buffer.from(await canvas.encode('png'));
             const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
