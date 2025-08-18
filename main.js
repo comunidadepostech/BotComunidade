@@ -129,7 +129,39 @@ async function processPollQueue(poll_id) {
 
 }
 
+// Cria um fila de processamento para os comandos de novos membros (evita que o bot deixe passar um membro e otimiza os processos em até 3 ao mesmo tempo)
+class Queue {
+    constructor(maxConcurrent = 1) {
+        this.items = [];
+        this.running = 0;
+        this.maxConcurrent = maxConcurrent;
+    }
 
+    enqueue(task) {
+        this.items.push(task);
+        this.process();
+    }
+
+    async process() {
+        if (this.running >= this.maxConcurrent) return;
+        if (this.items.length === 0) return;
+
+        const task = this.items.shift();
+        this.running++;
+
+        try {
+            await task();
+        } catch (err) {
+            console.error("Erro na fila:", err);
+        }
+
+        this.running--;
+        this.process();
+    }
+}
+
+// Cria uma fila global para processar joins
+const joinQueue = new Queue(1); // 1 por vez (até 3, quanto menos, menos uso de cpu e maior garantia)
 
 // Fecha o banco na saída do processo
 process.on('SIGINT', () => {
@@ -471,7 +503,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     return;
                 }
             } else if (createType == 'curso') {
-                return;
+                //interaction.guild.
             } else {
                 await interaction.reply({
                     content: "❌ Tipo de criação inválido.",
@@ -513,99 +545,104 @@ client.on('raw', async (packet) => {
 
 // Evento que é disparado quando um novo membro entra no servidor
 client.on(Events.GuildMemberAdd, async member => {
-    try {
-        // Constroi e envia uma imagem de boas-vindas
-        async function sendWelcome(profile, targetChannel) {
-            const canvas = createCanvas(1401, 571);
-            const context = canvas.getContext('2d');
-
-            const background = await loadImage('./data/wallpaper.png');
-
-            // Cria um buffer com a imagem do usuário
-            const avatarUrl = profile.displayAvatarURL({ extension: 'png', size: 512 });
-            const { body } = await request(avatarUrl);
-            const avatarBuffer = Buffer.from(await body.arrayBuffer());
-            const avatar = await loadImage(avatarBuffer);
-
-            // Insere o fundo e corta a foto de perfil do usuário em formato de círculo
-            context.drawImage(background, 0, 0, canvas.width, canvas.height);
-            context.save();
-            context.beginPath();
-            context.arc(285, 285, 256, 0, Math.PI * 2, true);
-            context.closePath();
-            context.clip();
-            context.drawImage(avatar, 29, 29, 512, 512);
-            context.restore();
-
-            // Insere uma mensagem de boas-vindas que utiliza o nome do usuário
-            context.font = '150px normalFont';
-            context.fillStyle = '#ffffff';
-            context.fillText('Bem vindo!', 512+100, (canvas.height - 150+150)/2);
-            context.fillText(`${profile.displayName}`, 512+100, (canvas.height - 150+150)/2+150);
-
-            const pngBuffer = Buffer.from(await canvas.encode('png'));
-            const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
-
-            targetChannel.send({ files: [attachment] });
-        }
-
-        let used_invite;
-        const cachedInvites = await member.guild.invites.fetch();
-
-        // Tenta resolver o invite diretamente
-        const resolvedInvite = await member.guild.invites.resolve(member.user.client);
-        if (resolvedInvite) {
-            used_invite = resolvedInvite.code;
-        } else {
-            // Se não conseguir resolver, pega o primeiro invite ativo
-            const activeInvite = cachedInvites.find(invite => invite.uses > 0);
-            used_invite = activeInvite ? activeInvite.code : null;
-        }
-
-        if (!used_invite) {
-            console.error(`${Date()} ERRO - Não foi possível determinar o convite usado`);
-            return;
-        }
-
-        // Busca o cargo vinculado ao invite no banco
-        db.query("SELECT role FROM invites WHERE invite = ?", [used_invite], async (err, rows) => {
-                if (err) {
-                    console.error(`${Date()} ERRO - Erro na consulta SQL:`, err);
-                    return;
-                }
-
-                // Verifica se há resultados
-                if (!rows || rows.length === 0) {
-                    console.error(`${Date()} ERRO - Nenhum cargo vinculado ao convite usado`);
-                    return;
-                }
-
-                const welcome_role = await member.guild.roles.cache.find(role => role.name === rows[0].role);
-                if (!welcome_role) {
-                    console.error(`ERRO - Cargo ${rows[0].role} não encontrado no servidor`);
-                    return;
-                }
-
-                await member.roles.add(welcome_role);
-                console.info(`${Date()} LOG - ${member.user.username} adicionado ao cargo ${welcome_role.name}`);
-            }
-        );
-
-        // Registra o log de entrada do membro
-        console.info(`${Date()} LOG - ${member.user.username} entrou no servidor ${member.guild.name} com o código: ${used_invite}`);
-
-        // Busca o canal de boas-vindas e envia a mensagem
+    joinQueue.enqueue(async () => {
         try {
-            const welcomeChannel = member.guild.channels.cache.find(channel => channel.name === "✨│boas-vindas");
-            if (welcomeChannel) {
-                //await welcomeChannel.send(`Olá ${member}, seja bem-vindo(a) a comunidade!`);
-                await sendWelcome(member, welcomeChannel);
-            }} catch (error) {
-            console.error(`${Date()} ERRO - Falha ao enviar mensagem de boas-vindas:`, error);
+            console.info(`${Date()} LOG - Processando entrada de ${member.user.username}`);
+
+            // Constroi e envia uma imagem de boas-vindas
+            async function sendWelcome(profile, targetChannel) {
+                const canvas = createCanvas(1401, 571);
+                const context = canvas.getContext('2d');
+
+                const background = await loadImage('./data/wallpaper.png');
+
+                // Cria um buffer com a imagem do usuário
+                const avatarUrl = profile.displayAvatarURL({ extension: 'png', size: 512 });
+                const { body } = await request(avatarUrl);
+                const avatarBuffer = Buffer.from(await body.arrayBuffer());
+                const avatar = await loadImage(avatarBuffer);
+
+                // Insere o fundo e corta a foto de perfil do usuário em formato de círculo
+                context.drawImage(background, 0, 0, canvas.width, canvas.height);
+                context.save();
+                context.beginPath();
+                context.arc(285, 285, 256, 0, Math.PI * 2, true);
+                context.closePath();
+                context.clip();
+                context.drawImage(avatar, 29, 29, 512, 512);
+                context.restore();
+
+                // Insere uma mensagem de boas-vindas que utiliza o nome do usuário
+                context.font = '150px normalFont';
+                context.fillStyle = '#ffffff';
+                context.fillText('Bem vindo!', 512+100, (canvas.height - 150+150)/2);
+                context.fillText(`${profile.displayName}`, 512+100, (canvas.height - 150+150)/2+150);
+
+                const pngBuffer = Buffer.from(await canvas.encode('png'));
+                const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
+
+                targetChannel.send({ files: [attachment] });
+            }
+
+            let used_invite;
+            const cachedInvites = await member.guild.invites.fetch();
+
+            // Tenta resolver o invite diretamente
+            const resolvedInvite = await member.guild.invites.resolve(member.user.client);
+            if (resolvedInvite) {
+                used_invite = resolvedInvite.code;
+            } else {
+                // Se não conseguir resolver, pega o primeiro invite ativo
+                const activeInvite = cachedInvites.find(invite => invite.uses > 0);
+                used_invite = activeInvite ? activeInvite.code : null;
+            }
+
+            if (!used_invite) {
+                console.error(`${Date()} ERRO - Não foi possível determinar o convite usado`);
+                return;
+            }
+
+            // Busca o cargo vinculado ao invite no banco
+            db.query("SELECT role FROM invites WHERE invite = ?", [used_invite], async (err, rows) => {
+                    if (err) {
+                        console.error(`${Date()} ERRO - Erro na consulta SQL:`, err);
+                        return;
+                    }
+
+                    // Verifica se há resultados
+                    if (!rows || rows.length === 0) {
+                        console.error(`${Date()} ERRO - Nenhum cargo vinculado ao convite usado`);
+                        return;
+                    }
+
+                    const welcome_role = await member.guild.roles.cache.find(role => role.name === rows[0].role);
+                    if (!welcome_role) {
+                        console.error(`ERRO - Cargo ${rows[0].role} não encontrado no servidor`);
+                        return;
+                    }
+
+                    await member.roles.add(welcome_role);
+                    console.info(`${Date()} LOG - ${member.user.username} adicionado ao cargo ${welcome_role.name}`);
+                }
+            );
+
+            // Registra o log de entrada do membro
+            console.info(`${Date()} LOG - ${member.user.username} entrou no servidor ${member.guild.name} com o código: ${used_invite}`);
+
+            // Busca o canal de boas-vindas e envia a mensagem
+            try {
+                const welcomeChannel = member.guild.channels.cache.find(channel => channel.name === "✨│boas-vindas");
+                if (welcomeChannel) {
+                    //await welcomeChannel.send(`Olá ${member}, seja bem-vindo(a) a comunidade!`);
+                    await sendWelcome(member, welcomeChannel);
+                }} catch (error) {
+                console.error(`${Date()} ERRO - Falha ao enviar mensagem de boas-vindas:`, error);
+            }
+
+        } catch (error) {
+            console.error(`${Date()} ERRO ao processar novo membro:`, error);
         }
-    } catch (error) {
-        console.error(`${Date()} ERRO ao processar novo membro:`, error);
-    }
+    });
 });
 
 
