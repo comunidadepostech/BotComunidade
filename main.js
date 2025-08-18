@@ -514,6 +514,7 @@ client.on('raw', async (packet) => {
 // Evento que é disparado quando um novo membro entra no servidor
 client.on(Events.GuildMemberAdd, async member => {
     try {
+        // Constroi e envia uma imagem de boas-vindas
         async function sendWelcome(profile, targetChannel) {
             const canvas = createCanvas(1401, 571);
             const context = canvas.getContext('2d');
