@@ -150,5 +150,23 @@ export const classActivations = [
     }
 ]
 
+export const classRolePermissions = [
+    'ChangeNickname',
+    'SendMessagesInThreads',
+    'CreatePublicThreads',
+    'AttachFiles',
+    'EmbedLinks',
+    'AddReactions',
+    'UseExternalEmojis',
+    'ReadMessageHistory',
+    'Connect',
+    'SendMessages',
+    'Speak',
+    'UseVAD',
+    'Stream',
+    'RequestToSpeak',
+    'UseExternalStickers'
+]
+
 export const somePermissionsChannels = ["✨│boas-vindas", "📃│regras"] // incluir faq-channel no código
 export const allPermissionsChannels = ["📅│acontece-aqui", "🚀│talent-lab", "💻│casa-do-código"]
