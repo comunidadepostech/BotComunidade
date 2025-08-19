@@ -518,7 +518,6 @@ client.on(Events.InteractionCreate, async interaction => {
                         };
                     })
                 );
-                console.debug(new_RolesForNewClasses)
 
                 const classCategory = await interaction.guild.channels.create({
                     name: className,
@@ -527,8 +526,6 @@ client.on(Events.InteractionCreate, async interaction => {
                 });
 
                 for (const channel of classChannels) {
-                    console.debug(channel.name)
-                    if (channel.name === "📒│Sala de estudo ") channel.name += className
                     const target = await interaction.guild.channels.create({
                         name: channel.name,
                         type: channel.type,
@@ -546,7 +543,7 @@ client.on(Events.InteractionCreate, async interaction => {
                                 message: {content: activate.content}
                             });
                         }));
-                    } else if ([classChannels[1].name, classChannels[5].name].includes(channel.name)) {
+                    } else if ([classChannels[1].name, classChannels[4].name].includes(channel.name)) {
                         await target.edit({permissionOverwrites: [{id: classRole, deny: ["SendMessages"], allow: ["ViewChannel"]}]})
                     } else if ([classChannels[6].name, classChannels[7].name].includes(channel.name)) {
                         await target.edit({name: channel.name+className})
