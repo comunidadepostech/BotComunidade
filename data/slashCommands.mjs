@@ -154,7 +154,7 @@ const create = await new SlashCommandBuilder()
     .addChannelOption(option =>
         option.setName('faq-channel')
             .setDescription('Canal de faq da nova turma (obrigatório para novas turmas)')
-            .setRequired(false)
+            .setRequired(true)
     );
 
 export const slashCommands = [
