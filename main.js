@@ -14,7 +14,13 @@ import {
     AttachmentBuilder
 } from "discord.js"
 import mysql from 'mysql2'
-import {somePermissionsChannels, allPermissionsChannels, classActivations, classChannels} from "./data/classPatterns.mjs"
+import {
+    somePermissionsChannels,
+    allPermissionsChannels,
+    classActivations,
+    classChannels,
+    classRolePermissions
+} from "./data/classPatterns.mjs"
 import {slashCommands} from "./data/slashCommands.mjs"
 import {defaultRoles} from "./data/defaultRoles.mjs"
 import {defaultTags} from "./data/defaultTags.mjs";
@@ -163,6 +169,31 @@ class Queue {
 // Cria uma fila global para processar joins
 const joinQueue = new Queue(1); // 1 por vez (até 3, quanto menos, menos uso de cpu e maior garantia)
 
+
+
+async function checkEvents() {
+    try {
+        const guilds = await client.guilds.fetch();
+
+        // percorre cada servidor e pega todos os eventos cadastrados
+        for (const [id, guild] of guilds) {
+            try {
+                const events = await guild.scheduledEvents.fetch();
+                console.log(`Eventos da guild ${id}:`, events);
+            } catch (err) {
+                console.error(`Erro ao buscar eventos da guild ${id}:`, err);
+            }
+        }
+    } catch (err) {
+        console.error("Erro na rotina:", err);
+    } finally {
+        // agenda de novo só depois que terminar tudo
+        setTimeout(checkEvents, 60 * 1000); // 1 minuto
+    }
+}
+
+
+
 // Fecha o banco na saída do processo
 process.on('SIGINT', () => {
     db.end(err => {
@@ -181,6 +212,7 @@ process.on('SIGINT', () => {
 client.once(Events.ClientReady, async c => {
     console.info(`${Date()} LOG - Inicializando cliente ${client.user.username} com ID ${client.user.id}`);
 
+    // Começa o cadastro de comandos nos servidores
     console.info(`${Date()} LOG - Iniciando registro de comandos`);
     async function loadCommand(commandName, command) {
         for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
@@ -196,6 +228,9 @@ client.once(Events.ClientReady, async c => {
     for (const command of slashCommands) {
         await loadCommand(command.name, command.commandBuild)
     }
+
+    // Inicia o processo de checagem de eventos nos servidores
+    checkEvents();
 });
 
 
@@ -369,7 +404,6 @@ client.on(Events.InteractionCreate, async interaction => {
         case "create":
             await interaction.deferReply({ephemeral: true}); // Responde de forma atrasada para evitar timeout
 
-            const createType = interaction.options.getString('type');
             const className = interaction.options.getString('name');
 
             async function createInvite(targetRole, targetChannel) {
@@ -400,91 +434,70 @@ client.on(Events.InteractionCreate, async interaction => {
                 }
             }
 
-            if (createType == 'turma') {
-                try {
-                    const classRole = await interaction.guild.roles.create({
-                        name: `Estudantes ${className}`,
-                        color: 3447003,
-                        mentionable: true, // Permite que o cargo seja mencionado
-                        hoist: true, // Exibe o cargo na lista de membros
-                        permissions: [
-                            'ChangeNickname',
-                            'SendMessagesInThreads',
-                            'CreatePublicThreads',
-                            'AttachFiles',
-                            'EmbedLinks',
-                            'AddReactions',
-                            'UseExternalEmojis',
-                            'ReadMessageHistory',
-                            'Connect',
-                            'SendMessages',
-                            'Speak',
-                            'UseVAD',
-                            'Stream',
-                            'RequestToSpeak',
-                            'UseExternalStickers'
-                        ]
-                    });
+            try {
+                const classRole = await interaction.guild.roles.create({
+                    name: `Estudantes ${className}`,
+                    color: 3447003,
+                    mentionable: true, // Permite que o cargo seja mencionado
+                    hoist: true, // Exibe o cargo na lista de membros
+                    permissions: classRolePermissions
+                });
 
-                    const serverChannels = await interaction.guild.channels.fetch()
-                    for (const channel of serverChannels.values()) {
-                        if ([...somePermissionsChannels, interaction.options.getChannel('faq-channel').name].includes(channel.name)) { // Ignora canais não especificados
-                            await channel.permissionOverwrites.edit(classRole, {
-                                SendMessages: false,
-                                ViewChannel: true,
-                                ReadMessageHistory: true,
-                                AddReactions: true
-                            });
-                        } else if (allPermissionsChannels.includes(channel.name)) {
-                            await channel.permissionOverwrites.edit(classRole, {
-                                SendMessages: true,
-                                ViewChannel: true,
-                                ReadMessageHistory: true,
-                                AddReactions: true
-                            });
-                        }
+                const serverChannels = await interaction.guild.channels.fetch()
+                for (const channel of serverChannels.values()) {
+                    if ([...somePermissionsChannels, interaction.options.getChannel('faq-channel').name].includes(channel.name)) { // Ignora canais não especificados no arquivo de configuração
+                        await channel.permissionOverwrites.edit(classRole, {
+                            SendMessages: false,
+                            ViewChannel: true,
+                            ReadMessageHistory: true,
+                            AddReactions: true
+                        });
+                    } else if (allPermissionsChannels.includes(channel.name)) {
+                        await channel.permissionOverwrites.edit(classRole, {
+                            SendMessages: true,
+                            ViewChannel: true,
+                            ReadMessageHistory: true,
+                            AddReactions: true
+                        });
                     }
+                }
 
-                    const roles = await interaction.guild.roles.fetch();
-                    let inviteChannel = await interaction.guild.channels.fetch();
-                    inviteChannel = inviteChannel.find(channel => channel.name === "✨│boas-vindas")
+                const roles = await interaction.guild.roles.fetch();
+                let inviteChannel = await interaction.guild.channels.fetch();
+                inviteChannel = inviteChannel.find(channel => channel.name === "✨│boas-vindas")
 
-                    const classCategory = await interaction.guild.channels.create({
-                        name: className,
-                        type: 4, // Categoria
-                        permissionOverwrites: [
+                const classCategory = await interaction.guild.channels.create({
+                    name: className,
+                    type: 4, // Categoria
+                    permissionOverwrites: []
+                });
 
-                        ]
-                    });
-
-                    for (const channel of classChannels) {
-                        if (channel.name === "Turma ") {channel.name += className}
-                            const target = await interaction.guild.channels.create({
-                                name: channel.name,
-                                type: channel.type,
-                                position: channel.position,
-                                parent: classCategory.id, // Define a categoria da turma
-                                permissionOverwrites: defaultRoles.rolesForNewClasses
-                        })
-
-                        if (channel.name === "❓│dúvidas") {
-                            await target.setAvailableTags(defaultTags);
-
-                            await Promise.all(classActivations.map(async (activate) => {
-                                if (activate.content.includes("{mention}")) {
-                                    activate.content = activate.content.replace("{mention}", `${classRole}`);
-                                }
-                                await target.threads.create({
-                                    name: activate.title,
-                                    message: {content: activate.content}
-                                });
-                            }));
-                        } else if ([classChannels[1].name, classChannels[5].name].includes(channel.name)) {
-                            await target.edit({permissionOverwrites: [{id: classRole, deny: ["SendMessages"], allow: ["ViewChannel"]}]})
-                        } else if ([classChannels[6].name, classChannels[7].name].includes(channel.name)) {
-                            await target.edit({name: channel.name+className})
-                        }
+                for (const channel of classChannels) {
+                    if (channel.name === "Turma ") {channel.name += className}
+                    const target = await interaction.guild.channels.create({
+                        name: channel.name,
+                        type: channel.type,
+                        position: channel.position,
+                        parent: classCategory.id, // Define a categoria da turma
+                        permissionOverwrites: defaultRoles.rolesForNewClasses
+                    })
+                    if (channel.name === "❓│dúvidas") {
+                        await target.setAvailableTags(defaultTags);
+                        await Promise.all(classActivations.map(async (activate) => {
+                            if (activate.content.includes("{mention}")) {
+                                activate.content = activate.content.replace("{mention}", `${classRole}`);
+                            }
+                            await target.threads.create({
+                                name: activate.title,
+                                message: {content: activate.content}
+                            });
+                        }));
+                    } else if ([classChannels[1].name, classChannels[5].name].includes(channel.name)) {
+                        await target.edit({permissionOverwrites: [{id: classRole, deny: ["SendMessages"], allow: ["ViewChannel"]}]})
+                    } else if ([classChannels[6].name, classChannels[7].name].includes(channel.name)) {
+                        await target.edit({name: channel.name+className})
                     }
+                }
 
                     // Cria o convite
                     const inviteUrl = await createInvite(classRole.id, inviteChannel) || "Erro no momento de criação do invite";
@@ -502,15 +515,6 @@ client.on(Events.InteractionCreate, async interaction => {
                     });
                     return;
                 }
-            } else if (createType == 'curso') {
-                //interaction.guild.
-            } else {
-                await interaction.reply({
-                    content: "❌ Tipo de criação inválido.",
-                    ephemeral: true
-                });
-                return;
-            }
             break;
 
         default:
