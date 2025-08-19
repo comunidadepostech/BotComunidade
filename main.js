@@ -203,7 +203,7 @@ async function checkEvents() {
                             );
 
                             // Pega o cargo da turma do evento
-                            const permissionOverwrites = await eventChannel.permissionOverwrites.fetch();
+                            const permissionOverwrites = eventChannel.permissionOverwrites.cache;
                             const classOverwrite = permissionOverwrites.find(o => o.type === 'role' && o.name?.includes("Estudantes"));
                             const classRole = await guild.roles.fetch(classOverwrite.id);
 
