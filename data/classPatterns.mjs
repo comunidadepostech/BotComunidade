@@ -15,8 +15,8 @@ export const classChannels = [
     {name: "🚨│avisos", type: 0, position: 1}, // Definido como especial (hardcoded na posição 1)
     {name: "💬│bate-papo", type: 0, position: 2},
     {name: "🧑‍💻│grupos-tech-challenge", type: 0, position: 3},
-    {name: "🎥│gravações", type: 0, position: 4},
-    {name: "❓│dúvidas", type: 15, position: 5}, // Definido como especial (hardcoded na posição 5)
+    {name: "🎥│gravações", type: 0, position: 4}, // Definido como especial (hardcoded na posição 4)
+    {name: "❓│dúvidas", type: 15, position: 5},
     {name: "🎙️│Dinâmica ao vivo ", type: 13, position: 6}, // Deixar o espaço no final para colocar a sigla da turma quando o comando /create for utilizado. Definido como especial (hardcoded na posição 6)
     {name: "📒│Sala de estudo ", type: 2, position: 7} // Deixar o espaço no final para colocar a sigla da turma quando o comando /create for utilizado. Definido como especial (hardcoded na posição 7)
 ]
