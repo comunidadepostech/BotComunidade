@@ -199,7 +199,7 @@ async function checkEvents() {
                             const eventChannel = channels.get(event.channelId); // pega o canal do evento
                             const target = channels.find(c =>
                                 c.parentId === eventChannel.parentId &&
-                                c.name === classChannels[5].name
+                                c.name === classChannels[1].name
                             );
 
                             // Pega o cargo da turma do evento
@@ -213,15 +213,14 @@ async function checkEvents() {
                                 })
                             );
 
-                            classRole = classRole.filter(r => r !== null);
-                            console.log(classRole)
+                            classRole = classRole.filter(r => r !== null)[0];
 
                             // Pega a hora do evento
                             const date = new Date(event.scheduledStartTimestamp);
                             const hours = date.getHours();
                             const minutes = date.getMinutes().toString().padStart(2, '0');
 
-                            target.send(`Boa noite, turma!!  ${classRole[0]}\n` +
+                            target.send(`Boa noite, turma!!  ${classRole}\n` +
                                 "\n" +
                                 `Passando para lembrar vocês do nosso evento de hoje às ${hours}:${minutes} 🚀 \n` +
                                 `acesse o card do evento [aqui](${event.url})`)
