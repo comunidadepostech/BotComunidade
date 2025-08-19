@@ -213,6 +213,7 @@ async function checkEvents() {
                                 })
                             );
 
+                            classRole = classRole.filter(r => r !== null);
                             console.log(classRole)
 
                             // Pega a hora do evento
@@ -220,7 +221,7 @@ async function checkEvents() {
                             const hours = date.getHours();
                             const minutes = date.getMinutes().toString().padStart(2, '0');
 
-                            target.send(`Boa noite, turma!!  ${classRole}\n` +
+                            target.send(`Boa noite, turma!!  ${classRole[0]}\n` +
                                 "\n" +
                                 `Passando para lembrar vocês do nosso evento de hoje às ${hours}:${minutes} 🚀 \n` +
                                 `acesse o card do evento [aqui](${event.url})`)
