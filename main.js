@@ -513,8 +513,10 @@ client.on(Events.InteractionCreate, async interaction => {
                 });
 
                 const new_RolesForNewClasses = defaultRoles.rolesForNewClasses.map(obj => ({...obj, name: obj.name === "className" ? `Estudantes ${className}` : obj.name}));
+                console.debug(new_RolesForNewClasses)
 
                 for (const channel of classChannels) {
+                    console.debug(channel.name)
                     if (channel.name === "📒│Sala de estudo ") channel.name += className
                     const target = await interaction.guild.channels.create({
                         name: channel.name,
