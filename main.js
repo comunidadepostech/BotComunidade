@@ -459,7 +459,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     await new Promise((resolve, reject) => {
                         db.query(
                             `INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`,
-                            [invite.code, targetRole, interaction.guild.id],
+                            [invite.code, targetRole.id, interaction.guild.id],
                             (err, result) => {
                                 if (err) return reject(err);
                                 resolve(result);
@@ -541,7 +541,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 }
 
                     // Cria o convite
-                    const inviteUrl = await createInvite(classRole.id, inviteChannel) || "Erro no momento de criação do invite";
+                    const inviteUrl = await createInvite(classRole, inviteChannel) || "Erro no momento de criação do invite";
 
                     // Responde com o link do invite e outras informações
                     await interaction.editReply({
