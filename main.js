@@ -217,12 +217,15 @@ async function checkEvents() {
 
                             // Pega a hora do evento
                             const date = new Date(event.scheduledStartTimestamp);
-                            const hours = date.getHours();
-                            const minutes = date.getMinutes().toString().padStart(2, '0');
+                            const hours = date.toLocaleString("pt-BR", {
+                                timeZone: "America/Sao_Paulo",
+                                hour: "2-digit",
+                                minute: "2-digit"
+                            });
 
                             target.send(`Boa noite, turma!!  ${classRole}\n` +
                                 "\n" +
-                                `Passando para lembrar vocês do nosso evento de hoje às ${hours}:${minutes} 🚀 \n` +
+                                `Passando para lembrar vocês do nosso evento de hoje às ${hours} 🚀 \n` +
                                 `acesse o card do evento [aqui](${event.url})`)
 
                             // Adiciona o evento na lista de eventos agendados para evitar duplicidade
