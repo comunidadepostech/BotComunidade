@@ -55,8 +55,5 @@ export const defaultRoles = {
             name: "className",
             permissions: ["ViewChannel"]
         }
-    ],
-    rolesForNewServers: [
-        {}
     ]
 }
