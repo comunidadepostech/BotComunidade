@@ -506,14 +506,25 @@ client.on(Events.InteractionCreate, async interaction => {
                 let inviteChannel = await interaction.guild.channels.fetch();
                 inviteChannel = inviteChannel.find(channel => channel.name === "✨│boas-vindas")
 
+                const new_RolesForNewClasses = await Promise.all(
+                    defaultRoles.rolesForNewClasses.map(async (obj) => {
+                        const role = obj.name === "className"
+                            ? roles.find(r => r.name === `Estudantes ${className}`)
+                            : roles.find(r => r.name === obj.name);
+
+                        return {
+                            id: role.id, // aqui vira id mesmo
+                            allow: obj.permissions //.map(p => PermissionFlagsBits[p.toUpperCase()]) // convertendo permissões
+                        };
+                    })
+                );
+                console.debug(new_RolesForNewClasses)
+
                 const classCategory = await interaction.guild.channels.create({
                     name: className,
                     type: 4, // Categoria
-                    permissionOverwrites: []
+                    permissionOverwrites: new_RolesForNewClasses,
                 });
-
-                const new_RolesForNewClasses = defaultRoles.rolesForNewClasses.map(obj => ({...obj, name: obj.name === "className" ? `Estudantes ${className}` : obj.name}));
-                console.debug(new_RolesForNewClasses)
 
                 for (const channel of classChannels) {
                     console.debug(channel.name)
@@ -522,8 +533,7 @@ client.on(Events.InteractionCreate, async interaction => {
                         name: channel.name,
                         type: channel.type,
                         position: channel.position,
-                        parent: classCategory.id, // Define a categoria da turma
-                        permissionOverwrites: new_RolesForNewClasses
+                        parent: classCategory.id // Define a categoria da turma
                     })
                     if (channel.name === "❓│dúvidas") {
                         await target.setAvailableTags(defaultTags);
