@@ -204,16 +204,16 @@ async function checkEvents() {
 
                             // Pega o cargo da turma do evento
                             const overwrites = eventChannel.permissionOverwrites.cache
-                                .filter(o => o.type === 0); // só roles
+                                .filter(o => o.type === 0); // só cargos
 
-                            const classRoles = await Promise.all(
+                            let classRole = await Promise.all(
                                 overwrites.map(async o => {
                                     const role = await guild.roles.fetch(o.id);
                                     return role.name.includes("Estudantes "+eventChannel.parent.name) ? role : null;
                                 })
                             );
 
-                            const validClassRoles = classRoles.filter(r => r !== null);
+                            console.log(classRole)
 
                             // Pega a hora do evento
                             const date = new Date(event.scheduledStartTimestamp);
