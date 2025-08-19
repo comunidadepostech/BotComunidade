@@ -119,7 +119,7 @@ async function processPollQueue(poll_id) {
             db.promise().query('INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)', [poll_data.id, JSON.stringify(poll_json)]);
         }
     } catch (error) {
-        console.error(`${Date()} ERRO - Falha ao processar fila de poll's:`, error);
+        console.error(`ERRO - Falha ao processar fila de poll's:`, error);
 
         // Em caso de erro, limpa a fila para evitar loop infinito
         pollQueues.set(poll_id, []);
@@ -175,12 +175,18 @@ async function checkEvents() {
     try {
         const guilds = await client.guilds.fetch();
 
-        await Promise.all(
-            guilds.map(async guild => {
+        for (const [id, partialGuild] of guilds) {
+            try {
+                // força o fetch completo da guild
+                const guild = await partialGuild.fetch();
+
                 const events = await guild.scheduledEvents.fetch();
-                console.log(events);
-            })
-        );
+                console.log(`Eventos da guild ${id}:`, events);
+
+            } catch (err) {
+                console.error(`Erro ao buscar eventos da guild ${id}:`, err);
+            }
+        }
     } catch (err) {
         console.error("Erro na rotina:", err);
     } finally {
@@ -207,17 +213,17 @@ process.on('SIGINT', () => {
 
 // Define o que o bot deve fazer ao ser iniciado, no caso, imprime uma mensagem de online e cria os comandos existentes
 client.once(Events.ClientReady, async c => {
-    console.info(`${Date()} LOG - Inicializando cliente ${client.user.username} com ID ${client.user.id}`);
+    console.info(`LOG - Inicializando cliente ${client.user.username} com ID ${client.user.id}`);
 
     // Começa o cadastro de comandos nos servidores
-    console.info(`${Date()} LOG - Iniciando registro de comandos`);
+    console.info(`LOG - Iniciando registro de comandos`);
     async function loadCommand(commandName, command) {
         for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
             try {
                 await client.application.commands.create(command, id);
-                console.info(`${Date()} COMANDOS - ${commandName} cadastrado em: ${id}`);
+                console.info(`COMANDOS - ${commandName} cadastrado em: ${id}`);
             } catch (error) {
-                console.info(`${Date()} ERRO - ${commandName} não cadastrado em: ${id}\n${error}`);
+                console.info(`ERRO - ${commandName} não cadastrado em: ${id}\n${error}`);
             }
         }
     }
@@ -261,9 +267,9 @@ client.on(Events.InteractionCreate, async interaction => {
                 await interaction.reply({
                     content: `✅ Convite criado com sucesso!\n📨 Link: ${invite.url}\n📍 Canal: ${channel}\n⏱️ Duração: ${duration === 0 ? 'Permanente' : `${duration} dias`}\n🔢 Usos máximos: ${maxUses === 0 ? 'Ilimitado' : maxUses}\n👥 Cargo vinculado: ${role}`,
                     ephemeral: true // Faz a resposta ser visível apenas para quem executou o comando
-                }).then(_ => console.info(`${Date()} LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
+                }).then(_ => console.info(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
             } catch (error) {
-                console.error(`${Date()} Erro ao criar convite:`, error);
+                console.error(`Erro ao criar convite:`, error);
                 await interaction.reply({
                     content: `❌ Ocorreu um erro ao criar o convite. Verifique se tenho permissões suficientes.\n` + "```" + error + "```",
                     ephemeral: true
@@ -286,9 +292,9 @@ client.on(Events.InteractionCreate, async interaction => {
                         content: `✅ Mensagem enviada para ${echoChannel} com sucesso!`,
                         ephemeral: true
                     });
-                    console.info(`${Date()} LOG - echo ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
+                    console.info(`LOG - echo ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
                 }).catch(error => {
-                    console.error(`${Date()} ERRO - Falha ao enviar mensagem:`, error);
+                    console.error(`ERRO - Falha ao enviar mensagem:`, error);
                     interaction.reply({
                         content: "❌ Ocorreu um erro ao enviar a mensagem.\n" + "```" + error + "```",
                         ephemeral: true
@@ -302,7 +308,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 // Busca os convites ativos do servidor
                 db.query(`SELECT * FROM invites WHERE server_id = ?`, [interaction.guild.id], async (err, rows) => {
                     if (err) {
-                        console.error(`${Date()} ERRO - Erro na consulta SQL:`, err);
+                        console.error(`ERRO - Erro na consulta SQL:`, err);
                         await interaction.reply({
                             content: "❌ Ocorreu um erro ao buscar os convites.",
                             ephemeral: true
@@ -325,14 +331,14 @@ client.on(Events.InteractionCreate, async interaction => {
                             if (!invites.has(invite.invite)) {
                                 db.query(`DELETE FROM invites WHERE invite = ?`, [invite.invite], (err) => {
                                     if (err) {
-                                        console.error(`${Date()} ERRO - Erro ao remover convite inválido:`, err);
+                                        console.error(`ERRO - Erro ao remover convite inválido:`, err);
                                     } else {
-                                        console.info(`${Date()} LOG - Convite inválido removido: ${invite.invite}`);
+                                        console.info(`LOG - Convite inválido removido: ${invite.invite}`);
                                     }
                                 });
                             }
                         }).catch(err => {
-                            console.error(`${Date()} ERRO - Falha ao buscar convites do servidor:`, err);
+                            console.error(`ERRO - Falha ao buscar convites do servidor:`, err);
                         });
                     })
 
@@ -348,7 +354,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 });
                 break;
             } catch (error) {
-                console.error(`${Date()} ERRO - Falha ao buscar convites:`, error);
+                console.error(`ERRO - Falha ao buscar convites:`, error);
                 await interaction.reply({
                     content: "❌ Ocorreu um erro ao buscar os convites.\n"  + "```" + error + "```",
                     ephemeral: true
@@ -390,7 +396,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 await interaction.reply({content: "✅ Enquete criada com sucesso!", ephemeral: true});
 
             } catch (error) {
-                console.error(`${Date()} ERRO - Falha ao criar enquete:`, error);
+                console.error(`ERRO - Falha ao criar enquete:`, error);
                 await interaction.reply({
                     content: "❌ Ocorreu um erro ao criar a enquete.\n" + error,
                     ephemeral: true
@@ -425,7 +431,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
                     return invite.url;
                 } catch (error) {
-                    console.error(`${Date()} ERRO - Não foi possível criar o convite\n${error}`);
+                    console.error(`ERRO - Não foi possível criar o convite\n${error}`);
                     //await interaction.editReply("❌ Erro ao criar convite\n" + "```" + error + "```");
                     return "";
                 }
@@ -503,9 +509,9 @@ client.on(Events.InteractionCreate, async interaction => {
                     await interaction.editReply({
                         content: `✅ Turma ${className} criado com sucesso!\n📨 Link: ${inviteUrl}\n👥 Cargo vinculado: ${classRole}`,
                         ephemeral: false
-                    }).then(_ => console.info(`${Date()} LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
+                    }).then(_ => console.info(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
                 } catch (error) {
-                    console.error(`${Date()} ERRO - Não foi possivel criar a turma\n${error}`);
+                    console.error(`ERRO - Não foi possivel criar a turma\n${error}`);
                     await interaction.editReply({
                         content: `❌ Erro ao criar ${className}\n` + "```" + error + "```",
                         ephemeral: true
@@ -548,7 +554,7 @@ client.on('raw', async (packet) => {
 client.on(Events.GuildMemberAdd, async member => {
     joinQueue.enqueue(async () => {
         try {
-            console.info(`${Date()} LOG - Processando entrada de ${member.user.username}`);
+            console.info(`LOG - Processando entrada de ${member.user.username}`);
 
             // Constroi e envia uma imagem de boas-vindas
             async function sendWelcome(profile, targetChannel) {
@@ -599,20 +605,20 @@ client.on(Events.GuildMemberAdd, async member => {
             }
 
             if (!used_invite) {
-                console.error(`${Date()} ERRO - Não foi possível determinar o convite usado`);
+                console.error(`ERRO - Não foi possível determinar o convite usado`);
                 return;
             }
 
             // Busca o cargo vinculado ao invite no banco
             db.query("SELECT role FROM invites WHERE invite = ?", [used_invite], async (err, rows) => {
                     if (err) {
-                        console.error(`${Date()} ERRO - Erro na consulta SQL:`, err);
+                        console.error(`ERRO - Erro na consulta SQL:`, err);
                         return;
                     }
 
                     // Verifica se há resultados
                     if (!rows || rows.length === 0) {
-                        console.error(`${Date()} ERRO - Nenhum cargo vinculado ao convite usado`);
+                        console.error(`ERRO - Nenhum cargo vinculado ao convite usado`);
                         return;
                     }
 
@@ -623,12 +629,12 @@ client.on(Events.GuildMemberAdd, async member => {
                     }
 
                     await member.roles.add(welcome_role);
-                    console.info(`${Date()} LOG - ${member.user.username} adicionado ao cargo ${welcome_role.name}`);
+                    console.info(`LOG - ${member.user.username} adicionado ao cargo ${welcome_role.name}`);
                 }
             );
 
             // Registra o log de entrada do membro
-            console.info(`${Date()} LOG - ${member.user.username} entrou no servidor ${member.guild.name} com o código: ${used_invite}`);
+            console.info(`LOG - ${member.user.username} entrou no servidor ${member.guild.name} com o código: ${used_invite}`);
 
             // Busca o canal de boas-vindas e envia a mensagem
             try {
@@ -637,11 +643,11 @@ client.on(Events.GuildMemberAdd, async member => {
                     //await welcomeChannel.send(`Olá ${member}, seja bem-vindo(a) a comunidade!`);
                     await sendWelcome(member, welcomeChannel);
                 }} catch (error) {
-                console.error(`${Date()} ERRO - Falha ao enviar mensagem de boas-vindas:`, error);
+                console.error(`ERRO - Falha ao enviar mensagem de boas-vindas:`, error);
             }
 
         } catch (error) {
-            console.error(`${Date()} ERRO ao processar novo membro:`, error);
+            console.error(`ERRO ao processar novo membro:`, error);
         }
     });
 });
@@ -649,8 +655,7 @@ client.on(Events.GuildMemberAdd, async member => {
 
 
 try {
-    client.login(process.env.TOKEN).then(_ => console.info(`${Date()}`));
-
+    await client.login(process.env.TOKEN);
 } catch (error) {
-    console.error(`${Date()} ERRO - Bot não iniciado\n${error}`);
+    console.error(`ERRO - Bot não iniciado\n${error}`);
 }
