@@ -11,7 +11,8 @@ import {
     PollLayoutType,
     TextChannel,
     ForumChannel,
-    AttachmentBuilder
+    AttachmentBuilder,
+    ChannelType
 } from "discord.js"
 import mysql from 'mysql2'
 import {
@@ -171,27 +172,64 @@ const joinQueue = new Queue(1); // 1 por vez (até 3, quanto menos, menos uso de
 
 
 
+let eventsSchedule = []
+
 async function checkEvents() {
     try {
         const guilds = await client.guilds.fetch();
+
+        const now = new Date(); // timestamp atual em ms
+
+        if (eventsSchedule.length === 100) eventsSchedule.shift() // remove o primeiro item da lista
 
         for (const [id, partialGuild] of guilds) {
             try {
                 // força o fetch completo da guild
                 const guild = await partialGuild.fetch();
-
                 const events = await guild.scheduledEvents.fetch();
-                console.log(`Eventos da guild ${id}:`, events);
+                for (const event of events.values()) {
+                    const now = Date.now(); // timestamp atual em ms
+                    const diffMs = event.scheduledStartTimestamp - now;
 
-            } catch (err) {
-                console.error(`Erro ao buscar eventos da guild ${id}:`, err);
-            }
+                    if (diffMs > 0) { // evento ainda não começou
+                        const diffMinutes = Math.floor(diffMs / 1000 / 60);
+                        if (diffMinutes <= 30 && !eventsSchedule.includes(event.id) && [ChannelType.GuildVoice, ChannelType.GuildStageVoice].includes(event.channel.type)) {
+                            // Define qual o canal que deve ser enviado o aviso
+                            const channels = await guild.channels.fetch(); // pega todos os canais
+                            const eventChannel = channels.get(event.channelId); // pega o canal do evento
+                            const target = channels.find(c =>
+                                c.parentId === eventChannel.parentId &&
+                                c.name === classChannels[5].name
+                            );
+
+                            // Pega o cargo da turma do evento
+                            const permissionOverwrites = await eventChannel.permissionOverwrites.fetch();
+                            const classOverwrite = permissionOverwrites.find(o => o.type === 'role' && o.name?.includes("Estudantes"));
+                            const classRole = await guild.roles.fetch(classOverwrite.id);
+
+                            // Pega a hora do evento
+                            const date = new Date(event.scheduledStartTimestamp);
+                            const hours = date.getHours();
+                            const minutes = date.getMinutes().toString().padStart(2, '0');
+
+                            target.send(`Boa noite, turma!!  ${classRole}\n` +
+                                "\n" +
+                                `Passando para lembrar vocês do nosso evento de hoje às ${hours}:${minutes} 🚀 \n` +
+                                `acesse o card do evento [aqui](${event.url})`)
+
+                            // Adiciona o evento na lista de eventos agendados para evitar duplicidade
+                            eventsSchedule.push(event.id)
+                        }
+                    }
+                }
+
+            } catch (err) {console.error(`Erro ao buscar eventos da guild ${id}:`, err);}
         }
     } catch (err) {
-        console.error("Erro na rotina:", err);
+        console.error("Erro na rotina:", err)
     } finally {
         // agenda de novo só depois que terminar tudo
-        setTimeout(checkEvents, 5 * 60 * 1000); // 1 minuto
+        setTimeout(checkEvents, 30 * 1000);
     }
 }
 
