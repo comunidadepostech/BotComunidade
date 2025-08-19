@@ -175,20 +175,17 @@ async function checkEvents() {
     try {
         const guilds = await client.guilds.fetch();
 
-        // percorre cada servidor e pega todos os eventos cadastrados
-        for (const [id, guild] of guilds) {
-            try {
+        await Promise.all(
+            guilds.map(async guild => {
                 const events = await guild.scheduledEvents.fetch();
-                console.log(`Eventos da guild ${id}:`, events);
-            } catch (err) {
-                console.error(`Erro ao buscar eventos da guild ${id}:`, err);
-            }
-        }
+                console.log(events);
+            })
+        );
     } catch (err) {
         console.error("Erro na rotina:", err);
     } finally {
         // agenda de novo só depois que terminar tudo
-        setTimeout(checkEvents, 60 * 1000); // 1 minuto
+        setTimeout(checkEvents, 5 * 60 * 1000); // 1 minuto
     }
 }
 
