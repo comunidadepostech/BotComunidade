@@ -470,7 +470,6 @@ client.on(Events.InteractionCreate, async interaction => {
                     return invite.url;
                 } catch (error) {
                     console.error(`ERRO - Não foi possível criar o convite\n${error}`);
-                    //await interaction.editReply("❌ Erro ao criar convite\n" + "```" + error + "```");
                     return "";
                 }
             }
@@ -513,14 +512,16 @@ client.on(Events.InteractionCreate, async interaction => {
                     permissionOverwrites: []
                 });
 
+                const new_RolesForNewClasses = defaultRoles.rolesForNewClasses.map(obj => ({...obj, name: obj.name === "className" ? `Estudantes ${className}` : obj.name}));
+
                 for (const channel of classChannels) {
-                    if (channel.name === "Turma ") {channel.name += className}
+                    if (channel.name === "📒│Sala de estudo ") channel.name += className
                     const target = await interaction.guild.channels.create({
                         name: channel.name,
                         type: channel.type,
                         position: channel.position,
                         parent: classCategory.id, // Define a categoria da turma
-                        permissionOverwrites: defaultRoles.rolesForNewClasses
+                        permissionOverwrites: new_RolesForNewClasses
                     })
                     if (channel.name === "❓│dúvidas") {
                         await target.setAvailableTags(defaultTags);
