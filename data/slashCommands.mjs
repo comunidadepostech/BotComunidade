@@ -147,15 +147,6 @@ const create = await new SlashCommandBuilder()
     .setDescription('Cria uma nova turma ou curso')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addStringOption(option =>
-        option.setName('type')
-            .setDescription('Define o que você quer criar')
-            .setRequired(true)
-            .addChoices(
-                { name: 'Curso', value: 'curso' },
-                { name: 'Turma', value: 'turma' }
-            )
-    )
-    .addStringOption(option =>
         option.setName('name')
             .setDescription('Nome da turma')
             .setRequired(true)
