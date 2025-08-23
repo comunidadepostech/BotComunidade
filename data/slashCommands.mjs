@@ -208,5 +208,6 @@ export const slashCommands = [
     {name: "echo", commandBuild: echo},
     {name: "display", commandBuild: display},
     {name: "poll", commandBuild: poll},
-    {name: "create", commandBuild: create}
+    {name: "create", commandBuild: create},
+    {name: "event", commandBuild: event}
 ]
