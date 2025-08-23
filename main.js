@@ -34,6 +34,7 @@ import get from 'axios';
 import base64 from "base-64";
 
 GlobalFonts.registerFromPath("./data/Coolvetica Hv Comp.otf", "normalFont")
+let zoomToken;
 
 // Define os principais acessos que o Bot precisa para poder funcionar corretamente
 const client = new Client({intents: [
@@ -247,8 +248,8 @@ async function getZoomAccessToken() {
 
 // Recebe o primeiro token da API do zoom ao iniciar o bot
 try {
-    global.zoomToken = await getZoomAccessToken();
-    console.info('LOG - Token do Zoom obtido com sucesso');
+    zoomToken = await getZoomAccessToken();
+    console.info(`LOG - Token do Zoom obtido com sucesso - ${zoomToken}`);
 } catch (error) {
     console.error('ERRO - Erro ao obter token do Zoom:', error);
     process.exit(1);
@@ -288,7 +289,7 @@ async function createZoomMeeting({topic, startTimeISO, duration, hostEmails, rec
             payload,
             {
                 headers: {
-                    Authorization: `Bearer ${global.zoomToken}`,
+                    Authorization: `Bearer ${zoomToken}`,
                     'Content-Type': 'application/json'
                 }
             }
@@ -296,20 +297,20 @@ async function createZoomMeeting({topic, startTimeISO, duration, hostEmails, rec
         return res.data;
     } catch (error) {
         if (error.response && error.response.status === 401) {
-            global.zoomToken = await getZoomAccessToken();
+            zoomToken = await getZoomAccessToken();
             const res = await axios.post(
                 `https://api.zoom.us/v2/users/me/meetings`,
                 payload,
                 {
                     headers: {
-                        Authorization: `Bearer ${global.zoomToken}`,
+                        Authorization: `Bearer ${zoomToken}`,
                         'Content-Type': 'application/json'
                     }
                 }
             );
             return res.data;
         } else {
-            return error.response.data;
+            console.error("ERRO - Erro ao cadastrar evento: " + error.response.data);
         }
     }
 }
