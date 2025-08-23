@@ -184,7 +184,7 @@ const event = new SlashCommandBuilder()
                 {name: "false", value: false}
             )
     )*/
-    .addIntegerOption(option =>
+    .addStringOption(option =>
         option.setName("duration")
             .setDescription("Define a duração do evento em minutos")
             .setRequired(true)

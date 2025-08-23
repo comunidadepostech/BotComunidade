@@ -658,7 +658,7 @@ client.on(Events.InteractionCreate, async interaction => {
             const topic = interaction.options.getString('title', true);
             const date = interaction.options.getString('date', true);
             const time = interaction.options.getString('time', true);
-            const duration = interaction.options.getNumber('duration', true);
+            const duration = interaction.options.getString('duration', true);
             const host_emails = interaction.options.getString('host_emails', true);
             const recording = !!interaction.options.getInteger('recording', true);
 
