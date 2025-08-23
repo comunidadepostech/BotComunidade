@@ -656,7 +656,6 @@ client.on(Events.InteractionCreate, async interaction => {
         case "event":
             await interaction.deferReply({ephemeral: true}); // Responde de forma atrasada para evitar timeout
             const topic = interaction.options.getString('title', true);
-            const description = interaction.options.getString('description', true);
             const date = interaction.options.getString('date', true);
             const time = interaction.options.getString('time', true);
             const duration = interaction.options.getNumber('duration', true);
