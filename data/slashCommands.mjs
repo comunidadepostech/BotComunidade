@@ -1,7 +1,7 @@
 import {SlashCommandBuilder, PermissionFlagsBits} from "discord.js"
 
 // Comando de invite, cria um convite que pode ser vinculado a um cargo e a um canal específico.
-const invite = await new SlashCommandBuilder()
+const invite = new SlashCommandBuilder()
     .setName('invite')
     .setDescription('Cria um convite para o servidor')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
@@ -29,13 +29,13 @@ const invite = await new SlashCommandBuilder()
     );
 
 // Comando de teste, serve para saber se o ‘Bot’ está a responder para ajudar na resolução de problemas
-const ping = await new SlashCommandBuilder()
+const ping = new SlashCommandBuilder()
     .setName('ping')
     .setDescription('Responde com Pong!')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 // Echo serve para replicar uma mensagem para um ou mais canais definidos pelo usuário
-const echo = await new SlashCommandBuilder()
+const echo = new SlashCommandBuilder()
     .setName("echo")
     .setDescription("Replica uma mensagem para determinado canal")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
@@ -52,13 +52,13 @@ const echo = await new SlashCommandBuilder()
     )
 
 // Display serve para exibir os convites ativos do servidor
-const display = await new SlashCommandBuilder()
+const display = new SlashCommandBuilder()
     .setName("display")
     .setDescription("Exibe os convites ativos do servidor")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 // Poll serve para criar uma enquete
-const poll = await new SlashCommandBuilder()
+const poll = new SlashCommandBuilder()
     .setName('poll')
     .setDescription('Cria uma enquete interativa')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
@@ -142,7 +142,7 @@ const poll = await new SlashCommandBuilder()
             )
     );
 
-const create = await new SlashCommandBuilder()
+const create = new SlashCommandBuilder()
     .setName('create')
     .setDescription('Cria uma nova turma ou curso')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
@@ -156,6 +156,39 @@ const create = await new SlashCommandBuilder()
             .setDescription('Canal de faq da nova turma (obrigatório para novas turmas)')
             .setRequired(true)
     );
+
+const event = new SlashCommandBuilder()
+    .setName('event')
+    .setDescription('Cria um evento no Discord, Zoom e no calendário')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addStringOption(option =>
+        option.setName('title')
+            .setDescription('Título do evento')
+            .setRequired(true)
+    )
+    .addStringOption(option =>
+        option.setName('date')
+            .setDescription('Data do evento (dd/mm/aaaa)')
+            .setRequired(true)
+    )
+    .addStringOption(option =>
+        option.setName('time')
+            .setDescription('Hora do evento (hh:mm)')
+            .setRequired(true)
+    )
+    /*.addStringOption(option =>
+        option.setName('passworld_required')
+            .setDescription("Especifica se uma senha é necessaria para a reunião")
+            .addChoices(
+                {name: "true", value: true},
+                {name: "false", value: false}
+            )
+    )*/
+    .addStringOption(option =>
+        option.setName("host_emails")
+            .setDescription("E-mails dos organizadores do evento separados por ;")
+            .setRequired(true)
+    )
 
 export const slashCommands = [
     {name: "invite", commandBuild: invite},
