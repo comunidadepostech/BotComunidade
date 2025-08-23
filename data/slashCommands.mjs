@@ -137,8 +137,8 @@ const poll = new SlashCommandBuilder()
             .setDescription('Permite múltipla seleção de opções (padrão: 0 para false)')
             .setRequired(false)
             .addChoices(
-                { name: 'Sim', value: 1 },
-                { name: 'Não', value: 0 }
+                { name: 'true', value: 1 },
+                { name: 'false', value: 0 }
             )
     );
 
@@ -184,11 +184,23 @@ const event = new SlashCommandBuilder()
                 {name: "false", value: false}
             )
     )*/
+    .addIntegerOption(option =>
+        option.setName("duration")
+            .setDescription("Define a duração do evento em minutos")
+            .setRequired(true)
+    )
     .addStringOption(option =>
         option.setName("host_emails")
             .setDescription("E-mails dos organizadores do evento separados por ;")
             .setRequired(true)
     )
+    .addStringOption(option =>
+        option.setName("recording")
+            .setDescription("Define se o evento deve ser gravado (true/false)")
+            .setRequired(true)
+            .addChoices({name: "true", value: true}, {name: "false", value: false})
+    )
+
 
 export const slashCommands = [
     {name: "invite", commandBuild: invite},
