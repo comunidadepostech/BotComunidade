@@ -28,7 +28,8 @@ import {defaultTags} from "./data/defaultTags.mjs";
 import {Canvas, createCanvas, Image, loadImage, GlobalFonts} from '@napi-rs/canvas'
 import {request}  from 'undici'
 import {readFile} from 'fs/promises'
-import {axios, get} from 'axios';
+import axios from 'axios';
+import get from 'axios';
 
 GlobalFonts.registerFromPath("./data/Coolvetica Hv Comp.otf", "normalFont")
 
