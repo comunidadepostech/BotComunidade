@@ -249,7 +249,8 @@ async function getZoomAccessToken() {
 // Recebe o primeiro token da API do zoom ao iniciar o bot
 try {
     zoomToken = await getZoomAccessToken();
-    console.info(`LOG - Token do Zoom obtido com sucesso - ${zoomToken}`);
+    console.info(`LOG - Token do Zoom obtido com sucesso`);
+    console.debug("DEBUG - Primeiro Token do Zoom:", typeof zoomToken, zoomToken?.slice?.(0, 30) + "...");
 } catch (error) {
     console.error('ERRO - Erro ao obter token do Zoom:', error);
     process.exit(1);
@@ -281,6 +282,7 @@ async function createZoomMeeting({topic, startTimeISO, duration, hostEmails, rec
             approval_type: 2,
             audio: "voip",
             auto_recording: record ? "cloud" : "none",
+            alternative_hosts: hostEmails
         }
     };
     try {
@@ -311,6 +313,7 @@ async function createZoomMeeting({topic, startTimeISO, duration, hostEmails, rec
             return res.data;
         } else {
             console.error("ERRO - Erro ao cadastrar evento: " + error.response.data);
+            return -1;
         }
     }
 }
@@ -682,9 +685,13 @@ client.on(Events.InteractionCreate, async interaction => {
                     topic: topic,
                     startTimeISO: startTimeISO,
                     duration: duration, // minutos,
-                    hostEmails: host_emails.split(";"),
+                    hostEmails: host_emails,
                     recording: recording
                 });
+                if (meeting === -1) {
+                    await interaction.editReply({content: "❌ Erro ao criar evento, cheque se os emais dos anfitriões são validos ou se as variáveis de ambiente estão definidas corretamente!", flags: MessageFlags.Ephemeral});
+                    break;
+                }
                 console.log(`LOG - Evento criado por ${interaction.user.username} em ${interaction.guild.name}: join_url: ${meeting.join_url}`);
             })();
             break;

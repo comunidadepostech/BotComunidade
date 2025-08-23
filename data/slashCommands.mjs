@@ -191,7 +191,7 @@ const event = new SlashCommandBuilder()
     )
     .addStringOption(option =>
         option.setName("host_emails")
-            .setDescription("E-mails dos organizadores do evento separados por ;")
+            .setDescription("E-mails dos organizadores do evento separados por , e sem espaço")
             .setRequired(true)
     )
     .addIntegerOption(option =>
