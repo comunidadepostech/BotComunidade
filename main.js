@@ -690,7 +690,6 @@ client.on(Events.InteractionCreate, async interaction => {
                 });
                 if (meeting === -1) {
                     await interaction.editReply({content: "❌ Erro ao criar evento, cheque se os emais dos anfitriões são validos ou se as variáveis de ambiente estão definidas corretamente!", flags: MessageFlags.Ephemeral});
-                    break;
                 }
                 console.log(`LOG - Evento criado por ${interaction.user.username} em ${interaction.guild.name}: join_url: ${meeting.join_url}`);
             })();
