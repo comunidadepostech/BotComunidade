@@ -59,7 +59,7 @@ async function dbConnect(database) {
 
     db.connect((err) => {
         if (err) {
-            console.error('Erro ao conectar no MySQL:', err);
+            console.error('ERRO - Erro ao conectar no MySQL:', err);
             process.exit(1); // Encerra o processo se não conseguir conectar ao banco de dados para tentar novamente
         }
     });
@@ -78,7 +78,7 @@ async function initializeTables() {
                 server_id VARCHAR(22) NOT NULL
             )
         `);
-        console.info('Tabela de convites verificada com sucesso');
+        console.info('LOG - Tabela de convites verificada com sucesso');
 
         // Cria a tabela de enquetes
         db.query(`
@@ -88,9 +88,9 @@ async function initializeTables() {
                 ended_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        console.info('Tabela de enquetes verificada com sucesso');
+        console.info('LOG - Tabela de enquetes verificada com sucesso');
     } catch (err) {
-        console.error('Erro ao inicializar tabelas:', err);
+        console.error('ERRO - Erro ao inicializar tabelas:', err);
         process.exit(1); // Encerra o processo se não conseguir criar as tabelas
     }
 }
@@ -108,8 +108,14 @@ class Queue {
     }
 
     enqueue(task) {
-        this.items.push(task);
-        this.process();
+        return new Promise((resolve, reject) => {
+            this.items.push({
+                ...task,
+                _resolve: resolve,
+                _reject: reject
+            });
+            this.process();
+        });
     }
 
     async process() {
@@ -121,12 +127,17 @@ class Queue {
 
         try {
             if (task.processData && typeof task.processData === "function") {
-                await task.processData(); // executa a função
+                await task.processData();
             } else {
                 console.warn("Tarefa inválida:", task);
             }
+            task._resolve();
         } catch (err) {
+            task._reject(err);
             console.error("Erro na fila:", err);
+        } finally {
+            this.running--;
+            this.process();
         }
 
         this.running--;
@@ -211,7 +222,7 @@ async function checkEvents() {
 }
 
 
-/*
+
 async function getZoomAccessToken() {
     const url = 'https://zoom.us/oauth/token';
     const params = new URLSearchParams({
@@ -289,7 +300,7 @@ async function createZoomMeeting({topic, startTimeISO, duration, hostEmails, rec
         }
     }
 }
-*/
+
 
 // Fecha o banco na saída do processo
 process.on('SIGINT', () => {
@@ -630,7 +641,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 }
             break;
 
-        /*case "event":
+        case "event":
             await interaction.deferReply({ephemeral: true}); // Responde de forma atrasada para evitar timeout
             interaction.options.getString('topic');
 
@@ -642,7 +653,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 });
                 console.log('Reunião criada:', meeting.join_url);
             })();
-            break;*/
+            break;
 
         default:
             break;
