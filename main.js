@@ -28,9 +28,9 @@ import {defaultTags} from "./data/defaultTags.mjs";
 import {Canvas, createCanvas, Image, loadImage, GlobalFonts} from '@napi-rs/canvas'
 import {request}  from 'undici'
 import {readFile} from 'fs/promises'
+import {axios, get} from 'axios';
 
 GlobalFonts.registerFromPath("./data/Coolvetica Hv Comp.otf", "normalFont")
-console.info(GlobalFonts.families)
 
 // Define os principais acessos que o Bot precisa para poder funcionar corretamente
 const client = new Client({intents: [
@@ -43,6 +43,7 @@ const client = new Client({intents: [
         GatewayIntentBits.GuildMessagePolls,
         GatewayIntentBits.GuildMessageReactions
     ]});
+
 
 
 // Conexão com o banco de dados MySQL
@@ -97,46 +98,7 @@ await initializeTables();
 
 
 
-// Cria um Map para gerenciar as filas de poll's e locks de processamento
-const pollQueues = new Map();
-const processingLocks = new Map();
-
-async function processPollQueue(poll_id) {
-    processingLocks.set(poll_id, true); // Marca a enquete como em processamento
-    let poll_data = pollQueues.get(poll_id)[0]; // Pega o primeiro item da fila
-    try {
-        while (pollQueues.get(poll_id)?.length > 0) {
-            pollQueues.get(poll_id).shift(); // Remove o primeiro da fila
-            const d1 = new Date(poll_data.poll.expiry.slice(0, 23)); // Converte as datas do timestamp e expiry para Date
-            const d2 = new Date(poll_data.timestamp.slice(0, 23));
-            let poll_json = { // Cria o JSON que será inserido no banco de dados
-                question: poll_data.poll.question.text,
-                answers: poll_data.poll.answers.map(answer => [
-                    answer.poll_media.text,
-                    poll_data.poll.results.answer_counts.map(count => count.count)[answer.answer_id - 1]
-                ]),
-                duration: `${((d1-d2)/1000/60/60).toFixed(0)}:${((d1 - d2)/1000/60).toFixed(0)}:${((d1 - d2)/1000).toFixed(0)}` // Converte de milissegundos para horas
-            };
-            db.promise().query('INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)', [poll_data.id, JSON.stringify(poll_json)]);
-        }
-    } catch (error) {
-        console.error(`ERRO - Falha ao processar fila de poll's:`, error);
-
-        // Em caso de erro, limpa a fila para evitar loop infinito
-        pollQueues.set(poll_id, []);
-    } finally {
-        // Libera o processo
-        processingLocks.set(poll_id, false);
-
-        // Se novos itens chegaram durante o processamento, processa novamente
-        if (pollQueues.get(poll_id)?.length > 0) {
-            await processPollQueue(poll_id);
-        }
-    }
-
-}
-
-// Cria um fila de processamento para os comandos de novos membros (evita que o bot deixe passar um membro e otimiza os processos em até 3 ao mesmo tempo)
+// Fila global para processamento diverso
 class Queue {
     constructor(maxConcurrent = 1) {
         this.items = [];
@@ -157,7 +119,11 @@ class Queue {
         this.running++;
 
         try {
-            await task();
+            if (task.processData && typeof task.processData === "function") {
+                await task.processData(); // executa a função
+            } else {
+                console.warn("Tarefa inválida:", task);
+            }
         } catch (err) {
             console.error("Erro na fila:", err);
         }
@@ -167,20 +133,19 @@ class Queue {
     }
 }
 
-// Cria uma fila global para processar joins
-const joinQueue = new Queue(1); // 1 por vez (até 3, quanto menos, menos uso de cpu e maior garantia)
+// Cria a única fila global
+const globalQueue = new Queue(Number(process.env.MAX_CONCURRENT)); // ajusta concorrência definida no .env (1 é recomendado, se velocidade se tornar mais necessária pode-se aumentar esse valor)
 
 
-
+// Comando que é executado a cada determinado espaço de tempo
 let eventsSchedule = []
-
 async function checkEvents() {
     try {
         const guilds = await client.guilds.fetch();
 
         const now = new Date(); // timestamp atual em ms
 
-        if (eventsSchedule.length === 100) eventsSchedule.shift() // remove o primeiro item da lista
+        if (eventsSchedule.length === Number(process.env.MAX_EVENTS_CACHE)) eventsSchedule.shift() // remove o primeiro item da lista
 
         for (const [id, partialGuild] of guilds) {
             try {
@@ -240,11 +205,90 @@ async function checkEvents() {
         console.error("Erro na rotina:", err)
     } finally {
         // agenda de novo só depois que terminar tudo
-        setTimeout(checkEvents, 30 * 1000);
+        setTimeout(checkEvents, Number(process.env.EVENT_CHECK_TIME) * 60 * 1000);
     }
 }
 
 
+/*
+async function getZoomAccessToken() {
+    const url = 'https://zoom.us/oauth/token';
+    const params = new URLSearchParams({
+        grant_type: 'account_credentials',
+        account_id: process.env.ZOOM_ACCOUNT_ID
+    });
+
+    // Constroi o parametro para o HTTP POST
+    const authHeader = 'Basic ' +
+        Buffer.from(`${process.env.ZOOM_CLIENT_ID}:${process.env.ZOOM_CLIENT_SECRET}`).toString('base64');
+
+    // Faz o HTTP POST para obter o token do Zoom
+    const res = await axios.post(`${url}?${params}`, null, {
+        headers: { Authorization: authHeader }
+    });
+    return res.data.access_token;
+}
+
+// Recebe o primeiro token da API do zoom ao iniciar o bot
+try {
+    global.zoomToken = await getZoomAccessToken();
+    console.info('LOG - Token do Zoom obtido com sucesso');
+} catch (error) {
+    console.error('ERRO - Erro ao obter token do Zoom:', error);
+    process.exit(1);
+}
+
+async function createZoomMeeting({topic, startTimeISO, duration, hostEmails, record}) {
+    const payload = {
+        topic: topic,
+        type: 2, // 2 = horário marcado
+        start_time: startTimeISO,
+        duration: duration,
+        timezone: "America/Sao_Paulo",
+        settings: {
+            join_before_host: false,
+            waiting_room: true,
+            host_video: true,
+            participant_video: false,
+            mute_upon_entry: true,
+            password: "",  // sem senha
+            approval_type: 2,
+            audio: "voip",
+            auto_recording: record
+        }
+    };
+    try {
+        const res = await axios.post(
+            `https://api.zoom.us/v2/users/me/meetings`,
+            payload,
+            {
+                headers: {
+                    Authorization: `Bearer ${global.zoomToken}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        return res.data;
+    } catch (error) {
+        if (error.response && error.response.status == 401) {
+            global.zoomToken = await getZoomAccessToken();
+            const res = await axios.post(
+                `https://api.zoom.us/v2/users/me/meetings`,
+                payload,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            return res.data;
+        } else {
+            return error.response.data;
+        }
+    }
+}
+*/
 
 // Fecha o banco na saída do processo
 process.on('SIGINT', () => {
@@ -265,21 +309,27 @@ client.once(Events.ClientReady, async c => {
     console.info(`LOG - Inicializando cliente ${client.user.username} com ID ${client.user.id}`);
 
     // Começa o cadastro de comandos nos servidores
-    console.info(`LOG - Iniciando registro de comandos`);
     async function loadCommand(commandName, command) {
-        for (const id of process.env.ALLOWED_SERVERS_ID.split(',')) {
+        const serverIds = process.env.ALLOWED_SERVERS_ID.split(',');
+
+        // Cria todas as promises em paralelo por servidor
+        const promises = serverIds.map(async (id) => {
             try {
                 await client.application.commands.create(command, id);
-                console.info(`COMANDOS - ${commandName} cadastrado em: ${id}`);
+                console.info(`COMANDO - "${commandName}" cadastrado em servidor ${id}`);
             } catch (error) {
-                console.info(`ERRO - ${commandName} não cadastrado em: ${id}\n${error}`);
+                console.error(`ERRO - "${commandName}" não cadastrado em servidor ${id}\n`, error);
             }
-        }
+        });
+
+        // Espera todas terminarem
+        await Promise.all(promises);
     }
 
-    for (const command of slashCommands) {
-        await loadCommand(command.name, command.commandBuild)
-    }
+// Cadastra todos os comandos em paralelo
+    await Promise.all(
+        slashCommands.map(c => loadCommand(c.name, c.commandBuild))
+    );
 
     // Inicia o processo de checagem de eventos nos servidores
     checkEvents();
@@ -310,7 +360,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 });
 
                 // Insere o convite no banco de dados
-                db.query(`INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`, [invite.code, role, interaction.guild.id]);
+                await db.query(`INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`, [invite.code, role, interaction.guild.id]);
 
                 // Responde com o link do convite
                 await interaction.reply({
@@ -579,6 +629,20 @@ client.on(Events.InteractionCreate, async interaction => {
                 }
             break;
 
+        /*case "event":
+            await interaction.deferReply({ephemeral: true}); // Responde de forma atrasada para evitar timeout
+            interaction.options.getString('topic');
+
+            await (async () => {
+                const meeting = await createZoomMeeting({
+                    topic: '',
+                    startTimeISO: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+                    duration: 30 // minutos
+                });
+                console.log('Reunião criada:', meeting.join_url);
+            })();
+            break;*/
+
         default:
             break;
     }
@@ -589,29 +653,36 @@ client.on(Events.InteractionCreate, async interaction => {
 // Evento que é disparado quando uma enquete termina
 client.on('raw', async (packet) => {
     if (!packet.t || !['MESSAGE_UPDATE'].includes(packet.t)) return;
-    try {
-        if (packet.d.poll.results.is_finalized) {
-            const poll_id = packet.d.id;
-
-            // Adiciona a poll à fila de processamento
-            if (!pollQueues.has(poll_id)) {
-                pollQueues.set(poll_id, []);
+    if (packet.d.poll.results.is_finalized) {
+        const pollData = packet.d;
+        globalQueue.enqueue({processData: async () => {
+            try {
+                const d1 = new Date(pollData.poll.expiry.slice(0, 23));
+                const d2 = new Date(pollData.timestamp.slice(0, 23));
+                let poll_json = {
+                    question: pollData.poll.question.text,
+                    answers: pollData.poll.answers.map(answer => [
+                        answer.poll_media.text,
+                        pollData.poll.results.answer_counts.map(count => count.count)[answer.answer_id - 1]
+                    ]),
+                    duration: `${((d1-d2)/1000/60/60).toFixed(0)}:${((d1 - d2)/1000/60).toFixed(0)}:${((d1 - d2)/1000).toFixed(0)}`
+                };
+                await db.promise().query(
+                    'INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)',
+                    [pollData.id, JSON.stringify(poll_json)]
+                );
+            } catch (err) {
+                console.error("Erro ao processar poll:", err);
             }
-            pollQueues.get(poll_id).push(packet.d);
-
-            // Processa a fila se não estiver sendo processada
-            if (!processingLocks.get(poll_id)) {
-                await processPollQueue(poll_id);
-            }
-        }
-    } catch (error) {}
+        }});
+    }
 });
 
 
 
 // Evento que é disparado quando um novo membro entra no servidor
 client.on(Events.GuildMemberAdd, async member => {
-    joinQueue.enqueue(async () => {
+    globalQueue.enqueue({processData: async () => {
         try {
             console.info(`LOG - Processando entrada de ${member.user.username}`);
 
@@ -708,7 +779,7 @@ client.on(Events.GuildMemberAdd, async member => {
         } catch (error) {
             console.error(`ERRO ao processar novo membro:`, error);
         }
-    });
+    }});
 });
 
 
