@@ -253,6 +253,15 @@ try {
     process.exit(1);
 }
 
+/**
+ * Cria uma reunião no Zoom
+ * @param {Object} options
+ * @param {string} options.topic - Título da reunião
+ * @param {string} options.startTimeISO - Data de início em ISO (ex: 2025-08-20T14:00:00Z)
+ * @param {number} options.duration - Duração em minutos
+ * @param {string[]} options.hostEmails - Lista de e-mails dos anfitriões
+ * @param {boolean} options.record - Se deve gravar a reunião
+ */
 async function createZoomMeeting({topic, startTimeISO, duration, hostEmails, record}) {
     const payload = {
         topic: topic,
@@ -269,7 +278,7 @@ async function createZoomMeeting({topic, startTimeISO, duration, hostEmails, rec
             password: "",  // sem senha
             approval_type: 2,
             audio: "voip",
-            auto_recording: record
+            auto_recording: record ? "cloud" : "none",
         }
     };
     try {
@@ -278,7 +287,7 @@ async function createZoomMeeting({topic, startTimeISO, duration, hostEmails, rec
             payload,
             {
                 headers: {
-                    Authorization: `Bearer ${global.zoomToken}`,
+                    Authorization: `Bearer ${zoomToken}`,
                     'Content-Type': 'application/json'
                 }
             }
@@ -292,7 +301,7 @@ async function createZoomMeeting({topic, startTimeISO, duration, hostEmails, rec
                 payload,
                 {
                     headers: {
-                        Authorization: `Bearer ${token}`,
+                        Authorization: `Bearer ${zoomToken}`,
                         'Content-Type': 'application/json'
                     }
                 }
