@@ -194,11 +194,11 @@ const event = new SlashCommandBuilder()
             .setDescription("E-mails dos organizadores do evento separados por ;")
             .setRequired(true)
     )
-    .addStringOption(option =>
+    .addIntegerOption(option =>
         option.setName("recording")
             .setDescription("Define se o evento deve ser gravado (true/false)")
             .setRequired(true)
-            .addChoices({name: "true", value: true}, {name: "false", value: false})
+            .addChoices({name: "true", value: 0}, {name: "false", value: 1})
     )
 
 
