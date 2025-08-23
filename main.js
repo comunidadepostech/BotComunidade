@@ -12,7 +12,8 @@ import {
     TextChannel,
     ForumChannel,
     AttachmentBuilder,
-    ChannelType
+    ChannelType,
+    MessageFlags
 } from "discord.js"
 import mysql from 'mysql2'
 import {
@@ -287,21 +288,21 @@ async function createZoomMeeting({topic, startTimeISO, duration, hostEmails, rec
             payload,
             {
                 headers: {
-                    Authorization: `Bearer ${zoomToken}`,
+                    Authorization: `Bearer ${global.zoomToken}`,
                     'Content-Type': 'application/json'
                 }
             }
         );
         return res.data;
     } catch (error) {
-        if (error.response && error.response.status == 401) {
+        if (error.response && error.response.status === 401) {
             global.zoomToken = await getZoomAccessToken();
             const res = await axios.post(
                 `https://api.zoom.us/v2/users/me/meetings`,
                 payload,
                 {
                     headers: {
-                        Authorization: `Bearer ${zoomToken}`,
+                        Authorization: `Bearer ${global.zoomToken}`,
                         'Content-Type': 'application/json'
                     }
                 }
@@ -365,7 +366,7 @@ client.once(Events.ClientReady, async c => {
 client.on(Events.InteractionCreate, async interaction => {
     switch (interaction.commandName) {
         case "ping":
-            await interaction.reply({content: "pong!", ephemeral: true});
+            await interaction.reply({content: "pong!", flags: MessageFlags.Ephemeral});
             console.info(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
             break;
 
@@ -389,13 +390,13 @@ client.on(Events.InteractionCreate, async interaction => {
                 // Responde com o link do convite
                 await interaction.reply({
                     content: `✅ Convite criado com sucesso!\n📨 Link: ${invite.url}\n📍 Canal: ${channel}\n⏱️ Duração: ${duration === 0 ? 'Permanente' : `${duration} dias`}\n🔢 Usos máximos: ${maxUses === 0 ? 'Ilimitado' : maxUses}\n👥 Cargo vinculado: ${role}`,
-                    ephemeral: true // Faz a resposta ser visível apenas para quem executou o comando
+                    flags: MessageFlags.Ephemeral // Faz a resposta ser visível apenas para quem executou o comando
                 }).then(_ => console.info(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
             } catch (error) {
                 console.error(`Erro ao criar convite:`, error);
                 await interaction.reply({
                     content: `❌ Ocorreu um erro ao criar o convite. Verifique se tenho permissões suficientes.\n` + "```" + error + "```",
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
             break;
@@ -406,21 +407,21 @@ client.on(Events.InteractionCreate, async interaction => {
             if (!echoChannel.isTextBased()) {
                 await interaction.reply({
                     content: "❌ O canal especificado não é um canal de texto.",
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
                 return;
             } else {
                 await echoChannel.send(message).then(_ => {
                     interaction.reply({
                         content: `✅ Mensagem enviada para ${echoChannel} com sucesso!`,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                     console.info(`LOG - echo ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
                 }).catch(error => {
                     console.error(`ERRO - Falha ao enviar mensagem:`, error);
                     interaction.reply({
                         content: "❌ Ocorreu um erro ao enviar a mensagem.\n" + "```" + error + "```",
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 });
             }
@@ -434,7 +435,7 @@ client.on(Events.InteractionCreate, async interaction => {
                         console.error(`ERRO - Erro na consulta SQL:`, err);
                         await interaction.reply({
                             content: "❌ Ocorreu um erro ao buscar os convites.",
-                            ephemeral: true
+                            flags: MessageFlags.Ephemeral
                         });
                         return;
                     }
@@ -443,7 +444,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     if (rows.length === 0) {
                         await interaction.reply({
                             content: "Nenhum convite ativo encontrado.",
-                            ephemeral: true
+                            flags: MessageFlags.Ephemeral
                         });
                         return;
                     }
@@ -472,7 +473,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     });
                     await interaction.reply({
                         content: response,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 });
                 break;
@@ -480,7 +481,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 console.error(`ERRO - Falha ao buscar convites:`, error);
                 await interaction.reply({
                     content: "❌ Ocorreu um erro ao buscar os convites.\n"  + "```" + error + "```",
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
             break;
@@ -516,19 +517,19 @@ client.on(Events.InteractionCreate, async interaction => {
                     }
                 });
 
-                await interaction.reply({content: "✅ Enquete criada com sucesso!", ephemeral: true});
+                await interaction.reply({content: "✅ Enquete criada com sucesso!", flags: MessageFlags.Ephemeral});
 
             } catch (error) {
                 console.error(`ERRO - Falha ao criar enquete:`, error);
                 await interaction.reply({
                     content: "❌ Ocorreu um erro ao criar a enquete.\n" + error,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
             break;
 
         case "create":
-            await interaction.deferReply({ephemeral: true}); // Responde de forma atrasada para evitar timeout
+            await interaction.deferReply({flags: MessageFlags.Ephemeral}); // Responde de forma atrasada para evitar timeout
 
             const className = interaction.options.getString('name');
 
@@ -641,20 +642,20 @@ client.on(Events.InteractionCreate, async interaction => {
                     // Responde com o link do invite e outras informações
                     await interaction.editReply({
                         content: `✅ Turma ${className} criado com sucesso!\n📨 Link: ${inviteUrl}\n👥 Cargo vinculado: ${classRole}`,
-                        ephemeral: false
+                        flags: MessageFlags.Ephemeral
                     }).then(_ => console.info(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
                 } catch (error) {
                     console.error(`ERRO - Não foi possivel criar a turma\n${error}`);
                     await interaction.editReply({
                         content: `❌ Erro ao criar ${className}\n` + "```" + error + "```",
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                     return;
                 }
             break;
 
         case "event":
-            await interaction.deferReply({ephemeral: true}); // Responde de forma atrasada para evitar timeout
+            await interaction.deferReply({flags: MessageFlags.Ephemeral}); // Responde de forma atrasada para evitar timeout
             const topic = interaction.options.getString('title', true);
             const date = interaction.options.getString('date', true);
             const time = interaction.options.getString('time', true);
