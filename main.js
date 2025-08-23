@@ -30,6 +30,7 @@ import {request}  from 'undici'
 import {readFile} from 'fs/promises'
 import axios from 'axios';
 import get from 'axios';
+import base64 from "base-64";
 
 GlobalFonts.registerFromPath("./data/Coolvetica Hv Comp.otf", "normalFont")
 
@@ -224,21 +225,23 @@ async function checkEvents() {
 
 
 async function getZoomAccessToken() {
-    const url = 'https://zoom.us/oauth/token';
-    const params = new URLSearchParams({
-        grant_type: 'account_credentials',
-        account_id: process.env.ZOOM_ACCOUNT_ID
-    });
+    const token = base64.encode(`${process.env.ZOOM_CLIENT_ID}:${process.env.ZOOM_CLIENT_SECRET}`);
 
-    // Constroi o parametro para o HTTP POST
-    const authHeader = 'Basic ' +
-        Buffer.from(`${process.env.ZOOM_CLIENT_ID}:${process.env.ZOOM_CLIENT_SECRET}`).toString('base64');
-
-    // Faz o HTTP POST para obter o token do Zoom
-    const res = await axios.post(`${url}?${params}`, null, {
-        headers: { Authorization: authHeader }
-    });
-    return res.data.access_token;
+    try {
+        const res = await axios.post(
+            `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${process.env.ZOOM_ACCOUNT_ID}`,
+            {},
+            {
+                headers: {
+                    "Authorization": `Basic ${token}`,
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+            }
+        );
+        return res.data.access_token;
+    } catch (error) {
+        return error.response.data;
+    }
 }
 
 // Recebe o primeiro token da API do zoom ao iniciar o bot
