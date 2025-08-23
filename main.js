@@ -361,7 +361,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 });
 
                 // Insere o convite no banco de dados
-                await db.query(`INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`, [invite.code, role, interaction.guild.id]);
+                db.query(`INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`, [invite.code, role, interaction.guild.id]);
 
                 // Responde com o link do convite
                 await interaction.reply({
@@ -668,7 +668,7 @@ client.on('raw', async (packet) => {
                     ]),
                     duration: `${((d1-d2)/1000/60/60).toFixed(0)}:${((d1 - d2)/1000/60).toFixed(0)}:${((d1 - d2)/1000).toFixed(0)}`
                 };
-                db.promise().query(
+                await db.promise().query(
                     'INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)',
                     [pollData.id, JSON.stringify(poll_json)]
                 );
