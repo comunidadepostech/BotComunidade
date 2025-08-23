@@ -655,15 +655,36 @@ client.on(Events.InteractionCreate, async interaction => {
 
         case "event":
             await interaction.deferReply({ephemeral: true}); // Responde de forma atrasada para evitar timeout
-            interaction.options.getString('topic');
+            const topic = interaction.options.getString('topic', true);
+            const description = interaction.options.getString('description', true);
+            const date = interaction.options.getString('date', true);
+            const time = interaction.options.getString('time', true);
+            const duration = interaction.options.getNumber('duration', true);
+            const host_emails = interaction.options.getString('host_emails', true);
+            const recording = interaction.options.getBoolean('recording', true);
+
+            const [day, month, year] = date.split("/");
+            const [hours, minutes] = time.split(":");
+
+            const startDate = new Date(
+                Number(year),
+                Number(month) - 1,
+                Number(day),
+                Number(hours),
+                Number(minutes)
+            );
+
+            const startTimeISO = startDate.toISOString();
 
             await (async () => {
                 const meeting = await createZoomMeeting({
-                    topic: '',
-                    startTimeISO: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-                    duration: 30 // minutos
+                    topic: topic,
+                    startTimeISO: startTimeISO,
+                    duration: duration, // minutos,
+                    hostEmails: host_emails.split(";"),
+                    recording: recording
                 });
-                console.log('Reunião criada:', meeting.join_url);
+                console.log(`LOG - Evento criado por ${interaction.user.username} em ${interaction.guild.name}: join_url: ${meeting.join_url}`);
             })();
             break;
 
