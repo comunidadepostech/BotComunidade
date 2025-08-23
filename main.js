@@ -668,7 +668,7 @@ client.on('raw', async (packet) => {
                     ]),
                     duration: `${((d1-d2)/1000/60/60).toFixed(0)}:${((d1 - d2)/1000/60).toFixed(0)}:${((d1 - d2)/1000).toFixed(0)}`
                 };
-                await db.promise().query(
+                db.promise().query(
                     'INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)',
                     [pollData.id, JSON.stringify(poll_json)]
                 );
