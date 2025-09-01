@@ -568,7 +568,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
             // Busca todas as mensagens em lotes de 100
             while (true) {
-                const options = { limit: 10000 };
+                const options = { limit: 100 };
                 if (lastId) options.before = lastId;
                 const messages = await channel.messages.fetch(options);
                 if (messages.size === 0) break;
