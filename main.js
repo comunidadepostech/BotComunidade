@@ -568,7 +568,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
             // Busca todas as mensagens em lotes de 100
             while (true) {
-                const options = { limit: 100 };
+                const options = { limit: 10000 };
                 if (lastId) options.before = lastId;
                 const messages = await channel.messages.fetch(options);
                 if (messages.size === 0) break;
@@ -579,7 +579,17 @@ client.on(Events.InteractionCreate, async interaction => {
             // Ordena as mensagens em ordem cronológica e inclui apenas as que têm conteúdo de texto
             const sortedMessages = Array.from(allMessages.values())
                 .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
-                .filter(msg => msg.content && msg.content.trim() !== "");
+                .filter(msg => {
+                    const content = msg.content.trim();
+                    if (!content) return false;
+                    // Ignora mensagens com formatação/markup indesejado
+                    if (content.includes('\\-\\-boundary') ||
+                        content.includes('Content-Disposition') ||
+                        content.startsWith('poll:') ||
+                        /^<t:\d+(:[a-zA-Z])?>$/.test(content))
+                        return false;
+                    return true;
+                });
 
             // Formata as mensagens com data, usuário e mensagem
             let output = "";
