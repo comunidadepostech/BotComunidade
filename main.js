@@ -566,7 +566,7 @@ client.on(Events.InteractionCreate, async interaction => {
             let allMessages = new Map();
             let lastId;
 
-            // Função para buscar todas as mensagens em lotes de 100
+            // Busca todas as mensagens em lotes de 100
             while (true) {
                 const options = { limit: 100 };
                 if (lastId) options.before = lastId;
@@ -576,12 +576,12 @@ client.on(Events.InteractionCreate, async interaction => {
                 lastId = messages.last().id;
             }
 
-            // Ordena as mensagens em ordem cronológica
-            const sortedMessages = Array.from(allMessages.values()).sort((a, b) =>
-                a.createdTimestamp - b.createdTimestamp
-            );
+            // Ordena as mensagens em ordem cronológica e inclui apenas as que têm conteúdo de texto
+            const sortedMessages = Array.from(allMessages.values())
+                .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
+                .filter(msg => msg.content && msg.content.trim() !== "");
 
-            // Formata o conteúdo com data, usuário e mensagem
+            // Formata as mensagens com data, usuário e mensagem
             let output = "";
             sortedMessages.forEach(msg => {
                 output += `[${msg.createdAt.toLocaleString("pt-BR")}] ${msg.author.tag}: ${msg.content}\n\n`;
