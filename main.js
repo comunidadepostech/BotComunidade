@@ -28,13 +28,8 @@ import {defaultRoles} from "./data/defaultRoles.mjs"
 import {defaultTags} from "./data/defaultTags.mjs";
 import {Canvas, createCanvas, Image, loadImage, GlobalFonts} from '@napi-rs/canvas'
 import {request}  from 'undici'
-import {readFile} from 'fs/promises'
-import axios from 'axios';
-import get from 'axios';
-import base64 from "base-64";
 
 GlobalFonts.registerFromPath("./data/Coolvetica Hv Comp.otf", "normalFont")
-let zoomToken;
 
 // Define os principais acessos que o Bot precisa para poder funcionar corretamente
 const client = new Client({intents: [
@@ -68,7 +63,7 @@ async function dbConnect(database) {
     });
 }
 
-await dbConnect(mysql);
+//await dbConnect(mysql);
 
 // Cria a tabela de convites, caso não exista
 async function initializeTables() {
@@ -98,7 +93,7 @@ async function initializeTables() {
     }
 }
 
-await initializeTables();
+//await initializeTables();
 
 
 
@@ -226,101 +221,8 @@ async function checkEvents() {
 
 
 
-async function getZoomAccessToken() {
-    const token = base64.encode(`${process.env.ZOOM_CLIENT_ID}:${process.env.ZOOM_CLIENT_SECRET}`);
-
-    try {
-        const res = await axios.post(
-            `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${process.env.ZOOM_ACCOUNT_ID}`,
-            {},
-            {
-                headers: {
-                    "Authorization": `Basic ${token}`,
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-            }
-        );
-        return res.data.access_token;
-    } catch (error) {
-        return error.response.data;
-    }
-}
-
-// Recebe o primeiro token da API do zoom ao iniciar o bot
-try {
-    zoomToken = await getZoomAccessToken();
-    console.info(`LOG - Token do Zoom obtido com sucesso`);
-    console.debug("DEBUG - Primeiro Token do Zoom:", typeof zoomToken, zoomToken?.slice?.(0, 30) + "...");
-} catch (error) {
-    console.error('ERRO - Erro ao obter token do Zoom:', error);
-    process.exit(1);
-}
-
-/**
- * Cria uma reunião no Zoom
- * @param {Object} options
- * @param {string} options.topic - Título da reunião
- * @param {string} options.startTimeISO - Data de início em ISO (ex: 2025-08-20T14:00:00Z)
- * @param {number} options.duration - Duração em minutos
- * @param {string[]} options.hostEmails - Lista de e-mails dos anfitriões
- * @param {boolean} options.record - Se deve gravar a reunião
- */
-async function createZoomMeeting({topic, startTimeISO, duration, hostEmails, record}) {
-    const payload = {
-        topic: topic,
-        type: 2, // 2 = horário marcado
-        start_time: startTimeISO,
-        duration: duration,
-        timezone: "America/Sao_Paulo",
-        settings: {
-            join_before_host: false,
-            waiting_room: true,
-            host_video: true,
-            participant_video: false,
-            mute_upon_entry: true,
-            password: "",  // sem senha
-            approval_type: 2,
-            audio: "voip",
-            auto_recording: record ? "cloud" : "none",
-            alternative_hosts: hostEmails
-        }
-    };
-    try {
-        const res = await axios.post(
-            `https://api.zoom.us/v2/users/me/meetings`,
-            payload,
-            {
-                headers: {
-                    Authorization: `Bearer ${zoomToken}`,
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
-        return res.data;
-    } catch (error) {
-        if (error.response && error.response.status === 401) {
-            zoomToken = await getZoomAccessToken();
-            const res = await axios.post(
-                `https://api.zoom.us/v2/users/me/meetings`,
-                payload,
-                {
-                    headers: {
-                        Authorization: `Bearer ${zoomToken}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-            return res.data;
-        } else {
-            console.error("ERRO - Erro ao cadastrar evento: " + error.response.data);
-            return -1;
-        }
-    }
-}
-
-
 // Fecha o banco na saída do processo
-process.on('SIGINT', () => {
+/* process.on('SIGINT', () => {
     db.end(err => {
         if (err) {
             console.error('Erro ao fechar a conexão com o MySQL:', err);
@@ -329,7 +231,7 @@ process.on('SIGINT', () => {
         }
         process.exit(0);
     })
-})
+}) */
 
 
 
@@ -374,7 +276,7 @@ client.on(Events.InteractionCreate, async interaction => {
             console.info(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
             break;
 
-        case "invite":
+        /* case "invite":
             try {
                 const channel = interaction.options.getChannel('channel');
                 const duration = interaction.options.getInteger('duration') || 0;
@@ -403,7 +305,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     flags: MessageFlags.Ephemeral
                 });
             }
-            break;
+            break; */
 
         case "echo":
             let message = interaction.options.getString("message")
@@ -431,7 +333,7 @@ client.on(Events.InteractionCreate, async interaction => {
             }
             break;
 
-        case "display":
+        /* case "display":
             try {
                 // Busca os convites ativos do servidor
                 db.query(`SELECT * FROM invites WHERE server_id = ?`, [interaction.guild.id], async (err, rows) => {
@@ -488,7 +390,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     flags: MessageFlags.Ephemeral
                 });
             }
-            break;
+            break; */
 
         case "poll":
             try {
@@ -532,7 +434,7 @@ client.on(Events.InteractionCreate, async interaction => {
             }
             break;
 
-        case "create":
+        /* case "createclass":
             await interaction.deferReply({flags: MessageFlags.Ephemeral}); // Responde de forma atrasada para evitar timeout
 
             const className = interaction.options.getString('name');
@@ -656,43 +558,39 @@ client.on(Events.InteractionCreate, async interaction => {
                     });
                     return;
                 }
-            break;
+            break; */
 
-        case "event":
-            await interaction.deferReply({flags: MessageFlags.Ephemeral}); // Responde de forma atrasada para evitar timeout
-            const topic = interaction.options.getString('title', true);
-            const date = interaction.options.getString('date', true);
-            const time = interaction.options.getString('time', true);
-            const duration = interaction.options.getString('duration', true);
-            const host_emails = interaction.options.getString('host_emails', true);
-            const recording = !!interaction.options.getInteger('recording', true);
+        case "extract":
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+            const channel = interaction.channel;
+            let allMessages = new Map();
+            let lastId;
 
-            const [day, month, year] = date.split("/");
-            const [hours, minutes] = time.split(":");
+            // Função para buscar todas as mensagens em lotes de 100
+            while (true) {
+                const options = { limit: 100 };
+                if (lastId) options.before = lastId;
+                const messages = await channel.messages.fetch(options);
+                if (messages.size === 0) break;
+                messages.forEach(message => allMessages.set(message.id, message));
+                lastId = messages.last().id;
+            }
 
-            const startDate = new Date(
-                Number(year),
-                Number(month) - 1,
-                Number(day),
-                Number(hours),
-                Number(minutes)
+            // Ordena as mensagens em ordem cronológica
+            const sortedMessages = Array.from(allMessages.values()).sort((a, b) =>
+                a.createdTimestamp - b.createdTimestamp
             );
 
-            const startTimeISO = startDate.toISOString();
+            // Formata o conteúdo com data, usuário e mensagem
+            let output = "";
+            sortedMessages.forEach(msg => {
+                output += `[${msg.createdAt.toLocaleString("pt-BR")}] ${msg.author.tag}: ${msg.content}\n\n`;
+            });
 
-            await (async () => {
-                const meeting = await createZoomMeeting({
-                    topic: topic,
-                    startTimeISO: startTimeISO,
-                    duration: duration, // minutos,
-                    hostEmails: host_emails,
-                    recording: recording
-                });
-                if (meeting === -1) {
-                    await interaction.editReply({content: "❌ Erro ao criar evento, cheque se os emais dos anfitriões são validos ou se as variáveis de ambiente estão definidas corretamente!", flags: MessageFlags.Ephemeral});
-                }
-                console.log(`LOG - Evento criado por ${interaction.user.username} em ${interaction.guild.name}: join_url: ${meeting.join_url}`);
-            })();
+            const textBuffer = Buffer.from(output, "utf-8");
+            const fileAttachment = new AttachmentBuilder(textBuffer, { name: "chat_history.txt" });
+
+            await interaction.editReply({ content: "Histórico coletado:", files: [fileAttachment] });
             break;
 
         default:
@@ -703,7 +601,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
 
 // Evento que é disparado quando uma enquete termina
-client.on('raw', async (packet) => {
+/*client.on('raw', async (packet) => {
     if (!packet.t || !['MESSAGE_UPDATE'].includes(packet.t)) return;
     if (packet.d.poll.results.is_finalized) {
         const pollData = packet.d;
@@ -728,12 +626,12 @@ client.on('raw', async (packet) => {
             }
         }});
     }
-});
+}); */
 
 
 
 // Evento que é disparado quando um novo membro entra no servidor
-client.on(Events.GuildMemberAdd, async member => {
+/* client.on(Events.GuildMemberAdd, async member => {
     globalQueue.enqueue({processData: async () => {
         try {
             console.info(`LOG - Processando entrada de ${member.user.username}`);
@@ -832,7 +730,7 @@ client.on(Events.GuildMemberAdd, async member => {
             console.error(`ERRO ao processar novo membro:`, error);
         }
     }});
-});
+}); */
 
 
 
