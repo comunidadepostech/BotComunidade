@@ -71,7 +71,7 @@ Funciona para qualquer servidor.
 
 **Exemplo de uso**: /poll `question: Qual seu dia preferido para eventos?` `duration: 1` `option1: Sábado` ``option2: Domingo`` `allow-multiselect: Sim`
 
-### `/create`
+### `/createclass`
 Pode criar tanto apenas uma nova turma (cargo, permissões e canais) quanto configurar um novo servidor do zero para um novo curso.
 
 Funciona apenas para servidores vazios ou servidores comuns, não pode ser usado para servidores com fontes diferentes (Ex: servidor de egressos).
@@ -86,8 +86,23 @@ Funciona apenas para servidores vazios ou servidores comuns, não pode ser usado
 - `faq-channel` (obrigatório apenas para turmas): Menção do canal de faq que a nova turma deve seguir (Ex: `#faq-2025`)
 
 **Exemplos de uso**: 
-- /create `type: Turma` `name: 1TESTE` `faq-channel: #faq-2025`
-- /create `type: Curso` `name: 1TESTE`
+- /createclass `type: Turma` `name: 1TESTE` `faq-channel: #faq-2025`
+- /createclass `type: Curso` `name: 1TESTE`
+
+### `/extract`
+Extrai o histórico de mensagens de um canal para um arquivo de texto.
+
+Funciona para qualquer servidor.
+
+**Permissão necessária**: Administrador
+
+**Parâmetros**:
+- `type` (obrigatório): o tipo de criação (Curso ou Turma)
+- `name` (obrigatório): o nome (sigla) da nova turma (Ex: 1TESTE)
+- `faq-channel` (obrigatório apenas para turmas): Menção do canal de faq que a nova turma deve seguir (Ex: `#faq-2025`)
+
+**Exemplos de uso**:
+- /extract
 
 ## Funcionalidades Automáticas
 
@@ -95,7 +110,6 @@ Funciona apenas para servidores vazios ou servidores comuns, não pode ser usado
 O bot automaticamente:
 - Envia uma mensagem de boas-vindas no canal `#✨│boas-vindas` quando um novo membro entra
 - Atribui automaticamente o cargo vinculado ao convite usado pelo novo membro
-
 
 ### Gerenciamento de enquetes
 - Gerencia votos de enquetes criadas, permitindo que os usuários votem e visualizem resultados em tempo real.
@@ -105,13 +119,16 @@ O bot automaticamente:
 - Confere se invites antigos ainda existem dentro do servidor e atualiza o banco de dados para economizar espaço
 
 ## Requisitos Técnicos
-- Node.js
+- Node.js: 20.x ou superior
 - Pacotes necessários:
     - discord.js: 14.21.0
     - @discordjs/rest: 2.5.1
     - discord-api-types: 0.38.16
     - dotenv: 17.2.1
     - mysql2: 3.14.2
+    - @napi-rs/canvas: 0.1.77
+    - axios: 1.11.0
+    - undici: 7.13.0
 
 ## Configuração
 1. Certifique-se de que o bot tenha as permissões necessárias no servidor (o cargo deve estar apenas embaixo do cargo admin)
