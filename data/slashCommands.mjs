@@ -142,9 +142,9 @@ const poll = new SlashCommandBuilder()
             )
     );
 
-const create = new SlashCommandBuilder()
-    .setName('create')
-    .setDescription('Cria uma nova turma ou curso')
+const createclass = new SlashCommandBuilder()
+    .setName('createclass')
+    .setDescription('Cria uma nova turma')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addStringOption(option =>
         option.setName('name')
@@ -157,57 +157,19 @@ const create = new SlashCommandBuilder()
             .setRequired(true)
     );
 
-const event = new SlashCommandBuilder()
-    .setName('event')
-    .setDescription('Cria um evento no Discord, Zoom e no calendário')
+const extract = new SlashCommandBuilder()
+    .setName("extract")
+    .setDescription("Extrai o conteúdo do chat e retorna um arquivo .txt")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addStringOption(option =>
-        option.setName('title')
-            .setDescription('Título do evento')
-            .setRequired(true)
-    )
-    .addStringOption(option =>
-        option.setName('date')
-            .setDescription('Data do evento (dd/mm/aaaa)')
-            .setRequired(true)
-    )
-    .addStringOption(option =>
-        option.setName('time')
-            .setDescription('Hora do evento (hh:mm)')
-            .setRequired(true)
-    )
-    /*.addStringOption(option =>
-        option.setName('passworld_required')
-            .setDescription("Especifica se uma senha é necessaria para a reunião")
-            .addChoices(
-                {name: "true", value: true},
-                {name: "false", value: false}
-            )
-    )*/
-    .addStringOption(option =>
-        option.setName("duration")
-            .setDescription("Define a duração do evento em minutos")
-            .setRequired(true)
-    )
-    .addStringOption(option =>
-        option.setName("host_emails")
-            .setDescription("E-mails dos organizadores do evento separados por , e sem espaço")
-            .setRequired(true)
-    )
-    .addIntegerOption(option =>
-        option.setName("recording")
-            .setDescription("Define se o evento deve ser gravado (true/false)")
-            .setRequired(true)
-            .addChoices({name: "true", value: 0}, {name: "false", value: 1})
-    )
+
 
 
 export const slashCommands = [
-    {name: "invite", commandBuild: invite},
+    //{name: "invite", commandBuild: invite},
     {name: "ping", commandBuild: ping},
     {name: "echo", commandBuild: echo},
-    {name: "display", commandBuild: display},
+    //{name: "display", commandBuild: display},
     {name: "poll", commandBuild: poll},
-    {name: "create", commandBuild: create},
-    {name: "event", commandBuild: event}
+    //{name: "createclass", commandBuild: createclass},
+    {name: "extract", commandBuild: extract}
 ]
