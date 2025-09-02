@@ -14,18 +14,6 @@ const invite = new SlashCommandBuilder()
         option.setName('role')
             .setDescription('Cargo ao qual o convite deve ser vinculado')
             .setRequired(true)
-    )
-    .addIntegerOption(option =>
-        option.setName('duration')
-            .setDescription('Duração do convite em dias (0 para permanente)')
-            .setRequired(false)
-            .setMinValue(0)
-            .setMaxValue(365)
-    )
-    .addIntegerOption(option =>
-        option.setName('uses')
-            .setDescription('Número máximo de usos (0 para ilimitado)')
-            .setRequired(false)
     );
 
 // Comando de teste, serve para saber se o ‘Bot’ está a responder para ajudar na resolução de problemas
