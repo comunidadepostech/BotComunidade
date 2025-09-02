@@ -3,15 +3,23 @@
   "version": "Undefined",
   "main": "main.js",
   "directories": {},
+  "type": "module",
   "scripts": {},
   "author": "Comunidade Pos Tech Fiap",
+  "engines": {
+    "node": "20.x"
+  },
   "license": "ISC",
   "description": "",
   "dependencies": {
     "@discordjs/rest": "^2.5.1",
+    "@napi-rs/canvas": "^0.1.77",
+    "axios": "^1.11.0",
+    "base-64": "^1.0.0",
     "discord-api-types": "^0.38.16",
     "discord.js": "^14.21.0",
     "dotenv": "^17.2.1",
-    "mysql2": "^3.14.2"
+    "mysql2": "^3.14.2",
+    "undici": "^7.13.0"
   }
 }
