@@ -14,10 +14,8 @@ Funciona para qualquer servidor.
 **Parâmetros**:
 - `channel` (obrigatório): Canal onde o convite será criado
 - `role` (obrigatório): Cargo que será atribuído automaticamente aos novos membros que entrarem usando este convite
-- `duration` (opcional): Duração do convite em dias (0 para permanente)
-- `uses` (opcional): Número máximo de usos do convite (0 para ilimitado)
 
-**Exemplo de uso**: /invite ``channel: #geral`` ``role: @Membro`` ``duration: 7`` ``uses: 10``
+**Exemplo de uso**: /invite ``channel: #geral`` ``role: @Membro``
 
 
 ### `/ping`
@@ -30,6 +28,7 @@ Funciona para qualquer servidor.
 **Exemplo de uso**: /ping
 
 O bot responderá com "pong!" para confirmar que está funcionando.
+
 
 ### `/echo`
 Replica uma mensagem para um canal.
@@ -44,6 +43,7 @@ Funciona para qualquer servidor.
 
 **Exemplo de uso**: /echo ``channel: #anúncios`` ``message: Olá a todos! Bem-vindos ao servidor!``
 
+
 ### `/display`
 Mostra todos os convites ativos do servidor, incluindo detalhes como canal, cargo vinculado, duração e usos restantes.
 
@@ -52,6 +52,7 @@ Funciona para qualquer servidor.
 **Permissão necessária**: Administrador
 
 **Exemplo de uso**: /display
+
 
 ### `/poll`
 Cria uma enquete interativa com opções de votação personalizadas.
@@ -71,6 +72,7 @@ Funciona para qualquer servidor.
 
 **Exemplo de uso**: /poll `question: Qual seu dia preferido para eventos?` `duration: 1` `option1: Sábado` ``option2: Domingo`` `allow-multiselect: Sim`
 
+
 ### `/createclass`
 Pode criar tanto apenas uma nova turma (cargo, permissões e canais) quanto configurar um novo servidor do zero para um novo curso.
 
@@ -88,6 +90,7 @@ Funciona apenas para servidores vazios ou servidores comuns, não pode ser usado
 **Exemplos de uso**: 
 - /createclass `type: Turma` `name: 1TESTE` `faq-channel: #faq-2025`
 - /createclass `type: Curso` `name: 1TESTE`
+
 
 ### `/extract`
 Extrai o histórico de mensagens de um canal para um arquivo de texto.
