@@ -146,6 +146,15 @@ class Queue {
 // Cria a única fila global
 const globalQueue = new Queue(Number(process.env.MAX_CONCURRENT)); // ajusta concorrência definida no .env (1 é recomendado, se velocidade se tornar mais necessária pode-se aumentar esse valor)
 
+let cachedInvites = {};
+async function getCachedInvites() {
+    db.query(`SELECT * FROM invites`, (err, rows) => {
+        rows.forEach(row =>
+            cachedInvites[row[0]] = [row[1], row[2]]
+        )
+    })
+}
+//await getCachedInvites();
 
 // Comando que é executado a cada determinado espaço de tempo
 let eventsSchedule = []
@@ -279,18 +288,17 @@ client.on(Events.InteractionCreate, async interaction => {
         /* case "invite":
             try {
                 const channel = interaction.options.getChannel('channel');
-                const duration = interaction.options.getInteger('duration') || 0;
-                const maxUses = interaction.options.getInteger('uses') || 0;
                 const role = interaction.options.getRole('role').name;
 
                 // Cria o convite
                 const invite = await channel.createInvite({
-                    maxAge: duration * 86400, // Converte dias para segundos
-                    maxUses: maxUses,
+                    maxAge: 0,
+                    maxUses: 0,
                     unique: true
                 });
 
-                // Insere o convite no banco de dados
+                // Insere o convite no banco de dados e no cache
+                cachedInvites[invite.code] = [role, interaction.guild.id];
                 db.query(`INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`, [invite.code, role, interaction.guild.id]);
 
                 // Responde com o link do convite
@@ -310,27 +318,22 @@ client.on(Events.InteractionCreate, async interaction => {
         case "echo":
             let message = interaction.options.getString("message")
             const echoChannel = interaction.options.getChannel("channel", true);
-            if (!echoChannel.isTextBased()) {
+
+            if (echoChannel.isTextBased()) {
                 await interaction.reply({
                     content: "❌ O canal especificado não é um canal de texto.",
                     flags: MessageFlags.Ephemeral
                 });
                 return;
-            } else {
-                await echoChannel.send(message).then(_ => {
-                    interaction.reply({
-                        content: `✅ Mensagem enviada para ${echoChannel} com sucesso!`,
-                        flags: MessageFlags.Ephemeral
-                    });
-                    console.info(`LOG - echo ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
-                }).catch(error => {
-                    console.error(`ERRO - Falha ao enviar mensagem:`, error);
-                    interaction.reply({
-                        content: "❌ Ocorreu um erro ao enviar a mensagem.\n" + "```" + error + "```",
-                        flags: MessageFlags.Ephemeral
-                    });
-                });
             }
+
+            await echoChannel.send(message).then(_ => {
+                interaction.reply({
+                    content: `✅ Mensagem enviada para ${echoChannel} com sucesso!`,
+                    flags: MessageFlags.Ephemeral
+                });
+                console.info(`LOG - echo ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
+            });
             break;
 
         /* case "display":
@@ -583,12 +586,11 @@ client.on(Events.InteractionCreate, async interaction => {
                     const content = msg.content.trim();
                     if (!content) return false;
                     // Ignora mensagens com formatação/markup indesejado
-                    if (content.includes('\\-\\-boundary') ||
+                    return !(content.includes('\\-\\-boundary') ||
                         content.includes('Content-Disposition') ||
                         content.startsWith('poll:') ||
-                        /^<t:\d+(:[a-zA-Z])?>$/.test(content))
-                        return false;
-                    return true;
+                        /^<t:\d+(:[a-zA-Z])?>$/.test(content));
+
                 });
 
             // Formata as mensagens com data, usuário e mensagem
@@ -682,24 +684,26 @@ client.on(Events.InteractionCreate, async interaction => {
             }
 
             let used_invite;
-            const cachedInvites = await member.guild.invites.fetch();
 
             // Tenta resolver o invite diretamente
             const resolvedInvite = await member.guild.invites.resolve(member.user.client);
-            if (resolvedInvite) {
-                used_invite = resolvedInvite.code;
-            } else {
-                // Se não conseguir resolver, pega o primeiro invite ativo
-                const activeInvite = cachedInvites.find(invite => invite.uses > 0);
-                used_invite = activeInvite ? activeInvite.code : null;
-            }
+            used_invite = resolvedInvite.code;
 
             if (!used_invite) {
                 console.error(`ERRO - Não foi possível determinar o convite usado`);
                 return;
             }
 
-            // Busca o cargo vinculado ao invite no banco
+            // Busca o cargo vinculado ao invite no cache
+            if (used_invite in cachedInvites) {
+                const role = cachedInvites.get(used_invite).role;
+                await member.roles.add(role);
+                console.info(`LOG - ${member.user.username} adicionado ao cargo ${role.name}`);
+            } else {
+                // Atualiza o cache e tenta novamente
+
+            }
+
             db.query("SELECT role FROM invites WHERE invite = ?", [used_invite], async (err, rows) => {
                     if (err) {
                         console.error(`ERRO - Erro na consulta SQL:`, err);
@@ -722,6 +726,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     console.info(`LOG - ${member.user.username} adicionado ao cargo ${welcome_role.name}`);
                 }
             );
+
 
             // Registra o log de entrada do membro
             console.info(`LOG - ${member.user.username} entrou no servidor ${member.guild.name} com o código: ${used_invite}`);
