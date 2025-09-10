@@ -501,7 +501,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 //let inviteChannel = await interaction.guild.channels.fetch();
                 //inviteChannel = inviteChannel.find(channel => channel.name === "✨│boas-vindas")
 
-                const new_RolesForNewClasses = defaultRoles.rolesForNewClasses;
+                let new_RolesForNewClasses = defaultRoles.rolesForNewClasses;
                 new_RolesForNewClasses = new_RolesForNewClasses.map(obj => {
                     const role = obj.name === "className"
                             ? roles.find(r => r.name === `Estudantes ${className}`)
