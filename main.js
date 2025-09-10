@@ -509,7 +509,8 @@ client.on(Events.InteractionCreate, async interaction => {
 
                         return {
                             id: role.id, // aqui vira id mesmo
-                            allow: obj.permissions //.map(p => PermissionFlagsBits[p.toUpperCase()]) // convertendo permissões
+                            allow: obj.permissions,
+                            deny: obj.deny//.map(p => PermissionFlagsBits[p.toUpperCase()]) // convertendo permissões
                         };
                     })
                 );

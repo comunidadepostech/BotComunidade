@@ -158,6 +158,6 @@ export const slashCommands = [
     {name: "echo", commandBuild: echo},
     //{name: "display", commandBuild: display},
     {name: "poll", commandBuild: poll},
-    //{name: "createclass", commandBuild: createclass},
+    {name: "createclass", commandBuild: createclass},
     {name: "extract", commandBuild: extract}
 ]
