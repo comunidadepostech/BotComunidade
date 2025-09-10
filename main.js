@@ -501,8 +501,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 //let inviteChannel = await interaction.guild.channels.fetch();
                 //inviteChannel = inviteChannel.find(channel => channel.name === "✨│boas-vindas")
 
-                let new_RolesForNewClasses = [...defaultRoles.rolesForNewClasses]; // Duplica a variavel para evitar modificar o original
-                new_RolesForNewClasses = new_RolesForNewClasses.map(obj => {
+                let new_RolesForNewClasses = [...defaultRoles.rolesForNewClasses].map(obj => { // Duplica a variavel para evitar modificar o original
                     const role = obj.name === "className"
                             ? roles.find(r => r.name === `Estudantes ${className}`)
                             : roles.find(r => r.name === obj.name);
@@ -529,8 +528,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     })
                     if (channel.name === "❓│dúvidas") {
                         await target.setAvailableTags(defaultTags);
-                        let new_classActivations = [...classActivations]; // Duplica a variavel para evitar modificar o original
-                        await Promise.all(new_classActivations.map(async (activate) => {
+                        await Promise.all([...classActivations].map(async (activate) => { // Duplica a variavel para evitar modificar o original
                             if (activate.content.includes("{mention}")) {
                                 activate.content = activate.content.replace("{mention}", `${classRole}`);
                             }
