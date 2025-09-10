@@ -437,11 +437,11 @@ client.on(Events.InteractionCreate, async interaction => {
             }
             break;
 
-        /* case "createclass":
+        case "createclass":
             await interaction.deferReply({flags: MessageFlags.Ephemeral}); // Responde de forma atrasada para evitar timeout
 
             const className = interaction.options.getString('name');
-
+            /*
             async function createInvite(targetRole, targetChannel) {
                 try{
                     const invite = await targetChannel.createInvite({
@@ -468,7 +468,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     return "";
                 }
             }
-
+            */
             try {
                 const classRole = await interaction.guild.roles.create({
                     name: `Estudantes ${className}`,
@@ -498,8 +498,8 @@ client.on(Events.InteractionCreate, async interaction => {
                 }
 
                 const roles = await interaction.guild.roles.fetch();
-                let inviteChannel = await interaction.guild.channels.fetch();
-                inviteChannel = inviteChannel.find(channel => channel.name === "✨│boas-vindas")
+                //let inviteChannel = await interaction.guild.channels.fetch();
+                //inviteChannel = inviteChannel.find(channel => channel.name === "✨│boas-vindas")
 
                 const new_RolesForNewClasses = await Promise.all(
                     defaultRoles.rolesForNewClasses.map(async (obj) => {
@@ -546,11 +546,11 @@ client.on(Events.InteractionCreate, async interaction => {
                 }
 
                     // Cria o convite
-                    const inviteUrl = await createInvite(classRole, inviteChannel) || "Erro no momento de criação do invite";
+                    //const inviteUrl = await createInvite(classRole, inviteChannel) || "Erro no momento de criação do invite";
 
                     // Responde com o link do invite e outras informações
                     await interaction.editReply({
-                        content: `✅ Turma ${className} criado com sucesso!\n📨 Link: ${inviteUrl}\n👥 Cargo vinculado: ${classRole}`,
+                        content: `✅ Turma ${className} criado com sucesso!\n👥 Cargo vinculado: ${classRole}`, // `✅ Turma ${className} criado com sucesso!\n📨 Link: ${inviteUrl}\n👥 Cargo vinculado: ${classRole}`
                         flags: MessageFlags.Ephemeral
                     }).then(_ => console.info(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
                 } catch (error) {
@@ -561,7 +561,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     });
                     return;
                 }
-            break; */
+            break;
 
         case "extract":
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
