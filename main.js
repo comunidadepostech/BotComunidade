@@ -501,19 +501,18 @@ client.on(Events.InteractionCreate, async interaction => {
                 //let inviteChannel = await interaction.guild.channels.fetch();
                 //inviteChannel = inviteChannel.find(channel => channel.name === "✨│boas-vindas")
 
-                const new_RolesForNewClasses = await Promise.all(
-                    defaultRoles.rolesForNewClasses.map(async (obj) => {
-                        const role = obj.name === "className"
+                const new_RolesForNewClasses = defaultRoles.rolesForNewClasses;
+                new_RolesForNewClasses = new_RolesForNewClasses.map(obj => {
+                    const role = obj.name === "className"
                             ? roles.find(r => r.name === `Estudantes ${className}`)
                             : roles.find(r => r.name === obj.name);
 
                         return {
-                            id: role.id, // aqui vira id mesmo
+                            id: role.id,
                             allow: obj.permissions,
                             deny: obj.deny//.map(p => PermissionFlagsBits[p.toUpperCase()]) // convertendo permissões
                         };
-                    })
-                );
+                });
 
                 const classCategory = await interaction.guild.channels.create({
                     name: className,
