@@ -1,3 +1,5 @@
+<img src="/data/postech.png"/>
+
 # Bot Comunidade Pos Tech
 
 Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades úteis e comandos administrativos que visam otimizar e contribuir com determinadas tarefas da equipe.
@@ -74,22 +76,20 @@ Funciona para qualquer servidor.
 
 
 ### `/createclass`
-Pode criar tanto apenas uma nova turma (cargo, permissões e canais) quanto configurar um novo servidor do zero para um novo curso.
+Cria cargo, categoria, canais e configura as permissões para uma nova turma com um link de convite
 
-Funciona apenas para servidores vazios ou servidores comuns, não pode ser usado para servidores com fontes diferentes (Ex: servidor de egressos).
+Funciona apenas para servidores servidores comuns, não pode ser usado para servidores com fontes diferentes (Ex: servidor de egressos).
 
 **Atenção! Para atualizar as funcionalidades de canais, permissões, threads automáticas e quaisquer configurações relacionadas ao formato de criação, deve ser feito uma alteração hard-coded (deve ser implementado uma atualização para isso no futuro), portanto se for necessario qualquer alteração deve-se primeiro contatar o dev responsavel pela manutenção do código.**
 
 **Permissão necessária**: Administrador
 
 **Parâmetros**:
-- `type` (obrigatório): o tipo de criação (Curso ou Turma)
 - `name` (obrigatório): o nome (sigla) da nova turma (Ex: 1TESTE)
 - `faq-channel` (obrigatório apenas para turmas): Menção do canal de faq que a nova turma deve seguir (Ex: `#faq-2025`)
 
 **Exemplos de uso**: 
 - /createclass `type: Turma` `name: 1TESTE` `faq-channel: #faq-2025`
-- /createclass `type: Curso` `name: 1TESTE`
 
 
 ### `/extract`
@@ -98,11 +98,6 @@ Extrai o histórico de mensagens de um canal para um arquivo de texto.
 Funciona para qualquer servidor.
 
 **Permissão necessária**: Administrador
-
-**Parâmetros**:
-- `type` (obrigatório): o tipo de criação (Curso ou Turma)
-- `name` (obrigatório): o nome (sigla) da nova turma (Ex: 1TESTE)
-- `faq-channel` (obrigatório apenas para turmas): Menção do canal de faq que a nova turma deve seguir (Ex: `#faq-2025`)
 
 **Exemplos de uso**:
 - /extract
@@ -134,8 +129,8 @@ O bot automaticamente:
     - undici: 7.13.0
 
 ## Configuração
-1. Certifique-se de que o bot tenha as permissões necessárias no servidor (o cargo deve estar apenas embaixo do cargo admin)
-2. O bot precisa ter acesso ao canal de boas-vindas (`#✨│boas-vindas`)
+1. Certifique-se de que o bot tenha as permissões necessárias no servidor (o cargo deve estar apenas embaixo do cargo admin ou Community Managers)
+2. O bot precisa de acesso ao banco de dados MySQL para funcionar.
 3. Configure o arquivo `.env` com:
     - TOKEN: Token do seu bot Discord
     - ALLOWED_SERVERS_ID: IDs dos servidores onde o bot pode ser usado (separados por vírgula e sem espaço)
@@ -145,8 +140,12 @@ O bot automaticamente:
     - MYSQLUSER: Usuário do MySQL
     - MYSQL_ROOT_PASSWORD: Senha do usuário MySQL
     - MYSQLDATABASE: Nome do banco de dados MySQL
+    - EVENT_CHECK_TIME: Espaço de tempo para executar o loop de verificação de eventos (em minutos)
+    - EVENT_DIFF_FOR_WARNING: Diferença de tempo para enviar o aviso de evento (em minutos)
+    - MAX_CONCURRENT: Define quantos comandos da fila de processamento podem ser executados ao mesmo tempo (recomendado manter em 1)
+    - MAX_EVENTS_CACHE: Define quantos eventos dos servidores o bot deve manter em cache (recomendado >= 100)
 4. Instale as dependências com `npm install`
-5. Inicie o bot com `npm start` ou `node .`
+5. Inicie o bot com  `node .` ou `nvm run 20 .` (recomendado se for localmente)
 
 ## Estrutura do Banco de Dados
 O bot utiliza MySQL2 para armazenar informações.
