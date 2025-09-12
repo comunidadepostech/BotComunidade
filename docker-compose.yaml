@@ -1,0 +1,27 @@
+services:
+  bot:
+    container_name: discordjs-bot-comunidade
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 1
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["node", "."]
+    working_dir: /app
+    environment:
+      - ALLOWED_SERVERS_ID=${ALLOWED_SERVERS_ID}
+      - EVENT_CHECK_TIME=${EVENT_CHECK_TIME}
+      - EVENT_DIFF_FOR_WARNING=${EVENT_DIFF_FOR_WARNING}
+      - ID=${ID}
+      - MAX_CONCURRENT=${MAX_CONCURRENT}
+      - MAX_EVENTS_CACHE=${MAX_EVENTS_CACHE}
+      - PUBLIC_KEY=${PUBLIC_KEY}
+      - TOKEN=${TOKEN}
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: [ "CMD", "curl", "--fail", "http://localhost:3000/health" ] # O bot não contem isso, mas é necessário para o docker-compose
+      interval: 10s
+      timeout: 5s
+      retries: 3
