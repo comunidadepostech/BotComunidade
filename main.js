@@ -481,13 +481,15 @@ client.on(Events.InteractionCreate, async interaction => {
                 // Insere o convite no banco de dados
                 await new Promise((resolve, reject) => {
                     db.query(
-                        `INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`,
+                        "INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)",
                         [invite.code, targetRole.id, interaction.guild.id],
                         (err, result) => {
                             if (err) return reject(err);
                             resolve(result);
-                        });
+                        }
+                    );
                 });
+
                 return invite.url;
             }
 
@@ -527,8 +529,8 @@ client.on(Events.InteractionCreate, async interaction => {
                 const roles = await interaction.guild.roles.fetch();
 
                 // Pega os canais do servidor e filtra o nome
-                //let inviteChannel = await interaction.guild.channels.fetch();
-                //inviteChannel = inviteChannel.find(channel => channel.name === "✨│boas-vindas")
+                let inviteChannel = await interaction.guild.channels.fetch();
+                inviteChannel = inviteChannel.find(channel => channel.name === "✨│boas-vindas")
 
                 // Muda o nome "className" para o nome da turma
                 const new_RolesForNewClasses = defaultRoles.rolesForNewClasses.map(obj => {
@@ -584,11 +586,18 @@ client.on(Events.InteractionCreate, async interaction => {
                 }
 
                 // Cria o convite
-                //const inviteUrl = await createInvite(classRole, inviteChannel) || "Erro no momento de criação do invite";
+                let inviteUrl;
+                try {
+                    inviteUrl = await createInvite(classRole, inviteChannel);
+                } catch (error) {
+                    console.error("ERRO - Não foi possível criar o convite\n", error);
+                    inviteUrl = "Erro no momento de criação do invite";
+                }
+
 
                 // Responde com o link do invite e outras informações
                 await interaction.editReply({
-                    content: `✅ Turma ${className} criado com sucesso!\n👥 Cargo vinculado: ${classRole}`, // `✅ Turma ${className} criado com sucesso!\n📨 Link: ${inviteUrl}\n👥 Cargo vinculado: ${classRole}`
+                    content: `✅ Turma ${className} criado com sucesso!\n👥 Cargo vinculado: ${classRole}\nLink do convite: ${inviteUrl}\\n`, // `✅ Turma ${className} criado com sucesso!\n📨 Link do convite: ${inviteUrl}\n👥 Cargo vinculado: ${classRole}`
                     flags: MessageFlags.Ephemeral
                 }).then(_ => console.info(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
 
@@ -722,16 +731,18 @@ client.on(Events.GuildMemberAdd, async member => {
                 targetChannel.send({ files: [attachment] });
             }
 
-            /* let used_invite;
-
             // Tenta resolver o invite diretamente
+            let used_invite;
             const resolvedInvite = await member.guild.invites.resolve(member.user.client);
             used_invite = resolvedInvite.code;
 
             if (!used_invite) {
-                console.error(`ERRO - Não foi possível determinar o convite usado`);
-                return;
+                console.error(`ERRO - Não foi possível obter o código do invite usado por ${member.user.username}`);
+                return; // encerra o processamento desse membro sem lançar erro
             }
+
+            // Registra o log de entrada do membro
+            console.info(`LOG - ${member.user.username} entrou no servidor ${member.guild.name} com o código: ${used_invite}`);
 
             // Busca o cargo vinculado ao invite no cache
             if (used_invite in cachedInvites) {
@@ -739,10 +750,10 @@ client.on(Events.GuildMemberAdd, async member => {
                 await member.roles.add(role);
                 console.info(`LOG - ${member.user.username} adicionado ao cargo ${role.name}`);
             } else {
-                // Atualiza o cache e tenta novamente
-
+                console.error(`ERRO - O invite usado por ${member.user.username} não foi encontrado`);
             }
 
+            /*
             db.query("SELECT role FROM invites WHERE invite = ?", [used_invite], async (err, rows) => {
                     if (err) {
                         console.error(`ERRO - Erro na consulta SQL:`, err);
@@ -767,22 +778,17 @@ client.on(Events.GuildMemberAdd, async member => {
             );
              */
 
-
-            // Registra o log de entrada do membro
-            console.info(`LOG - ${member.user.username} entrou no servidor ${member.guild.name} com o código: ${used_invite}`);
-
             // Busca o canal de boas-vindas e envia a mensagem
-            try {
-                const welcomeChannel = member.guild.channels.cache.find(channel => channel.name === "✨│boas-vindas");
-                if (welcomeChannel) {
-                    //await welcomeChannel.send(`Olá ${member}, seja bem-vindo(a) a comunidade!`);
-                    await sendWelcome(member, welcomeChannel);
-                }} catch (error) {
-                console.error(`ERRO - Falha ao enviar mensagem de boas-vindas:`, error);
+            const welcomeChannel = member.guild.channels.cache.find(channel => channel.name === "✨│boas-vindas");
+            if (welcomeChannel) {
+                await welcomeChannel.send(`Olá ${member}, seja bem-vindo(a) a comunidade!`);
+                await sendWelcome(member, welcomeChannel).catch(err => {
+                    console.error(`ERRO - Não foi possível construir a imagem de boas-vindas para o usuário ${member.user.username}\n${err}`);
+                });
             }
 
         } catch (error) {
-            console.error(`ERRO ao processar novo membro:`, error);
+            console.error(`ERRO - Não foi possível processar novo membro\n`, error);
         }
     }});
 });
