@@ -22,24 +22,20 @@ Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades �
 - [Progresso de desenvolvimento e atualizações](#progresso-de-desenvolvimento-e-atualizações)
 - [Requisição de pull request na branch Stable](#requisição-de-pull-request-na-branch-stable)
 
-## Como instalar e executar
-1. Certifique-se de que o bot tenha as permissões necessárias no servidor (o cargo deve estar apenas embaixo do cargo admin ou Community Managers)
-2. O Bot é hospedado na AWS EC2 junto a outras aplicações que rodam em containers.
-3. O bot precisa de acesso ao banco de dados para funcionar.
-4. Configure o arquivo `.env` com:
-    - TOKEN: Token do seu bot Discord
-    - ALLOWED_SERVERS_ID: IDs dos servidores onde o bot pode ser usado (separados por vírgula e sem espaço)
-    - ID: ID do bot
-    - PUBLIC_KEY: Chave pública do bot para interações
-    - MYSQLHOST: Endereço do servidor MySQL
-    - MYSQLUSER: Usuário do MySQL
-    - MYSQL_ROOT_PASSWORD: Senha do usuário MySQL
-    - MYSQLDATABASE: Nome do banco de dados MySQL
-    - EVENT_CHECK_TIME: Espaço de tempo para executar o loop de verificação de eventos (em minutos)
-    - EVENT_DIFF_FOR_WARNING: Diferença de tempo para enviar o aviso de evento (em minutos)
-    - MAX_CONCURRENT: Define quantos comandos da fila de processamento podem ser executados ao mesmo tempo (recomendado manter em 1)
-    - MAX_EVENTS_CACHE: Define quantos eventos dos servidores o bot deve manter em cache (recomendado >= 100)
-5. Crie a imagem usando `docker compose up --build bot` ou inicie o bot com  `npm install && node .` ou `npm install && nvm run 20 .` (recomendado se for localmente)
+## Como instalar e executar (serviço interno)
+1. Certifique-se de que o Bot tenha as permissões necessárias no servidor (o cargo deve estar apenas embaixo do cargo admin ou Community Managers)
+2. O Bot precisa de acesso ao banco de dados para funcionar.
+3. Configure o [Environment do Github Actions](https://github.com/comunidadepostech/BotComunidade/settings/environments) com:
+    - (Secret) TOKEN: Token do seu bot Discord
+    - (Secret) ALLOWED_SERVERS_ID: IDs dos servidores onde o bot pode ser usado (separados por vírgula e sem espaço)
+    - (Secret) ID: ID do bot
+    - (Secret) PUBLIC_KEY: Chave pública do Bot para interações
+    - (Variable) EVENT_CHECK_TIME: Espaço de tempo para executar o loop de verificação de eventos (em minutos)
+    - (Variable) EVENT_DIFF_FOR_WARNING: Diferença de tempo para enviar o aviso de evento (em minutos)
+    - (Variable) MAX_CONCURRENT: Define quantos comandos da fila de processamento podem ser executados ao mesmo tempo (recomendado manter em 1)
+    - (Variable) MAX_EVENTS_CACHE: Define quantos eventos dos servidores o bot deve manter em cache (recomendado >= 100)
+4. Configure o Github Actions para fazer o deploy do Bot usando a conexão com chave SSH da AWS EC2.
+   <!-- Crie a imagem usando `docker compose up --build bot` ou inicie o bot com  `npm install && node .` ou `npm install && nvm run 20 .` (recomendado se for localmente) -->
 
 ## Comandos Disponíveis
 
