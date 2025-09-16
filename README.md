@@ -5,7 +5,7 @@
 Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades úteis e comandos administrativos que visam otimizar e contribuir com determinadas tarefas da equipe.
 
 # Sumário
-- [Como instalar e executar](#como-instalar-e-executar)
+- [Como instalar e executar](#como-instalar-e-executar-serviço-interno)
 - [Comandos Disponíveis](#comandos-disponíveis)
   - [/invite](#invite)
   - [/ping](#ping)
@@ -111,9 +111,9 @@ Funciona para qualquer servidor.
 ### `/createclass`
 Cria cargo, categoria, canais e configura as permissões para uma nova turma com um link de convite
 
-Funciona apenas para servidores servidores comuns, não pode ser usado para servidores com fontes diferentes (Ex: servidor de egressos).
+Funciona apenas para servidores comuns, não pode ser usado para servidores com fontes diferentes (Ex: servidor de egressos).
 
-**Atenção! Para atualizar as funcionalidades de canais, permissões, threads automáticas e quaisquer configurações relacionadas ao formato de criação, deve ser feito uma alteração hard-coded (deve ser implementado uma atualização para isso no futuro), portanto se for necessario qualquer alteração deve-se primeiro contatar o dev responsavel pela manutenção do código.**
+> **Atenção! Para atualizar as funcionalidades de canais, permissões, threads automáticas e quaisquer configurações relacionadas ao formato de criação, deve ser feito uma alteração hard-coded (deve ser implementado uma atualização para isso no futuro), portanto se for necessario qualquer alteração deve-se primeiro contatar o dev responsavel pela manutenção do código.**
 
 **Permissão necessária**: Administrador
 
@@ -140,7 +140,7 @@ Funciona para qualquer servidor.
 ### Mensagens de Boas-Vindas
 O bot automaticamente:
 - Envia uma mensagem de boas-vindas no canal `#✨│boas-vindas` quando um novo membro entra
-- Atribui automaticamente o cargo vinculado ao convite usado pelo novo membro
+<!-- - Atribui automaticamente o cargo vinculado ao convite usado pelo novo membro 
 
 ### Armazenamento de enquetes
 - Gerencia votos de enquetes criadas, permitindo que os usuários votem e visualizem resultados em tempo real.
@@ -148,7 +148,7 @@ O bot automaticamente:
 
 ### Atualização constante de invites
 - Confere se invites antigos ainda existem dentro do servidor e atualiza o banco de dados para economizar espaço
-
+-->
 ### Criação de invites diretamente no comando `/createclass`
 - Cria um convite para cada turma nova que já é vinculado ao novo cargo da turma e ao canal de FAQ correspondente do comando.
 
