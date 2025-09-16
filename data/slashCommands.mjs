@@ -153,10 +153,10 @@ const extract = new SlashCommandBuilder()
 
 
 export const slashCommands = [
-    //{name: "invite", commandBuild: invite},
+    {name: "invite", commandBuild: invite},
     {name: "ping", commandBuild: ping},
     {name: "echo", commandBuild: echo},
-    //{name: "display", commandBuild: display},
+    {name: "display", commandBuild: display},
     {name: "poll", commandBuild: poll},
     {name: "createclass", commandBuild: createclass},
     {name: "extract", commandBuild: extract}
