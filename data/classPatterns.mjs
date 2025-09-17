@@ -88,7 +88,7 @@ export const classActivations = [
             "\n" +
             "☁️ Azure\n" +
             "\n" +
-            "🎨 JetBrains\n" +
+            "💻 JetBrains\n" +
             "\n" +
             "🎨 Figma\n" +
             "\n" +
