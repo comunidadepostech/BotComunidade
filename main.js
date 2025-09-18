@@ -5,17 +5,11 @@ import {
     Client,
     Events,
     GatewayIntentBits,
-    SlashCommandBuilder,
     PermissionFlagsBits,
-    EmbedBuilder,
     PollLayoutType,
-    TextChannel,
-    ForumChannel,
     AttachmentBuilder,
-    ChannelType,
     MessageFlags
 } from "discord.js"
-import mysql from 'mysql2'
 import {
     somePermissionsChannels,
     allPermissionsChannels,
@@ -26,10 +20,11 @@ import {
 import {slashCommands} from "./data/slashCommands.mjs"
 import {defaultRoles} from "./data/defaultRoles.mjs"
 import {defaultTags} from "./data/defaultTags.mjs";
-import {Canvas, createCanvas, Image, loadImage, GlobalFonts} from '@napi-rs/canvas'
+import {createCanvas, loadImage, GlobalFonts} from '@napi-rs/canvas'
 import {request}  from 'undici'
+import {localDataBaseConnect, remoteDataBaseConnect} from "./data/database.mjs"
 
-// Registra a fonte usada na imagem de boas vindas
+// Registra a fonte usada na imagem de boas-vindas
 GlobalFonts.registerFromPath("./data/Coolvetica Hv Comp.otf", "normalFont")
 
 // Define os acessos que o Bot precisa para poder funcionar corretamente
@@ -48,55 +43,9 @@ const client = new Client({
 
 
 
-// Conexão com o banco de dados MySQL
-async function dbConnect(database) {
-    global.db = database.createConnection({
-        host: process.env.MYSQLHOST,
-        user: process.env.MYSQLUSER,
-        password: process.env.MYSQL_ROOT_PASSWORD,
-        database: process.env.MYSQLDATABASE,
-        waitForConnections: true
-    });
-
-    db.connect((err) => {
-        if (err) {
-            console.error('ERRO - Erro ao conectar no MySQL:', err);
-            process.exit(1); // Encerra o processo se não conseguir conectar ao banco de dados para tentar novamente
-        }
-    });
-}
-
-//await dbConnect(mysql);
-
-// Cria a tabela de convites, caso não exista
-async function initializeTables() {
-    try {
-        // Cria a tabela de convites
-        db.query(`
-            CREATE TABLE IF NOT EXISTS invites (
-                invite VARCHAR(16) PRIMARY KEY NOT NULL,
-                role VARCHAR(32) NOT NULL,
-                server_id VARCHAR(22) NOT NULL
-            )
-        `);
-        console.info('LOG - Tabela de convites verificada com sucesso');
-
-        // Cria a tabela de enquetes
-        db.query(`
-            CREATE TABLE IF NOT EXISTS polls (
-                poll_id VARCHAR(22) PRIMARY KEY NOT NULL,
-                poll_json JSON NOT NULL,
-                ended_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-        console.info('LOG - Tabela de enquetes verificada com sucesso');
-    } catch (err) {
-        console.error('ERRO - Erro ao inicializar tabelas:', err);
-        process.exit(1); // Encerra o processo se não conseguir criar as tabelas
-    }
-}
-
-//await initializeTables();
+// Conecta aos bancos de dados
+const localDataBase = await new localDataBaseConnect();
+//const remoteDataBase = await new remoteDataBaseConnect();
 
 
 
@@ -146,126 +95,162 @@ class Queue {
     }
 }
 
-// Cria a única fila global
 const globalQueue = new Queue(Number(process.env.MAX_CONCURRENT)); // ajusta concorrência definida no .env (1 é recomendado, se velocidade se tornar mais necessária pode-se aumentar esse valor)
 
-// Lista de todos os eventos que já foram avisados (para evitar duplicidade)
-let alreadyNotifiedEvents = [];
 
 // Cache de convites cadastrados no banco de dados (cache aside) para economizar requests ao banco de dados
 let cachedInvites = {};
 
 // Função executada no inicio para carregar os convites do banco de dados no cache
-async function getCachedInvites() {
-    db.query(`SELECT * FROM invites`, (err, rows) => {
-        rows.forEach(row =>
-            cachedInvites[row[0]] = [row[1], row[2]]
-        )
-    })
+async function getCachedInvites(cache) {
+    const rows = await localDataBase.getAllInvites()
+    rows.forEach(row => cache[row.invite] = [row.role, row.server_id]);
 }
-//await getCachedInvites();
+await getCachedInvites(cachedInvites);
+console.log(`DEBUG - Convites carregados do banco de dados para o cache\n${JSON.stringify(cachedInvites, null, 2)}`);
+
+
+// Lista de todos os eventos que já foram avisados (para evitar duplicidade)
+let eventsSchedule = []
 
 // Comando que é executado a cada determinado espaço de tempo
-let eventsSchedule = []
 async function checkEvents() {
-    try {
-        // Pega todos os servidores em que o bot está
-        const guilds = await client.guilds.fetch();
+    // Pega todos os servidores em que o bot está
+    const guilds = await client.guilds.fetch();
 
-        // Remove o primeiro item da lista quando ela atinge um limite determinado
-        if (eventsSchedule.length === Number(process.env.MAX_EVENTS_CACHE)) eventsSchedule.shift()
+    // Remove o primeiro item da lista quando ela atinge um limite determinado
+    if (eventsSchedule.length === Number(process.env.MAX_EVENTS_CACHE)) eventsSchedule.shift()
 
-        for (const [id, partialGuild] of guilds) {
-            try {
-                // força o fetch completo da guild
-                const guild = await partialGuild.fetch();
+    for (const [id, partialGuild] of guilds) {
+        try {
+            // força o fetch completo da guild
+            const guild = await partialGuild.fetch();
 
-                // Pega todos os eventos cadastrados no servidor
-                const events = await guild.scheduledEvents.fetch();
+            // Pega todos os eventos cadastrados no servidor
+            const events = await guild.scheduledEvents.fetch();
 
-                for (const event of events.values()) {
+            for (const event of events.values()) {
 
-                    // timestamp atual em ms
-                    const now = Date.now();
+                // timestamp atual em ms
+                const now = Date.now();
 
-                    // Calcula a diferença de tempo entre o evento e o momento atual
-                    const diffMs = event.scheduledStartTimestamp - now;
+                // Calcula a diferença de tempo entre o evento e o momento atual
+                const diffMs = event.scheduledStartTimestamp - now;
 
-                    // Diferença em minutos
-                    const diffMinutes = Math.floor(diffMs / 1000 / 60);
+                // Diferença em minutos
+                const diffMinutes = Math.floor(diffMs / 1000 / 60);
 
-                    // verifica se o evento ainda não começou e se ele não está na lista de eventos já avisados
-                    if (diffMinutes > 0 && diffMinutes <= Number(process.env.EVENT_DIFF_FOR_WARNING) && !eventsSchedule.includes(event.id)) {
+                // verifica se o evento ainda não começou e se ele não está na lista de eventos já avisados
+                if (diffMinutes > 0 && diffMinutes <= Number(process.env.EVENT_DIFF_FOR_WARNING) && !eventsSchedule.includes(event.id)) {
 
-                        // Pega todos os canais do servidor
-                        const channels = await guild.channels.fetch();
+                    // Pega todos os canais do servidor
+                    const channels = await guild.channels.fetch();
 
-                        // Encontra o canal do evento
-                        const eventChannel = channels.get(event.channelId);
+                    if (event.channelId === null) {
+                        // Filtra os canais do servidor para os canais de avisos envia o aviso neles todos
+                        const avisoChannels = channels.filter(c => c.type === 0 && c.name === classChannels[1].name);
+                        for (const [, channel] of avisoChannels) {
+                            if (!channel.isTextBased()) {
+                                console.warn(`Aviso ignorado: canal ${channel.id} não é de texto.`);
+                                continue;
+                            }
+                            // Pega os cargos do canal
+                            const overwrites = channel.permissionOverwrites.cache.filter(o => o.type === 0); // só cargos
 
-                        // Encontra o canal de avisos
-                        const target = channels.find(c =>
-                                c.parentId === eventChannel.parentId &&
-                                c.name === classChannels[1].name
+                            // Determina qual o cargo da turma vendo todos os cargos do servidor e filtrando pelo nome da categoria (que sempre deve ser a sigla da turma)
+                            const parentName = channel.parent?.name ?? null;
+                            if (!parentName) {
+                                console.warn(`Aviso ignorado: canal ${channel.id} sem categoria (parent null).`);
+                                continue;
+                            }
+                            const roles = await Promise.all(
+                                overwrites.map(async o => {
+                                    const role = await guild.roles.fetch(o.id).catch(() => null);
+                                    return role && role.name?.includes("Estudantes " + parentName) ? role : null;
+                                })
+                            );
+                            const classRole = roles.find(r => r !== null);
+
+                            // Pega a hora do evento
+                            const date = new Date(event.scheduledStartTimestamp);
+                            const hours = date.toLocaleString("pt-BR", {
+                                timeZone: "America/Sao_Paulo",
+                                hour: "2-digit",
+                                minute: "2-digit"
+                            });
+
+                            await channel.send(
+                                `Boa noite, turma!!  ${classRole ? classRole.toString() : ""}\n` +
+                                "\n" +
+                                `Passando para lembrar vocês do nosso evento de hoje às ${hours} 🚀 \n` +
+                                `acesse o card do evento [aqui](${event.url})`
                             );
 
-                        // Pega o cargo da turma do evento
-                        const overwrites = eventChannel.permissionOverwrites.cache
-                            .filter(o => o.type === 0); // só cargos
-
-                        // Determina qual o cargo da turma vendo todos os cargos do servidor e filtrando pelo nome da categoria (que sempre deve ser a sigla da turma)
-                        let classRole = await Promise.all(
-                            overwrites.map(async o => {
-                                const role = await guild.roles.fetch(o.id);
-                                return role.name.includes("Estudantes "+eventChannel.parent.name) ? role : null;
-                            })
-                        );
-
-                        // Filtra os cargos vazios
-                        classRole = classRole.filter(r => r !== null)[0];
-
-                        // Pega a hora do evento
-                        const date = new Date(event.scheduledStartTimestamp);
-                        const hours = date.toLocaleString("pt-BR", {
-                            timeZone: "America/Sao_Paulo",
-                            hour: "2-digit",
-                            minute: "2-digit"
-                        });
-
-                        // Envia o aviso no canal de avisos
-                        target.send(`Boa noite, turma!!  ${classRole}\n` +
-                            "\n" +
-                            `Passando para lembrar vocês do nosso evento de hoje às ${hours} 🚀 \n` +
-                            `acesse o card do evento [aqui](${event.url})`)
-
-                        // Adiciona o evento na lista de eventos agendados para evitar duplicidade
-                        eventsSchedule.push(event.id)
+                            // Adiciona o evento na lista de eventos agendados para evitar duplicidade
+                            eventsSchedule.push(event.id)
                         }
                     }
+                    else {
+                            // Encontra o canal do evento
+                            const eventChannel = channels.get(event.channelId);
 
-            } catch (err) {console.error(`Erro ao buscar eventos da guild ${id}:`, err);}
+                            // Encontra o canal de avisos
+                            const target = channels.find(c =>
+                                c.parentId === eventChannel.parentId && // Nome da classe
+                                c.name === classChannels[1].name // Nome do canal de avisos
+                            );
+
+                            // Pega o cargo da turma do evento
+                            const overwrites = await eventChannel.permissionOverwrites.cache.filter(o => o.type === 0); // só cargos
+
+                            // Determina qual o cargo da turma vendo todos os cargos do servidor e filtrando pelo nome da categoria (que sempre deve ser a sigla da turma)
+                            let classRole = await Promise.all(
+                                overwrites.map(async o => {
+                                    const role = await guild.roles.fetch(o.id);
+                                    return role.name.includes("Estudantes " + eventChannel.parent.name) ? role : null;
+                                })
+                            );
+
+                            // Filtra os cargos vazios
+                            classRole = classRole.filter(r => r !== null)[0];
+
+                            // Pega a hora do evento
+                            const date = new Date(event.scheduledStartTimestamp);
+                            const hours = date.toLocaleString("pt-BR", {
+                                timeZone: "America/Sao_Paulo",
+                                hour: "2-digit",
+                                minute: "2-digit"
+                            });
+
+                            // Envia o aviso no canal de avisos
+                            target.send(`Boa noite, turma!!  ${classRole}\n` +
+                                "\n" +
+                                `Passando para lembrar vocês do nosso evento de hoje às ${hours} 🚀 \n` +
+                                `acesse o card do evento [aqui](${event.url})`)
+
+                            // Adiciona o evento na lista de eventos agendados para evitar duplicidade
+                            eventsSchedule.push(event.id)
+                        }
+                    }
+                }
+
+        } catch (err) {
+            console.error(`Erro ao buscar eventos da guild ${id} o evento pode não ter um canal de voz vinculado\n${err}`);
+        } finally {
+            // agenda de novo só depois que terminar tudo
+            setTimeout(checkEvents, Number(process.env.EVENT_CHECK_TIME) * 60 * 1000);
         }
-    } catch (err) {
-        console.error("Erro na rotina:", err)
-    } finally {
-        // agenda de novo só depois que terminar tudo
-        setTimeout(checkEvents, Number(process.env.EVENT_CHECK_TIME) * 60 * 1000);
     }
 }
 
 
 
 // Fecha o banco na saída do processo
-/* process.on('SIGINT', () => {
-    db.end(err => {
-        if (err) {
-            console.error('Erro ao fechar a conexão com o MySQL:', err);
-        } else {
-            console.info('Conexão com o MySQL fechada');
-        }
-        process.exit(0);
-    })
-}) */
+process.on('SIGINT', () => {
+    localDataBase.endConnection() //.then(() => console.info('Conexão com o SQLite fechada'));
+    //remoteDataBase.endConnection()// .then(() => console.info('Conexão com o MySQL fechada'))
+    process.exit(0);
+})
 
 
 
@@ -275,7 +260,8 @@ client.once(Events.ClientReady, async c => {
 
     // Começa o cadastro de comandos nos servidores
     async function loadCommand(commandName, command) {
-        const serverIds = process.env.ALLOWED_SERVERS_ID.split(',');
+        let serverIds = await client.guilds.fetch()
+        serverIds = [...serverIds.keys()]
 
         // Cria todas as promises em paralelo por servidor
         const promises = serverIds.map(async (id) => {
@@ -310,25 +296,26 @@ client.on(Events.InteractionCreate, async interaction => {
             console.info(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
             break;
 
-        /* case "invite":
+        case "invite":
             try {
                 const channel = interaction.options.getChannel('channel');
-                const role = interaction.options.getRole('role').name;
+                const role = interaction.options.getRole('role');
 
                 // Cria o convite
                 const invite = await channel.createInvite({
                     maxAge: 0,
                     maxUses: 0,
+                    duration: 0,
                     unique: true
                 });
 
                 // Insere o convite no banco de dados e no cache
-                cachedInvites[invite.code] = [role, interaction.guild.id];
-                db.query(`INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`, [invite.code, role, interaction.guild.id]);
+                cachedInvites[invite.code] = [role.id, interaction.guild.id];
+                await localDataBase.saveInvite(invite.code, role.id, interaction.guild.id);
 
                 // Responde com o link do convite
                 await interaction.reply({
-                    content: `✅ Convite criado com sucesso!\n📨 Link: ${invite.url}\n📍 Canal: ${channel}\n⏱️ Duração: ${duration === 0 ? 'Permanente' : `${duration} dias`}\n🔢 Usos máximos: ${maxUses === 0 ? 'Ilimitado' : maxUses}\n👥 Cargo vinculado: ${role}`,
+                    content: `✅ Convite criado com sucesso!\n📨 Link: ${invite.url}\n📍 Canal: ${channel}\n👥 Cargo vinculado: ${role}`,
                     flags: MessageFlags.Ephemeral // Faz a resposta ser visível apenas para quem executou o comando
                 }).then(_ => console.info(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
             } catch (error) {
@@ -338,7 +325,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     flags: MessageFlags.Ephemeral
                 });
             }
-            break; */
+            break;
 
         case "echo":
             let message = interaction.options.getString("message")
@@ -361,56 +348,31 @@ client.on(Events.InteractionCreate, async interaction => {
             });
             break;
 
-        /* case "display":
+        case "display":
             try {
-                // Busca os convites ativos do servidor
-                db.query(`SELECT * FROM invites WHERE server_id = ?`, [interaction.guild.id], async (err, rows) => {
-                    if (err) {
-                        console.error(`ERRO - Erro na consulta SQL:`, err);
-                        await interaction.reply({
-                            content: "❌ Ocorreu um erro ao buscar os convites.",
-                            flags: MessageFlags.Ephemeral
-                        });
-                        return;
-                    }
+                const rows = await localDataBase.getAllInvites();
 
-                    // Verifica se há convites no banco de dados
-                    if (rows.length === 0) {
-                        await interaction.reply({
-                            content: "Nenhum convite ativo encontrado.",
-                            flags: MessageFlags.Ephemeral
-                        });
-                        return;
-                    }
-
-                    // Verifica os convites existentes
-                    rows.forEach(invite => {
-                        interaction.guild.invites.fetch().then(invites => {
-                            if (!invites.has(invite.invite)) {
-                                db.query(`DELETE FROM invites WHERE invite = ?`, [invite.invite], (err) => {
-                                    if (err) {
-                                        console.error(`ERRO - Erro ao remover convite inválido:`, err);
-                                    } else {
-                                        console.info(`LOG - Convite inválido removido: ${invite.invite}`);
-                                    }
-                                });
-                            }
-                        }).catch(err => {
-                            console.error(`ERRO - Falha ao buscar convites do servidor:`, err);
-                        });
-                    })
-
-                    // Formata a resposta com os convites
-                    let response = "Convites ativos:\n";
-                    rows.forEach(invite => {
-                        response += `- **${invite.role}:** https://discord.gg/${invite.invite}\n`;
-                    });
+                // Verifica se há convites do banco de dados
+                if (!rows) {
                     await interaction.reply({
-                        content: response,
+                        content: "Nenhum convite ativo encontrado.",
                         flags: MessageFlags.Ephemeral
                     });
+                    return;
+                }
+
+                // implementar uma forma de atualizar os convites do banco de dados quando o convite não existir mais
+
+                // Formata a resposta com os convites
+                let response = "Convites ativos:\n";
+                rows.forEach(invite => {
+                    response += `**${interaction.guild.roles.cache.get(invite.role)} -->** https://discord.gg/${invite.invite}\n`;
                 });
-                break;
+                await interaction.reply({
+                    content: response,
+                    flags: MessageFlags.Ephemeral
+                });
+
             } catch (error) {
                 console.error(`ERRO - Falha ao buscar convites:`, error);
                 await interaction.reply({
@@ -418,7 +380,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     flags: MessageFlags.Ephemeral
                 });
             }
-            break; */
+            break;
 
         case "poll":
             try {
@@ -479,16 +441,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 });
 
                 // Insere o convite no banco de dados
-                await new Promise((resolve, reject) => {
-                    db.query(
-                        "INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)",
-                        [invite.code, targetRole.id, interaction.guild.id],
-                        (err, result) => {
-                            if (err) return reject(err);
-                            resolve(result);
-                        }
-                    );
-                });
+                await localDataBase.saveInvite(invite.code, targetRole.id, interaction.guild.id);
 
                 return invite.url;
             }
@@ -540,7 +493,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
                         return {
                             id: role.id,
-                            allow: obj.permissions,
+                            allow: obj.allow,
                             deny: obj.deny //.map(p => PermissionFlagsBits[p.toUpperCase()]) // convertendo permissões
                         };
                 });
@@ -578,7 +531,10 @@ client.on(Events.InteractionCreate, async interaction => {
 
                     } else if ([classChannels[1].name, classChannels[4].name].includes(channel.name)) {
                         // Define quais canais os membros não podem enviar mensagens
-                        await target.edit({permissionOverwrites: [{id: classRole, deny: ["SendMessages"], allow: ["ViewChannel"]}]})
+                        await target.permissionOverwrites.edit(classRole, {
+                            SendMessages: false,
+                            ViewChannel: true
+                        })
                     } else if ([classChannels[6].name, classChannels[7].name].includes(channel.name)) {
                         // Define os canais que devem conter o nome/sigla da turma
                         await target.edit({name: channel.name+className})
@@ -597,7 +553,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
                 // Responde com o link do invite e outras informações
                 await interaction.editReply({
-                    content: `✅ Turma ${className} criado com sucesso!\n👥 Cargo vinculado: ${classRole}\nLink do convite: ${inviteUrl}\\n`, // `✅ Turma ${className} criado com sucesso!\n📨 Link do convite: ${inviteUrl}\n👥 Cargo vinculado: ${classRole}`
+                    content: `✅ Turma ${className} criado com sucesso!\n👥 Cargo vinculado: ${classRole}\nLink do convite: ${inviteUrl}\n`, // `✅ Turma ${className} criado com sucesso!\n📨 Link do convite: ${inviteUrl}\n👥 Cargo vinculado: ${classRole}`
                     flags: MessageFlags.Ephemeral
                 }).then(_ => console.info(`LOG - ${interaction.commandName} ultilizado por ${interaction.user.username} em ${interaction.guild.name}`));
 
@@ -659,40 +615,48 @@ client.on(Events.InteractionCreate, async interaction => {
 });
 
 
-
+/*
 // Evento que é disparado quando uma enquete termina
-/*client.on('raw', async (packet) => {
-    if (!packet.t || !['MESSAGE_UPDATE'].includes(packet.t)) return;
-    if (packet.d.poll.results.is_finalized) {
-        const pollData = packet.d;
-        globalQueue.enqueue({processData: async () => {
-            try {
-                const d1 = new Date(pollData.poll.expiry.slice(0, 23));
-                const d2 = new Date(pollData.timestamp.slice(0, 23));
-                let poll_json = {
-                    question: pollData.poll.question.text,
-                    answers: pollData.poll.answers.map(answer => [
-                        answer.poll_media.text,
-                        pollData.poll.results.answer_counts.map(count => count.count)[answer.answer_id - 1]
-                    ]),
-                    duration: `${((d1-d2)/1000/60/60).toFixed(0)}:${((d1 - d2)/1000/60).toFixed(0)}:${((d1 - d2)/1000).toFixed(0)}`
-                };
-                await db.promise().query(
-                    'INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)',
-                    [pollData.id, JSON.stringify(poll_json)]
-                );
-            } catch (err) {
-                console.error("Erro ao processar poll:", err);
+client.on('raw', async (packet) => {
+    if (!packet.t || !['GUILD_MEMBER_ADD'].includes(packet.t)) return; // if (!packet.t || !['MESSAGE_UPDATE', 'GUILD_MEMBER_ADD'].includes(packet.t)) return;
+    switch (packet.t) {
+        case 'GUILD_MEMBER_ADD':
+            console.debug(`DEBUG - ${JSON.stringify(packet, null, 2)}`);
+            break;
+        case 'MESSAGE_UPDATE':
+            /*
+            if (packet.d.poll.results.is_finalized) {
+                const pollData = packet.d;
+                globalQueue.enqueue({processData: async () => {
+                    try {
+                        const d1 = new Date(pollData.poll.expiry.slice(0, 23));
+                        const d2 = new Date(pollData.timestamp.slice(0, 23));
+                        let poll_json = {
+                            question: pollData.poll.question.text,
+                            answers: pollData.poll.answers.map(answer => [
+                                answer.poll_media.text,
+                                pollData.poll.results.answer_counts.map(count => count.count)[answer.answer_id - 1]
+                            ]),
+                            duration: `${((d1-d2)/1000/60/60).toFixed(0)}:${((d1 - d2)/1000/60).toFixed(0)}:${((d1 - d2)/1000).toFixed(0)}`
+                        };
+                        await db.promise().query(
+                            'INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)',
+                            [pollData.id, JSON.stringify(poll_json)]
+                        );
+                    } catch (err) {
+                        console.error("Erro ao processar poll:", err);
+                    }
+                }});
             }
-        }});
+            break;
     }
-}); */
-
+});
+*/
 
 
 // Evento que é disparado quando um novo membro entra no servidor
 client.on(Events.GuildMemberAdd, async member => {
-    globalQueue.enqueue({processData: async () => {
+    await globalQueue.enqueue({processData: async (invite, options) => {
         try {
             console.info(`LOG - Processando entrada de ${member.user.username}`);
 
@@ -731,9 +695,14 @@ client.on(Events.GuildMemberAdd, async member => {
                 targetChannel.send({ files: [attachment] });
             }
 
+            /*
+                Feature esperando a API do discord resolver se implementarão a funcionalidade de obter o invite diretamente pela interação
+
             // Tenta resolver o invite diretamente
             let used_invite;
-            const resolvedInvite = await member.guild.invites.resolve(member.user.client);
+            await member.user.client.fetchInvite(invite)
+            const resolvedInvite = member.guild.invites.resolve(member.user.client);
+            console.debug(`DEBUG - Invite resolvido para ${member.user.username}:`, resolvedInvite);
             used_invite = resolvedInvite.code;
 
             if (!used_invite) {
@@ -746,9 +715,12 @@ client.on(Events.GuildMemberAdd, async member => {
 
             // Busca o cargo vinculado ao invite no cache
             if (used_invite in cachedInvites) {
-                const role = cachedInvites.get(used_invite).role;
-                await member.roles.add(role);
-                console.info(`LOG - ${member.user.username} adicionado ao cargo ${role.name}`);
+                const role = cachedInvites[used_invite][0]; // Posição do id do cargo
+                const roleName = member.guild.roles.cache.get(role).name;
+
+                // Adiciona o cargo ao membro
+                await member.roles.add(roleName);
+                console.info(`LOG - ${member.user.username} adicionado ao cargo ${roleName}`);
             } else {
                 console.error(`ERRO - O invite usado por ${member.user.username} não foi encontrado`);
             }
