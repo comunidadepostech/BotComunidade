@@ -1,5 +1,5 @@
 services:
-  bot:
+  bot_comunidade:
     container_name: discordjs-bot-comunidade
     restart: on-failure:3
     mem_limit: 256m
@@ -10,7 +10,6 @@ services:
     command: node .
     working_dir: /bot
     environment:
-      - ALLOWED_SERVERS_ID=${ALLOWED_SERVERS_ID}
       - EVENT_CHECK_TIME=${EVENT_CHECK_TIME}
       - EVENT_DIFF_FOR_WARNING=${EVENT_DIFF_FOR_WARNING}
       - ID=${ID}
@@ -20,6 +19,7 @@ services:
       - TOKEN=${TOKEN}
     ports:
       - "3000:3000"
+      - "443:443"
     volumes:
       - ./db:/bot/db
 
