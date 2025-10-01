@@ -27,7 +27,6 @@ Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades �
 2. O Bot precisa de acesso ao banco de dados para funcionar.
 3. Configure o [Environment do Github Actions](https://github.com/comunidadepostech/BotComunidade/settings/environments) com:
     - (Secret) TOKEN: Token do seu bot Discord
-    - (Secret) ALLOWED_SERVERS_ID: IDs dos servidores onde o bot pode ser usado (separados por vírgula e sem espaço)
     - (Secret) ID: ID do bot
     - (Secret) PUBLIC_KEY: Chave pública do Bot para interações
     - (Variable) EVENT_CHECK_TIME: Espaço de tempo para executar o loop de verificação de eventos (em minutos)
