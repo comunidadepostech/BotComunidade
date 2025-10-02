@@ -2,7 +2,7 @@ name: Deploy EC2
 
 on:
   push:
-    branches: [ experimental ]
+    branches: [ stable ]
 
 jobs:
   deploy:
