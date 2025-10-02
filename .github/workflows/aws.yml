@@ -9,15 +9,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      
-name: Checkout codigo
-      uses: actions/checkout@v4
-      
-name: Debug secrets
-      run: echo "O valor do host é: ${{ secrets.EC2_HOST }}"
+    - name: Checkout codigo
+    - uses: actions/checkout@v4
 
-      
-name: Conectar via SSH e fazer deploy
+    - name: Debug secrets
+      run: echo 'O valor do host é:${{ secrets.EC2_HOST }}'
+
+    - name: Conectar via SSH e fazer deploy
       uses: appleboy/ssh-action@v1.1.0
       with:
         host: ${{ secrets.EC2_HOST }}
