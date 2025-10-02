@@ -4,6 +4,38 @@
 
 Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades úteis e comandos administrativos que visam otimizar e contribuir com determinadas tarefas da equipe.
 
+# Sumário
+- [Como instalar e executar](#como-instalar-e-executar-serviço-interno)
+- [Comandos Disponíveis](#comandos-disponíveis)
+  - [/invite](#invite)
+  - [/ping](#ping)
+  - [/echo](#echo)
+  - [/display](#display)
+  - [/poll](#poll)
+  - [/createclass](#createclass)
+  - [/extract](#extract)
+- [Funcionalidades Automáticas](#funcionalidades-automáticas)
+  - [Mensagens de Boas-Vindas](#sistema-de-boas-vindas)
+  - [Armazenamento de enquetes](#atualização-constante-de-invites)
+  - [Atualização constante de invites](#atualização-constante-de-invites)
+  - [Criação de invites diretamente no comando /createclass](#criação-de-invites-diretamente-no-comando-createclass)
+- [Progresso de desenvolvimento e atualizações](#progresso-de-desenvolvimento-e-atualizações)
+- [Requisição de pull request na branch Stable](#requisição-de-pull-request-na-branch-stable)
+
+## Como instalar e executar (serviço interno)
+1. Certifique-se de que o Bot tenha as permissões necessárias no servidor (o cargo deve estar apenas embaixo do cargo admin ou Community Managers)
+2. O Bot precisa de acesso ao banco de dados para funcionar.
+3. Configure o [Environment do Github Actions](https://github.com/comunidadepostech/BotComunidade/settings/environments) com:
+    - (Secret) TOKEN: Token do seu bot Discord
+    - (Secret) ID: ID do bot
+    - (Secret) PUBLIC_KEY: Chave pública do Bot para interações
+    - (Variable) EVENT_CHECK_TIME: Espaço de tempo para executar o loop de verificação de eventos (em minutos)
+    - (Variable) EVENT_DIFF_FOR_WARNING: Diferença de tempo para enviar o aviso de evento (em minutos)
+    - (Variable) MAX_CONCURRENT: Define quantos comandos da fila de processamento podem ser executados ao mesmo tempo (recomendado manter em 1)
+    - (Variable) MAX_EVENTS_CACHE: Define quantos eventos dos servidores o bot deve manter em cache (recomendado >= 100)
+4. Configure o Github Actions para fazer o deploy do Bot usando a conexão com chave SSH da AWS EC2.
+   <!-- Crie a imagem usando `docker compose up --build bot` ou inicie o bot com  `npm install && node .` ou `npm install && nvm run 20 .` (recomendado se for localmente) -->
+
 ## Comandos Disponíveis
 
 ### `/invite`
@@ -78,9 +110,9 @@ Funciona para qualquer servidor.
 ### `/createclass`
 Cria cargo, categoria, canais e configura as permissões para uma nova turma com um link de convite
 
-Funciona apenas para servidores servidores comuns, não pode ser usado para servidores com fontes diferentes (Ex: servidor de egressos).
+Funciona apenas para servidores comuns, não pode ser usado para servidores com fontes diferentes (Ex: servidor de egressos).
 
-**Atenção! Para atualizar as funcionalidades de canais, permissões, threads automáticas e quaisquer configurações relacionadas ao formato de criação, deve ser feito uma alteração hard-coded (deve ser implementado uma atualização para isso no futuro), portanto se for necessario qualquer alteração deve-se primeiro contatar o dev responsavel pela manutenção do código.**
+> **Atenção! Para atualizar as funcionalidades de canais, permissões, threads automáticas e quaisquer configurações relacionadas ao formato de criação, deve ser feito uma alteração hard-coded (deve ser implementado uma atualização para isso no futuro), portanto se for necessario qualquer alteração deve-se primeiro contatar o dev responsavel pela manutenção do código.**
 
 **Permissão necessária**: Administrador
 
@@ -104,56 +136,28 @@ Funciona para qualquer servidor.
 
 ## Funcionalidades Automáticas
 
-### Sistema de Boas-Vindas
+### Mensagens de Boas-Vindas
 O bot automaticamente:
 - Envia uma mensagem de boas-vindas no canal `#✨│boas-vindas` quando um novo membro entra
-- Atribui automaticamente o cargo vinculado ao convite usado pelo novo membro
+<!-- - Atribui automaticamente o cargo vinculado ao convite usado pelo novo membro 
 
-### Gerenciamento de enquetes
+### Armazenamento de enquetes
 - Gerencia votos de enquetes criadas, permitindo que os usuários votem e visualizem resultados em tempo real.
 - Gerencia multiplos votos ao mesmo tempo, usando um sistema de fila para garantir que os votos sejam contabilizados corretamente.
 
-### Gerenciamento de invites
+### Atualização constante de invites
 - Confere se invites antigos ainda existem dentro do servidor e atualiza o banco de dados para economizar espaço
+-->
+### Criação de invites diretamente no comando `/createclass`
+- Cria um convite para cada turma nova que já é vinculado ao novo cargo da turma e ao canal de FAQ correspondente do comando.
 
-## Requisitos Técnicos
-- Node.js: 20.x ou superior
-- Pacotes necessários:
-    - discord.js: 14.21.0
-    - @discordjs/rest: 2.5.1
-    - discord-api-types: 0.38.16
-    - dotenv: 17.2.1
-    - mysql2: 3.14.2
-    - @napi-rs/canvas: 0.1.77
-    - axios: 1.11.0
-    - undici: 7.13.0
-
-## Configuração
-1. Certifique-se de que o bot tenha as permissões necessárias no servidor (o cargo deve estar apenas embaixo do cargo admin ou Community Managers)
-2. O bot precisa de acesso ao banco de dados MySQL para funcionar.
-3. Configure o arquivo `.env` com:
-    - TOKEN: Token do seu bot Discord
-    - ALLOWED_SERVERS_ID: IDs dos servidores onde o bot pode ser usado (separados por vírgula e sem espaço)
-    - ID: ID do bot
-    - PUBLIC_KEY: Chave pública do bot para interações
-    - MYSQLHOST: Endereço do servidor MySQL
-    - MYSQLUSER: Usuário do MySQL
-    - MYSQL_ROOT_PASSWORD: Senha do usuário MySQL
-    - MYSQLDATABASE: Nome do banco de dados MySQL
-    - EVENT_CHECK_TIME: Espaço de tempo para executar o loop de verificação de eventos (em minutos)
-    - EVENT_DIFF_FOR_WARNING: Diferença de tempo para enviar o aviso de evento (em minutos)
-    - MAX_CONCURRENT: Define quantos comandos da fila de processamento podem ser executados ao mesmo tempo (recomendado manter em 1)
-    - MAX_EVENTS_CACHE: Define quantos eventos dos servidores o bot deve manter em cache (recomendado >= 100)
-4. Instale as dependências com `npm install`
-5. Inicie o bot com  `node .` ou `nvm run 20 .` (recomendado se for localmente)
-
-## Estrutura do Banco de Dados
-O bot utiliza MySQL2 para armazenar informações.
+### Cadastro de eventos através com Webhook (em breve)
+- O Bot pode cadastrar eventos automaticamente devido a uma integração com um Webhook que se mantem numa aplicação [n8n](https://n8n.io).
 
 ## Progresso de desenvolvimento e atualizações
 Para saber em detalhes o andamento do desenvolvimento acompanhe a aba de projetos e veja os commits da branch `experimental`.
 
-## Requisição para pull request na branch `stable`
+## Requisição de pull request na branch `stable`
 - Deve-se sempre testar o código por completo antes de fazer a requisição
 - Nunca dê um commit na branch `stable` se não for algo extremamente urgente ou um erro despercebido
 - Sempre utilize primeiro a branch `experimental` para fazer testes e implementar novas funcionalidades e atualizações e apenas após completas e testadas que se deve fazer o Pull Request

@@ -3,12 +3,12 @@ export const defaultRoles = {
     rolesForNewClasses: [
         {
             name: "Equipe Pós-Tech",
-            permissions: ["ViewChannel"],
+            allow: ["ViewChannel"],
             deny: []
         },
         {
             name: "Talent Lab",
-            permissions: ["ViewChannel"],
+            allow: ["ViewChannel"],
             deny: []
         },
         {
@@ -28,7 +28,7 @@ export const defaultRoles = {
         },
         {
             name: "Coordenação",
-            permissions: [
+            allow: [
                 "ViewChannel",
                 "SendMessages",
                 "CreatePublicThreads",
@@ -43,7 +43,7 @@ export const defaultRoles = {
         },
         {
             name: "Professores",
-            permissions: [
+            allow: [
                 "ViewChannel",
                 "SendMessages",
                 "CreatePublicThreads",
@@ -58,7 +58,7 @@ export const defaultRoles = {
         },
         {
             name: "className",
-            permissions: ["ViewChannel"],
+            allow: ["ViewChannel"],
             deny: ["SendPolls"]
         }
     ]
