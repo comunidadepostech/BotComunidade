@@ -14,6 +14,7 @@ Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades �
   - [/poll](#poll)
   - [/createclass](#createclass)
   - [/extract](#extract)
+  - [/event](#event)
 - [Funcionalidades Automáticas](#funcionalidades-automáticas)
   - [Mensagens de Boas-Vindas](#sistema-de-boas-vindas)
   - [Armazenamento de enquetes](#atualização-constante-de-invites)
@@ -133,6 +134,25 @@ Funciona para qualquer servidor.
 
 **Exemplos de uso**:
 - /extract
+
+
+### `/event`
+Cria um evento no servidor.
+
+Funciona para qualquer servidor.
+
+**Permissão necessária**: Administrador
+
+**Parâmetros**:
+- `topic` (obrigatório): Tópico do evento
+- `date` (obrigatório): Data do evento (formato: YYYY-MM-DD)
+- `time` (obrigatório): Hora do evento (formato: HH:MM, 24 horas)
+- `description` (obrigatório): Descrição do evento (dica: use \n para pular linhas)
+- `link` (obrigatório): Link relacionado ao evento (Ex: link de reunião)
+- `background` (obrigatório): Imagem de fundo para o evento (anexo)
+
+**Exemplos de uso**:
+- /event ``topic: aula`` ``date: 2025-11-01`` ``time: 20:00`` ``description: descrição`` ``link: https://teste.com`` ``background: [imagem de fundo]``
 
 ## Funcionalidades Automáticas
 

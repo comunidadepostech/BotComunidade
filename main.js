@@ -31,7 +31,7 @@ import {defaultEventDescription} from "./data/defaultEventDescription.js";
 
 // Inicia o webhook para receber as informações de cadastro de aulas
 const webhook = express();
-const port = 9999;
+const port = process.env.PRIMARY_WEBHOOK_PORT || 9999;
 webhook.use(bodyParser.json());
 
 // Registra a fonte usada na imagem de boas-vindas
@@ -644,13 +644,12 @@ client.on(Events.InteractionCreate, async interaction => {
                 scheduledEndTime: new Date(new Date(`${date}T${time}:00-03:00`).getTime() + 180 * 60 * 1000), // Duração padrão de 3 horas
                 privacyLevel: 2, // Guild Only
                 entityType: 3, // External
-                description: description,
+                description: description.replace(/\\n/g, '\n'),
                 image: `data:image/png;base64,${buffer.toString('base64')}`,
                 entityMetadata: {location: link}
             })
 
             await interaction.reply({ content: "✅ Evento criado com sucesso!", flags: MessageFlags.Ephemeral });
-
             break;
 
         default:
