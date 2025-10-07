@@ -150,7 +150,40 @@ const extract = new SlashCommandBuilder()
     .setDescription("Extrai o conteúdo do chat e retorna um arquivo .txt")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 
-
+const event = new SlashCommandBuilder()
+    .setName('event')
+    .setDescription('Cria um evento')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addStringOption(option =>
+        option.setName('topic')
+            .setDescription('Tópico do evento')
+            .setRequired(true)
+    )
+    .addStringOption(option =>
+        option.setName('date')
+            .setDescription('Data (yyyy-MM-dd)')
+            .setRequired(true)
+    )
+    .addStringOption(option =>
+        option.setName('time')
+            .setDescription('Hora (HH:mm)')
+            .setRequired(true)
+    )
+    .addStringOption(option =>
+        option.setName('description')
+            .setDescription('Descrição do evento')
+            .setRequired(true)
+    )
+    .addStringOption(option =>
+        option.setName('link')
+            .setDescription('Link do evento')
+            .setRequired(true)
+    )
+    .addAttachmentOption(option =>
+        option.setName("background")
+            .setDescription("Imagem de fundo do evento")
+            .setRequired(true)
+    );
 
 export const slashCommands = [
     {name: "invite", commandBuild: invite},
@@ -159,5 +192,6 @@ export const slashCommands = [
     {name: "display", commandBuild: display},
     {name: "poll", commandBuild: poll},
     {name: "createclass", commandBuild: createclass},
-    {name: "extract", commandBuild: extract}
+    {name: "extract", commandBuild: extract},
+    {name: "event", commandBuild: event},
 ]
