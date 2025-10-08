@@ -180,8 +180,8 @@ O bot automaticamente:
 ### Criação de invites diretamente no comando `/createclass`
 - Cria um convite para cada turma nova que já é vinculado ao novo cargo da turma e ao canal de FAQ correspondente do comando.
 
-### Cadastro de eventos através com Webhook (em breve)
-- O Bot pode cadastrar eventos automaticamente devido a uma integração com um Webhook que se mantem numa aplicação [n8n](https://n8n.io).
+### Cadastro de eventos através com Webhook
+- O Bot pode cadastrar eventos automaticamente com uma integração de um Webhook que se mantem numa aplicação [n8n](https://n8n.io) mas também é possível cadastrar evento usando apenas HTTP POST com os parametros certos.
 
 ## Progresso de desenvolvimento e atualizações
 Para saber em detalhes o andamento do desenvolvimento acompanhe a aba de projetos e veja os commits da branch `experimental`.
