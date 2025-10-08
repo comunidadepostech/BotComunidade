@@ -18,7 +18,7 @@ services:
       - PUBLIC_KEY=${PUBLIC_KEY}
       - TOKEN=${TOKEN}
     ports:
-      - "3000:3000"
+      - "9999:9999"
       - "443:443"
     volumes:
       - ./db:/bot/db

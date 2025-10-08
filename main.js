@@ -23,6 +23,16 @@ import {defaultTags} from "./data/defaultTags.mjs";
 import {createCanvas, loadImage, GlobalFonts} from '@napi-rs/canvas'
 import {request}  from 'undici'
 import {localDataBaseConnect, remoteDataBaseConnect} from "./data/database.mjs"
+import express from 'express';
+import bodyParser from 'body-parser';
+import {serverNames} from "./data/servers.mjs";
+import fetch from 'node-fetch';
+import {defaultEventDescription} from "./data/defaultEventDescription.js";
+
+// Inicia o webhook para receber as informações de cadastro de aulas
+const webhook = express();
+const port = process.env.PRIMARY_WEBHOOK_PORT || 9999;
+webhook.use(bodyParser.json());
 
 // Registra a fonte usada na imagem de boas-vindas
 GlobalFonts.registerFromPath("./data/Coolvetica Hv Comp.otf", "normalFont")
@@ -609,6 +619,39 @@ client.on(Events.InteractionCreate, async interaction => {
             await interaction.editReply({ content: "Histórico coletado:", files: [fileAttachment] });
             break;
 
+        case "event":
+            const topic = interaction.options.getString('topic');
+            const date = interaction.options.getString('date');
+            const time = interaction.options.getString('time');
+            const description = interaction.options.getString('description');
+            const link = interaction.options.getString('link');
+            const background = interaction.options.getAttachment('background');
+
+            if (!background.contentType.startsWith('image/')) {
+                return await interaction.reply({
+                    content: '❌ O arquivo enviado não é uma imagem válida.',
+                    ephemeral: true
+                });
+            }
+
+            const response = await fetch(background.url);
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+
+            await interaction.guild.scheduledEvents.create({
+                name: topic,
+                scheduledStartTime: new Date(`${date}T${time}:00-03:00`),
+                scheduledEndTime: new Date(new Date(`${date}T${time}:00-03:00`).getTime() + 180 * 60 * 1000), // Duração padrão de 3 horas
+                privacyLevel: 2, // Guild Only
+                entityType: 3, // External
+                description: description.replace(/\\n/g, '\n'),
+                image: `data:image/png;base64,${buffer.toString('base64')}`,
+                entityMetadata: {location: link}
+            })
+
+            await interaction.reply({ content: "✅ Evento criado com sucesso!", flags: MessageFlags.Ephemeral });
+            break;
+
         default:
             break;
     }
@@ -765,7 +808,48 @@ client.on(Events.GuildMemberAdd, async member => {
     }});
 });
 
+// Endpoint para cadastros de eventos no servidores (não há tratamento de erros aqui, pois os dados já chegam no formato correto)
+webhook.post('/criarEvento', async (req, res) => {
+    console.debug('DEBUG - Dados recebidos: ', req.body);
 
+    const { turma, nomeEvento, tipo, data_hora, link } = req.body;
+
+    // Pega todos os servidores em que o bot está
+    const guild = await client.guilds.fetch(serverNames[turma.replace(/\d+/g, '')]);
+
+    if (!guild) {
+        console.error(`Servidor de ${turma.replace(/\d+/g, '')} não encontrado`);
+        res.status(500).json({ status: 'erro', mensagem: `Servidor de ${turma.replace(/\d+/g, '')} não encontrado`});
+    }
+
+    // Faz fetch dos canais do servidor e busca pelo canal de voz da turma
+    const channels = await guild.channels.fetch();
+    const voiceChannel = channels.find(c => c.name === classChannels[7].name + turma && c.type === 2);
+
+    let description = defaultEventDescription[tipo] instanceof Function;
+    description = description ? defaultEventDescription[tipo](link) : defaultEventDescription[tipo];
+
+    // Marca o evento no servidor
+    const scheduledEvent = await guild.scheduledEvents.create({
+        name: `${turma} - ${nomeEvento}`,
+        scheduledStartTime: new Date(`${data_hora}`),
+        scheduledEndTime: new Date(new Date(`${data_hora}`).getTime() + 180 * 60 * 1000),
+        privacyLevel: 2,
+        entityType: 2,
+        channel: voiceChannel.id,
+        description: description,
+        image: './data/postech.png'
+    });
+
+    // Responde o request com sucesso e registra o log
+    console.log(`LOG - Evento ${nomeEvento} criado com sucesso`);
+    res.json({status: 'sucesso', evento: scheduledEvent});
+});
+
+
+webhook.listen(port, "0.0.0.0", () => {
+    console.log(`Webhook aberto em: ${port}`);
+});
 
 try {
     await client.login(process.env.TOKEN);

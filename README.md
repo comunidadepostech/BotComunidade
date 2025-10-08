@@ -14,6 +14,7 @@ Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades �
   - [/poll](#poll)
   - [/createclass](#createclass)
   - [/extract](#extract)
+  - [/event](#event)
 - [Funcionalidades Automáticas](#funcionalidades-automáticas)
   - [Mensagens de Boas-Vindas](#sistema-de-boas-vindas)
   - [Armazenamento de enquetes](#atualização-constante-de-invites)
@@ -24,17 +25,26 @@ Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades �
 
 ## Como instalar e executar (serviço interno)
 1. Certifique-se de que o Bot tenha as permissões necessárias no servidor (o cargo deve estar apenas embaixo do cargo admin ou Community Managers)
-2. O Bot precisa de acesso ao banco de dados para funcionar.
-3. Configure o [Environment do Github Actions](https://github.com/comunidadepostech/BotComunidade/settings/environments) com:
-    - (Secret) TOKEN: Token do seu bot Discord
-    - (Secret) ID: ID do bot
-    - (Secret) PUBLIC_KEY: Chave pública do Bot para interações
-    - (Variable) EVENT_CHECK_TIME: Espaço de tempo para executar o loop de verificação de eventos (em minutos)
-    - (Variable) EVENT_DIFF_FOR_WARNING: Diferença de tempo para enviar o aviso de evento (em minutos)
-    - (Variable) MAX_CONCURRENT: Define quantos comandos da fila de processamento podem ser executados ao mesmo tempo (recomendado manter em 1)
-    - (Variable) MAX_EVENTS_CACHE: Define quantos eventos dos servidores o bot deve manter em cache (recomendado >= 100)
-4. Configure o Github Actions para fazer o deploy do Bot usando a conexão com chave SSH da AWS EC2.
-   <!-- Crie a imagem usando `docker compose up --build bot` ou inicie o bot com  `npm install && node .` ou `npm install && nvm run 20 .` (recomendado se for localmente) -->
+2. O Bot precisa de acesso ao banco de dados para funcionar corretamente.
+3. Configure o Github Actions para fazer o deploy do Bot usando a conexão com chave SSH da AWS EC2. ou pule para o passo 4.
+4. Crie a imagem usando `docker-compose up --build -d --remove-orphans` (AWS linux) ou inicie o bot com  `npm install && node .` ou `npm install && nvm run 20 .` (recomendado se for localmente)
+5. Crie e configure um arquivo .env na raiz do projeto com as seguintes variáveis de ambiente:
+```
+EVENT_CHECK_TIME="1" #padrão 
+EVENT_DIFF_FOR_WARNING="30" #padrão 
+PRIMARY_WEBHOOK_PORT="9999" #padrão 
+ID="" #ID do bot
+MAX_CONCURRENT="1" #padrão 
+MAX_EVENTS_CACHE="300" #padrão 
+MYSQL_ROOT_PASSWORD=""
+MYSQLDATABASE=""
+MYSQLHOST=""
+MYSQLPASSWORD=""
+MYSQLPORT=""
+MYSQLUSER=""
+PUBLIC_KEY="" #Chave pública do bot
+TOKEN="" #Token do bot
+```
 
 ## Comandos Disponíveis
 
@@ -133,6 +143,25 @@ Funciona para qualquer servidor.
 
 **Exemplos de uso**:
 - /extract
+
+
+### `/event`
+Cria um evento no servidor.
+
+Funciona para qualquer servidor.
+
+**Permissão necessária**: Administrador
+
+**Parâmetros**:
+- `topic` (obrigatório): Tópico do evento
+- `date` (obrigatório): Data do evento (formato: YYYY-MM-DD)
+- `time` (obrigatório): Hora do evento (formato: HH:MM, 24 horas)
+- `description` (obrigatório): Descrição do evento (dica: use \n para pular linhas)
+- `link` (obrigatório): Link relacionado ao evento (Ex: link de reunião)
+- `background` (obrigatório): Imagem de fundo para o evento (anexo)
+
+**Exemplos de uso**:
+- /event ``topic: aula`` ``date: 2025-11-01`` ``time: 20:00`` ``description: descrição`` ``link: https://teste.com`` ``background: [imagem de fundo]``
 
 ## Funcionalidades Automáticas
 
