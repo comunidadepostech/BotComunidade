@@ -53,7 +53,9 @@ const poll = new SlashCommandBuilder()
     .addStringOption(option =>
         option.setName('question')
             .setDescription('Pergunta da enquete')
-            .setRequired(true))
+            .setRequired(true)
+            .setMaxLength(300)
+    )
     .addIntegerOption(option =>
         option.setName('duration')
             .setDescription('Duração da enquete em horas')
