@@ -1,33 +1,26 @@
 // Importa as dependencias
 import dotenv from 'dotenv'
-dotenv.config();
+import {AttachmentBuilder, Client, Events, GatewayIntentBits, MessageFlags, PollLayoutType} from "discord.js"
 import {
-    Client,
-    Events,
-    GatewayIntentBits,
-    PermissionFlagsBits,
-    PollLayoutType,
-    AttachmentBuilder,
-    MessageFlags
-} from "discord.js"
-import {
-    somePermissionsChannels,
     allPermissionsChannels,
     classActivations,
     classChannels,
-    classRolePermissions
+    classRolePermissions,
+    somePermissionsChannels
 } from "./data/classPatterns.mjs"
 import {slashCommands} from "./data/slashCommands.mjs"
 import {defaultRoles} from "./data/defaultRoles.mjs"
 import {defaultTags} from "./data/defaultTags.mjs";
-import {createCanvas, loadImage, GlobalFonts} from '@napi-rs/canvas'
-import {request}  from 'undici'
-import {localDataBaseConnect, remoteDataBaseConnect} from "./data/database.mjs"
+import {createCanvas, GlobalFonts, loadImage} from '@napi-rs/canvas'
+import {request} from 'undici'
+import {localDataBaseConnect} from "./data/database.mjs"
 import express from 'express';
 import bodyParser from 'body-parser';
 import {serverNames} from "./data/servers.mjs";
 import fetch from 'node-fetch';
 import {defaultEventDescription} from "./data/defaultEventDescription.js";
+
+dotenv.config();
 
 // Inicia o webhook para receber as informações de cadastro de aulas
 const webhook = express();
@@ -48,7 +41,12 @@ const client = new Client({
         GatewayIntentBits.GuildInvites,
         GatewayIntentBits.GuildMessagePolls,
         GatewayIntentBits.GuildMessageReactions
-    ]
+    ],
+    rest: {
+        timeout: 10000,
+        retries: 1
+    }
+
 });
 
 
@@ -119,6 +117,7 @@ async function getCachedInvites(cache) {
 await getCachedInvites(cachedInvites);
 console.log(`DEBUG - Convites carregados do banco de dados para o cache\n${JSON.stringify(cachedInvites, null, 2)}`);
 
+// Funções rotineiras
 
 // Lista de todos os eventos que já foram avisados (para evitar duplicidade)
 let eventsSchedule = []
@@ -253,15 +252,50 @@ async function checkEvents() {
     }
 }
 
+let members_checked = false
 
+async function getMembers() {
+    const date = new Date().getDate();
 
-// Fecha o banco na saída do processo
-process.on('SIGINT', () => {
-    localDataBase.endConnection() //.then(() => console.info('Conexão com o SQLite fechada'));
-    //remoteDataBase.endConnection()// .then(() => console.info('Conexão com o MySQL fechada'))
-    process.exit(0);
-})
+    // Confere se é dia primeiro e se os membros ainda não foram verificados, do contrário verifica se o dia é diferente e se sim ele permite a próxima contagem
+    if (date === 1 && !members_checked) {
+        // Pega todos os servidores em que o bot está
+        const guilds = await client.guilds.fetch();
 
+        const results = {};
+
+        for (const [id, partialGuild] of guilds) {
+            // força o fetch completo da guild
+            const guild = await partialGuild.fetch();
+
+            // Pega todos os membros do servidor
+            const roles = await guild.roles.fetch();
+
+            // Busca todos os membros do servidor (garante cache atualizado)
+            const members = await guild.members.fetch();
+
+            // Mapa de contagem por role id (apenas cargos que contenham "Estudantes")
+            const counts = {};
+
+            // Lista todos os cargos que contém "Estudantes" no nome e conta os membros
+            guild.roles.cache
+                .filter(r => r.name.includes('Estudantes'))
+                .forEach(role => {
+                    counts[role.name] = role.members.size;
+                });
+
+            results[guild.id] = {
+                guildName: guild.name,
+                counts
+            };
+
+            console.debug(`DEBUG - Contagem de cargos em ${guild.name} (${guild.id}): ${JSON.stringify(counts)}`);
+        }
+    } else if (date !== 1) {
+        members_checked = false
+    }
+    setTimeout(getMembers, 22 * 60 * 60 * 1000); // 22 horas
+}
 
 
 // Define o que o bot deve fazer ao ser iniciado, no caso, imprime uma mensagem de online e cria os comandos existentes
@@ -292,8 +326,9 @@ client.once(Events.ClientReady, async c => {
         slashCommands.map(c => loadCommand(c.name, c.commandBuild))
     );
 
-    // Inicia o processo de checagem de eventos nos servidores
+    // Inicia o processo de checagem de eventos e membros nos servidores
     checkEvents();
+    getMembers();
 });
 
 
@@ -696,7 +731,7 @@ client.on('raw', async (packet) => {
 });
 */
 
-
+/*
 // Evento que é disparado quando um novo membro entra no servidor
 client.on(Events.GuildMemberAdd, async member => {
     await globalQueue.enqueue({processData: async (invite, options) => {
@@ -738,7 +773,7 @@ client.on(Events.GuildMemberAdd, async member => {
                 targetChannel.send({ files: [attachment] });
             }
 
-            /*
+
                 Feature esperando a API do discord resolver se implementarão a funcionalidade de obter o invite diretamente pela interação
 
             // Tenta resolver o invite diretamente
@@ -768,7 +803,7 @@ client.on(Events.GuildMemberAdd, async member => {
                 console.error(`ERRO - O invite usado por ${member.user.username} não foi encontrado`);
             }
 
-            /*
+
             db.query("SELECT role FROM invites WHERE invite = ?", [used_invite], async (err, rows) => {
                     if (err) {
                         console.error(`ERRO - Erro na consulta SQL:`, err);
@@ -791,7 +826,7 @@ client.on(Events.GuildMemberAdd, async member => {
                     console.info(`LOG - ${member.user.username} adicionado ao cargo ${welcome_role.name}`);
                 }
             );
-             */
+
 
             // Busca o canal de boas-vindas e envia a mensagem
             const welcomeChannel = member.guild.channels.cache.find(channel => channel.name === "✨│boas-vindas");
@@ -807,49 +842,60 @@ client.on(Events.GuildMemberAdd, async member => {
         }
     }});
 });
+*/
 
 // Endpoint para cadastros de eventos no servidores (não há tratamento de erros aqui, pois os dados já chegam no formato correto)
 webhook.post('/criarEvento', async (req, res) => {
     console.debug('DEBUG - Dados recebidos: ', req.body);
+    const {turma, nomeEvento, tipo, data_hora, link} = req.body;
+    try {
+        // Pega todos os servidores em que o bot está
+        const guild = await client.guilds.fetch(serverNames[turma.replace(/\d+/g, '')]);
 
-    const { turma, nomeEvento, tipo, data_hora, link } = req.body;
+        if (!guild) {
+            console.error(`Servidor de ${turma.replace(/\d+/g, '')} não encontrado`);
+            res.status(500).json({status: 'erro', mensagem: `Servidor de ${turma.replace(/\d+/g, '')} não encontrado`});
+        }
 
-    // Pega todos os servidores em que o bot está
-    const guild = await client.guilds.fetch(serverNames[turma.replace(/\d+/g, '')]);
+        // Faz fetch dos canais do servidor e busca pelo canal de voz da turma
+        const channels = await guild.channels.fetch();
+        const voiceChannel = channels.find(c => c.name === classChannels[7].name + turma && c.type === 2);
 
-    if (!guild) {
-        console.error(`Servidor de ${turma.replace(/\d+/g, '')} não encontrado`);
-        res.status(500).json({ status: 'erro', mensagem: `Servidor de ${turma.replace(/\d+/g, '')} não encontrado`});
+        let description = defaultEventDescription[tipo] instanceof Function;
+        description = description ? defaultEventDescription[tipo](link) : defaultEventDescription[tipo];
+
+        // Marca o evento no servidor
+        const scheduledEvent = await guild.scheduledEvents.create({
+            name: `${turma} - ${nomeEvento}`,
+            scheduledStartTime: new Date(`${data_hora}`),
+            scheduledEndTime: new Date(new Date(`${data_hora}`).getTime() + 180 * 60 * 1000),
+            privacyLevel: 2,
+            entityType: 2,
+            channel: voiceChannel.id,
+            description: description,
+            image: './data/postech.png'
+        });
+
+        // Responde o request com sucesso e registra o log
+        console.log(`LOG - Evento ${nomeEvento} criado com sucesso`);
+        res.json({status: 'sucesso', evento: scheduledEvent});
+    } catch (error) {
+        console.error(`Servidor de ${turma.replace(/\d+/g, '')} não encontrado ou a turma não corresponde ao cargo\n`, error);
+        res.status(500).json({status: 'erro', mensagem: `${error}`});
     }
-
-    // Faz fetch dos canais do servidor e busca pelo canal de voz da turma
-    const channels = await guild.channels.fetch();
-    const voiceChannel = channels.find(c => c.name === classChannels[7].name + turma && c.type === 2);
-
-    let description = defaultEventDescription[tipo] instanceof Function;
-    description = description ? defaultEventDescription[tipo](link) : defaultEventDescription[tipo];
-
-    // Marca o evento no servidor
-    const scheduledEvent = await guild.scheduledEvents.create({
-        name: `${turma} - ${nomeEvento}`,
-        scheduledStartTime: new Date(`${data_hora}`),
-        scheduledEndTime: new Date(new Date(`${data_hora}`).getTime() + 180 * 60 * 1000),
-        privacyLevel: 2,
-        entityType: 2,
-        channel: voiceChannel.id,
-        description: description,
-        image: './data/postech.png'
-    });
-
-    // Responde o request com sucesso e registra o log
-    console.log(`LOG - Evento ${nomeEvento} criado com sucesso`);
-    res.json({status: 'sucesso', evento: scheduledEvent});
 });
 
 
 webhook.listen(port, "0.0.0.0", () => {
     console.log(`Webhook aberto em: ${port}`);
 });
+
+// Fecha o banco na saída do processo
+process.on('SIGINT', () => {
+    localDataBase.endConnection() //.then(() => console.info('Conexão com o SQLite fechada'));
+    //remoteDataBase.endConnection()// .then(() => console.info('Conexão com o MySQL fechada'))
+    process.exit(0);
+})
 
 try {
     await client.login(process.env.TOKEN);
