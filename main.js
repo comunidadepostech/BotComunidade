@@ -13,7 +13,7 @@ import {defaultRoles} from "./data/defaultRoles.mjs"
 import {defaultTags} from "./data/defaultTags.mjs";
 import {createCanvas, GlobalFonts, loadImage} from '@napi-rs/canvas'
 import {request} from 'undici'
-import {localDataBaseConnect} from "./data/database.mjs"
+import {DataBaseConnect} from "./data/database.mjs"
 import express from 'express';
 import bodyParser from 'body-parser';
 import {serverNames} from "./data/servers.mjs";
@@ -46,14 +46,12 @@ const client = new Client({
         timeout: 10000,
         retries: 1
     }
-
 });
 
 
 
 // Conecta aos bancos de dados
-const localDataBase = await new localDataBaseConnect();
-//const remoteDataBase = await new remoteDataBaseConnect();
+const db = await new DataBaseConnect();
 
 
 
@@ -105,17 +103,18 @@ class Queue {
 
 const globalQueue = new Queue(Number(process.env.MAX_CONCURRENT)); // ajusta concorrência definida no .env (1 é recomendado, se velocidade se tornar mais necessária pode-se aumentar esse valor)
 
-
 // Cache de convites cadastrados no banco de dados (cache aside) para economizar requests ao banco de dados
 let cachedInvites = {};
 
 // Função executada no inicio para carregar os convites do banco de dados no cache
 async function getCachedInvites(cache) {
-    const rows = await localDataBase.getAllInvites()
+    const rows = await db.getAllInvites()
     rows.forEach(row => cache[row.invite] = [row.role, row.server_id]);
 }
 await getCachedInvites(cachedInvites);
 console.log(`DEBUG - Convites carregados do banco de dados para o cache\n${JSON.stringify(cachedInvites, null, 2)}`);
+
+
 
 // Funções rotineiras
 
@@ -298,6 +297,7 @@ async function getMembers() {
 }
 
 
+
 // Define o que o bot deve fazer ao ser iniciado, no caso, imprime uma mensagem de online e cria os comandos existentes
 client.once(Events.ClientReady, async c => {
     console.info(`LOG - Inicializando cliente ${client.user.username} com ID ${client.user.id}`);
@@ -331,8 +331,6 @@ client.once(Events.ClientReady, async c => {
     getMembers();
 });
 
-
-
 // Interações com os comandos
 client.on(Events.InteractionCreate, async interaction => {
     switch (interaction.commandName) {
@@ -356,7 +354,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
                 // Insere o convite no banco de dados e no cache
                 cachedInvites[invite.code] = [role.id, interaction.guild.id];
-                await localDataBase.saveInvite(invite.code, role.id, interaction.guild.id);
+                await db.saveInvite(invite.code, role.id, interaction.guild.id);
 
                 // Responde com o link do convite
                 await interaction.reply({
@@ -395,7 +393,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
         case "display":
             try {
-                const rows = await localDataBase.getAllInvites();
+                const rows = await db.getAllInvites();
 
                 // Verifica se há convites do banco de dados
                 if (!rows) {
@@ -486,7 +484,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 });
 
                 // Insere o convite no banco de dados
-                await localDataBase.saveInvite(invite.code, targetRole.id, interaction.guild.id);
+                await db.saveInvite(invite.code, targetRole.id, interaction.guild.id);
 
                 return invite.url;
             }
@@ -889,13 +887,6 @@ webhook.post('/criarEvento', async (req, res) => {
 webhook.listen(port, "0.0.0.0", () => {
     console.log(`Webhook aberto em: ${port}`);
 });
-
-// Fecha o banco na saída do processo
-process.on('SIGINT', () => {
-    localDataBase.endConnection() //.then(() => console.info('Conexão com o SQLite fechada'));
-    //remoteDataBase.endConnection()// .then(() => console.info('Conexão com o MySQL fechada'))
-    process.exit(0);
-})
 
 try {
     await client.login(process.env.TOKEN);

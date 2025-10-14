@@ -6,7 +6,7 @@ export const defaultEventDescription = {
         "Não perca o bate papo do Grupo de Estudos!\n" +
         " \n" +
         "Obs: Este momento não será gravado\n",
-    "Live": (link) => `Lembre-se que a live será no Zoom através do link: ${link}` +
+    "Live": (link) => `Lembre-se que a live será no Zoom através do link: ${link}\n` +
         "\n" +
         "Obs.: Todas as lives serão gravadas e disponibilizadas no dia seguinte para a turma no canal #gravações",
     "Mentoria": "Olá, turma!\n" +
