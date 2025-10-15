@@ -7,18 +7,18 @@ import {
     classChannels,
     classRolePermissions,
     somePermissionsChannels
-} from "./data/classPatterns.mjs"
-import {slashCommands} from "./data/slashCommands.mjs"
-import {defaultRoles} from "./data/defaultRoles.mjs"
-import {defaultTags} from "./data/defaultTags.mjs";
+} from "./functions/classPatterns.mjs"
+import {slashCommands} from "./functions/slashCommands.mjs"
+import {defaultRoles} from "./functions/defaultRoles.mjs"
+import {defaultTags} from "./functions/defaultTags.mjs";
 import {createCanvas, GlobalFonts, loadImage} from '@napi-rs/canvas'
 import {request} from 'undici'
-import {DataBaseConnect} from "./data/database.mjs"
+import {DataBaseConnect} from "./functions/database.mjs"
 import express from 'express';
 import bodyParser from 'body-parser';
-import {serverNames} from "./data/servers.mjs";
+import {serverNames} from "./functions/servers.mjs";
 import fetch from 'node-fetch';
-import {defaultEventDescription} from "./data/defaultEventDescription.js";
+import {defaultEventDescription} from "./functions/defaultEventDescription.js";
 
 dotenv.config();
 
@@ -89,45 +89,31 @@ class Queue {
             }
             task._resolve();
         } catch (err) {
-            task._reject(err);
+            this.running--;
             console.error("Erro na fila:", err);
+            task._reject(err);
         } finally {
             this.running--;
             this.process();
         }
-
-        this.running--;
-        this.process();
     }
 }
 
 const globalQueue = new Queue(Number(process.env.MAX_CONCURRENT)); // ajusta concorrência definida no .env (1 é recomendado, se velocidade se tornar mais necessária pode-se aumentar esse valor)
 
-// Cache de convites cadastrados no banco de dados (cache aside) para economizar requests ao banco de dados
-let cachedInvites = {};
-
-// Função executada no inicio para carregar os convites do banco de dados no cache
-async function getCachedInvites(cache) {
-    const rows = await db.getAllInvites()
-    rows.forEach(row => cache[row.invite] = [row.role, row.server_id]);
-}
-await getCachedInvites(cachedInvites);
-console.log(`DEBUG - Convites carregados do banco de dados para o cache\n${JSON.stringify(cachedInvites, null, 2)}`);
-
-
 
 // Funções rotineiras
 
 // Lista de todos os eventos que já foram avisados (para evitar duplicidade)
-let eventsSchedule = []
+let eventsSchedule = new Map(); // O(1)
 
 // Comando que é executado a cada determinado espaço de tempo
 async function checkEvents() {
+    let start = Date.now();
+    console.debug(`DEBUG - ${eventsSchedule.size} eventos avisados`);
+
     // Pega todos os servidores em que o bot está
     const guilds = await client.guilds.fetch();
-
-    // Remove o primeiro item da lista quando ela atinge um limite determinado
-    if (eventsSchedule.length === Number(process.env.MAX_EVENTS_CACHE)) eventsSchedule.shift()
 
     for (const [id, partialGuild] of guilds) {
         try {
@@ -137,29 +123,26 @@ async function checkEvents() {
             // Pega todos os eventos cadastrados no servidor
             const events = await guild.scheduledEvents.fetch();
 
+            // Pega todos os canais do servidor
+            const channels = await guild.channels.fetch();
+
+            // timestamp atual em ms
+            const now = Date.now();
+
             for (const event of events.values()) {
 
-                // timestamp atual em ms
-                const now = Date.now();
-
-                // Calcula a diferença de tempo entre o evento e o momento atual
-                const diffMs = event.scheduledStartTimestamp - now;
-
-                // Diferença em minutos
-                const diffMinutes = Math.floor(diffMs / 1000 / 60);
+                // Calcula a diferença de tempo entre o evento e o momento atual em minutos
+                const diffMinutes = Math.floor((event.scheduledStartTimestamp - now) / 1000 / 60);
 
                 // verifica se o evento ainda não começou e se ele não está na lista de eventos já avisados
-                if (diffMinutes > 0 && diffMinutes <= Number(process.env.EVENT_DIFF_FOR_WARNING) && !eventsSchedule.includes(event.id)) {
-
-                    // Pega todos os canais do servidor
-                    const channels = await guild.channels.fetch();
+                if (diffMinutes > 0 && diffMinutes <= Number(process.env.EVENT_DIFF_FOR_WARNING) && !eventsSchedule.has(event.id)) {
 
                     if (event.channelId === null) {
                         // Filtra os canais do servidor para os canais de avisos envia o aviso neles todos
                         const avisoChannels = channels.filter(c => c.type === 0 && c.name === classChannels[1].name);
                         for (const [, channel] of avisoChannels) {
                             if (!channel.isTextBased()) {
-                                console.warn(`Aviso ignorado: canal ${channel.id} não é de texto.`);
+                                console.warn(`Aviso ignorado: canal ${channel.name} não é de texto.`);
                                 continue;
                             }
                             // Pega os cargos do canal
@@ -195,106 +178,92 @@ async function checkEvents() {
                             );
 
                             // Adiciona o evento na lista de eventos agendados para evitar duplicidade
-                            eventsSchedule.push(event.id)
+                            eventsSchedule.set(event.id, true)
+
+                            // Remove o primeiro item da lista quando ela atinge um limite determinado
+                            if (eventsSchedule.size === Number(process.env.MAX_EVENTS_CACHE)) {
+                                const firstKey = eventsSchedule.keys().next().value;
+                                eventsSchedule.delete(firstKey);
+                            }
                         }
-                    }
-                    else {
-                            // Encontra o canal do evento
-                            const eventChannel = channels.get(event.channelId);
+                    } else {
+                        // Encontra o canal do evento
+                        const eventChannel = channels.get(event.channelId);
 
-                            // Encontra o canal de avisos
-                            const target = channels.find(c =>
-                                c.parentId === eventChannel.parentId && // Nome da classe
-                                c.name === classChannels[1].name // Nome do canal de avisos
-                            );
+                        if (!eventChannel) {
+                            console.warn(`Aviso ignorado: canal do evento ${event.id} não encontrado.`);
+                            continue;
+                        }
 
-                            // Pega o cargo da turma do evento
-                            const overwrites = await eventChannel.permissionOverwrites.cache.filter(o => o.type === 0); // só cargos
 
-                            // Determina qual o cargo da turma vendo todos os cargos do servidor e filtrando pelo nome da categoria (que sempre deve ser a sigla da turma)
-                            let classRole = await Promise.all(
-                                overwrites.map(async o => {
-                                    const role = await guild.roles.fetch(o.id);
-                                    return role.name.includes("Estudantes " + eventChannel.parent.name) ? role : null;
-                                })
-                            );
+                        // Encontra o canal de avisos
+                        const target = channels.find(c =>
+                            c.parentId === eventChannel.parentId && // Nome da classe
+                            c.name === classChannels[1].name // Nome do canal de avisos
+                        );
 
-                            // Filtra os cargos vazios
-                            classRole = classRole.filter(r => r !== null)[0];
+                        // Pega o cargo da turma do evento
+                        const overwrites = await eventChannel.permissionOverwrites.cache.filter(o => o.type === 0); // só cargos
 
-                            // Pega a hora do evento
-                            const date = new Date(event.scheduledStartTimestamp);
-                            const hours = date.toLocaleString("pt-BR", {
-                                timeZone: "America/Sao_Paulo",
-                                hour: "2-digit",
-                                minute: "2-digit"
-                            });
+                        // Determina qual o cargo da turma vendo todos os cargos do servidor e filtrando pelo nome da categoria (que sempre deve ser a sigla da turma)
+                        let classRole = await Promise.all(
+                            overwrites.map(async o => {
+                                const role = await guild.roles.fetch(o.id);
+                                return role.name.includes("Estudantes " + eventChannel.parent.name) ? role : null;
+                            })
+                        );
 
-                            // Envia o aviso no canal de avisos
-                            target.send(`Boa noite, turma!!  ${classRole}\n` +
-                                "\n" +
-                                `Passando para lembrar vocês do nosso evento de hoje às ${hours} 🚀 \n` +
-                                `acesse o card do evento [aqui](${event.url})`)
+                        // Filtra os cargos vazios
+                        classRole = classRole.filter(r => r !== null)[0];
 
-                            // Adiciona o evento na lista de eventos agendados para evitar duplicidade
-                            eventsSchedule.push(event.id)
+                        // Pega a hora do evento
+                        const date = new Date(event.scheduledStartTimestamp);
+                        const hours = date.toLocaleString("pt-BR", {
+                            timeZone: "America/Sao_Paulo",
+                            hour: "2-digit",
+                            minute: "2-digit"
+                        });
+
+                        // Envia o aviso no canal de avisos
+                        await target.send(`Boa noite, turma!!  ${classRole}\n` +
+                            "\n" +
+                            `Passando para lembrar vocês do nosso evento de hoje às ${hours} 🚀 \n` +
+                            `acesse o card do evento [aqui](${event.url})`)
+
+                        // Adiciona o evento na lista de eventos agendados para evitar duplicidade
+                        eventsSchedule.set(event.id, true)
+
+                        // Remove o primeiro item da lista quando ela atinge um limite determinado
+                        if (eventsSchedule.size === Number(process.env.MAX_EVENTS_CACHE)) {
+                            const firstKey = eventsSchedule.keys().next().value;
+                            eventsSchedule.delete(firstKey);
                         }
                     }
                 }
-
+            }
+            await clearCache()
         } catch (err) {
             console.error(`Erro ao buscar eventos da guild ${id} o evento pode não ter um canal de voz vinculado\n${err}`);
-        } finally {
-            // agenda de novo só depois que terminar tudo
-            setTimeout(checkEvents, Number(process.env.EVENT_CHECK_TIME) * 60 * 1000);
         }
     }
+    let end = Date.now()
+    console.debug(`DEBUG - tempo de execução do checkEvents: ${end - start}ms`);
 }
 
-let members_checked = false
 
 async function getMembers() {
-    const date = new Date().getDate();
 
-    // Confere se é dia primeiro e se os membros ainda não foram verificados, do contrário verifica se o dia é diferente e se sim ele permite a próxima contagem
-    if (date === 1 && !members_checked) {
-        // Pega todos os servidores em que o bot está
-        const guilds = await client.guilds.fetch();
-
-        const results = {};
-
-        for (const [id, partialGuild] of guilds) {
-            // força o fetch completo da guild
-            const guild = await partialGuild.fetch();
-
-            // Pega todos os membros do servidor
-            const roles = await guild.roles.fetch();
-
-            // Busca todos os membros do servidor (garante cache atualizado)
-            const members = await guild.members.fetch();
-
-            // Mapa de contagem por role id (apenas cargos que contenham "Estudantes")
-            const counts = {};
-
-            // Lista todos os cargos que contém "Estudantes" no nome e conta os membros
-            guild.roles.cache
-                .filter(r => r.name.includes('Estudantes'))
-                .forEach(role => {
-                    counts[role.name] = role.members.size;
-                });
-
-            results[guild.id] = {
-                guildName: guild.name,
-                counts
-            };
-
-            console.debug(`DEBUG - Contagem de cargos em ${guild.name} (${guild.id}): ${JSON.stringify(counts)}`);
-        }
-    } else if (date !== 1) {
-        members_checked = false
-    }
-    setTimeout(getMembers, 22 * 60 * 60 * 1000); // 22 horas
 }
+
+// função para limpar o cache do discord
+async function clearCache() {
+    await client.guilds.cache.forEach(guild => {
+        guild.members.cache.clear();
+        guild.channels.cache.clear();
+    });
+    console.log('LOG - Caches do Discord.js limpos');
+}
+
 
 
 
@@ -302,33 +271,16 @@ async function getMembers() {
 client.once(Events.ClientReady, async c => {
     console.info(`LOG - Inicializando cliente ${client.user.username} com ID ${client.user.id}`);
 
-    // Começa o cadastro de comandos nos servidores
-    async function loadCommand(commandName, command) {
-        let serverIds = await client.guilds.fetch()
-        serverIds = [...serverIds.keys()]
-
-        // Cria todas as promises em paralelo por servidor
-        const promises = serverIds.map(async (id) => {
-            try {
-                await client.application.commands.create(command, id);
-                console.info(`COMANDO - "${commandName}" cadastrado em servidor ${id}`);
-            } catch (error) {
-                console.error(`ERRO - "${commandName}" não cadastrado em servidor ${id}\n`, error);
-            }
-        });
-
-        // Espera todas terminarem
-        await Promise.all(promises);
-    }
-
-    // Cadastra todos os comandos em paralelo
-    await Promise.all(
-        slashCommands.map(c => loadCommand(c.name, c.commandBuild))
+    // Cadastra todos os comandos
+    await client.application.commands.set(
+        slashCommands.map(c => c.commandBuild)
     );
+    console.log('LOG - Comandos registrados');
 
     // Inicia o processo de checagem de eventos e membros nos servidores
-    checkEvents();
-    getMembers();
+    setInterval(checkEvents, process.env.EVENT_CHECK_TIME * 60 * 1000);
+    //setInterval(getMembers, 22 * 60 * 60 * 1000);
+    //setInterval(clearCache, 60 * 60 * 1000); // 1 hora
 });
 
 // Interações com os comandos
@@ -382,13 +334,13 @@ client.on(Events.InteractionCreate, async interaction => {
                 return;
             }
 
-            await echoChannel.send(message).then(_ => {
-                interaction.reply({
-                    content: `✅ Mensagem enviada para ${echoChannel} com sucesso!`,
-                    flags: MessageFlags.Ephemeral
-                });
-                console.info(`LOG - echo ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
+            await echoChannel.send(message.replace(/\\n/g, '\n'))
+
+            await interaction.reply({
+                content: `✅ Mensagem enviada para ${echoChannel} com sucesso!`,
+                flags: MessageFlags.Ephemeral
             });
+            console.info(`LOG - echo ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
             break;
 
         case "display":
@@ -650,6 +602,11 @@ client.on(Events.InteractionCreate, async interaction => {
             const fileAttachment = new AttachmentBuilder(textBuffer, { name: "chat_history.txt" });
 
             await interaction.editReply({ content: "Histórico coletado:", files: [fileAttachment] });
+
+            // limpa o cache e as mensagens para economizar memória
+            channel.messages.cache.clear();
+            allMessages = null;
+
             break;
 
         case "event":
@@ -691,43 +648,54 @@ client.on(Events.InteractionCreate, async interaction => {
 });
 
 
-/*
 // Evento que é disparado quando uma enquete termina
 client.on('raw', async (packet) => {
-    if (!packet.t || !['GUILD_MEMBER_ADD'].includes(packet.t)) return; // if (!packet.t || !['MESSAGE_UPDATE', 'GUILD_MEMBER_ADD'].includes(packet.t)) return;
+    if (!packet.t || !['MESSAGE_UPDATE'].includes(packet.t)) return;
     switch (packet.t) {
-        case 'GUILD_MEMBER_ADD':
-            console.debug(`DEBUG - ${JSON.stringify(packet, null, 2)}`);
-            break;
         case 'MESSAGE_UPDATE':
-            /*
-            if (packet.d.poll.results.is_finalized) {
+            if (packet.d.poll?.results?.is_finalized) {
                 const pollData = packet.d;
-                globalQueue.enqueue({processData: async () => {
-                    try {
-                        const d1 = new Date(pollData.poll.expiry.slice(0, 23));
-                        const d2 = new Date(pollData.timestamp.slice(0, 23));
-                        let poll_json = {
-                            question: pollData.poll.question.text,
-                            answers: pollData.poll.answers.map(answer => [
-                                answer.poll_media.text,
-                                pollData.poll.results.answer_counts.map(count => count.count)[answer.answer_id - 1]
-                            ]),
-                            duration: `${((d1-d2)/1000/60/60).toFixed(0)}:${((d1 - d2)/1000/60).toFixed(0)}:${((d1 - d2)/1000).toFixed(0)}`
+                globalQueue.enqueue({
+                    processData: async () => {
+                        const d1 = new Date(pollData.poll.expiry.slice(0, 23)); // momento em que a enquete terminou
+                        const d2 = new Date(pollData.timestamp.slice(0, 23)); // momento em que a mensagem foi atual
+                        let body = {
+                            question: pollData.poll.question.text, // a pergunta da enquete
+                            answers: pollData.poll.answers.map(answer => [{ // lista de respostas
+                                response: answer.poll_media.text,
+                                answers: pollData.poll.results.answer_counts.map(count => count.count)[answer.answer_id - 1]
+                            }]),
+                            duration: `${((d1 - d2) / 1000 / 60 / 60).toFixed(0)}` // horas
                         };
-                        await db.promise().query(
-                            'INSERT INTO polls (poll_id, poll_json) VALUES (?, ?)',
-                            [pollData.id, JSON.stringify(poll_json)]
-                        );
-                    } catch (err) {
-                        console.error("Erro ao processar poll:", err);
+
+                        const response = await fetch(process.env.N8N_ENDPOINT + '/salvarEnquete', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'token': process.env.N8N_TOKEN
+                            },
+                            body: JSON.stringify(body)
+                        })
+
+                        /*try {
+
+
+                            console.log(JSON.stringify(poll_json, null, 4));
+
+                            //await db.savePoll(pollData.id, poll_json);
+
+                        } catch (err) {
+                            console.error("Erro ao processar poll:", err);
+                        }*/
                     }
-                }});
+                });
             }
+            break;
+        default:
             break;
     }
 });
-*/
+
 
 /*
 // Evento que é disparado quando um novo membro entra no servidor
@@ -788,18 +756,6 @@ client.on(Events.GuildMemberAdd, async member => {
 
             // Registra o log de entrada do membro
             console.info(`LOG - ${member.user.username} entrou no servidor ${member.guild.name} com o código: ${used_invite}`);
-
-            // Busca o cargo vinculado ao invite no cache
-            if (used_invite in cachedInvites) {
-                const role = cachedInvites[used_invite][0]; // Posição do id do cargo
-                const roleName = member.guild.roles.cache.get(role).name;
-
-                // Adiciona o cargo ao membro
-                await member.roles.add(roleName);
-                console.info(`LOG - ${member.user.username} adicionado ao cargo ${roleName}`);
-            } else {
-                console.error(`ERRO - O invite usado por ${member.user.username} não foi encontrado`);
-            }
 
 
             db.query("SELECT role FROM invites WHERE invite = ?", [used_invite], async (err, rows) => {
@@ -886,6 +842,41 @@ webhook.post('/criarEvento', async (req, res) => {
 
 webhook.listen(port, "0.0.0.0", () => {
     console.log(`Webhook aberto em: ${port}`);
+});
+
+
+
+process.on('SIGINT', async () => {
+    console.log('LOG - Recebido SIGINT - desligando graciosamente...');
+
+    // Limpa timers e listeners
+    client.removeAllListeners();
+
+    // Fecha conexão com banco de dados
+    if (db && db.close) {
+        await db.close();
+    }
+
+    // Destrói o cliente Discord
+    await client.destroy();
+
+    console.log('LOG - Desligamento completo');
+    process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+    console.log('LOG - Recebido SIGTERM - desligando graciosamente...');
+
+    client.removeAllListeners();
+
+    if (db && db.close) {
+        await db.close();
+    }
+
+    client.destroy();
+
+    console.log('LOG - Desligamento completo');
+    process.exit(0);
 });
 
 try {
