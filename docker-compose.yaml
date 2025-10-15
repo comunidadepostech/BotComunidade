@@ -2,13 +2,13 @@ services:
   bot_comunidade:
     container_name: discordjs-bot-comunidade
     restart: on-failure:3
-    mem_limit: 256m
+    mem_limit: 512m
     cpus: 1
     build:
       context: .
       dockerfile: Dockerfile
     command: node .
-    working_dir: /bot
+    working_dir: /botComunidade
     environment:
       - EVENT_CHECK_TIME=${EVENT_CHECK_TIME}
       - EVENT_DIFF_FOR_WARNING=${EVENT_DIFF_FOR_WARNING}
