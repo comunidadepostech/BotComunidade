@@ -1,6 +1,14 @@
 // Importa as dependencias
 import dotenv from 'dotenv'
-import {AttachmentBuilder, Client, Events, GatewayIntentBits, MessageFlags, PollLayoutType} from "discord.js"
+import {
+    AttachmentBuilder,
+    ChannelType,
+    Client,
+    Events,
+    GatewayIntentBits,
+    MessageFlags,
+    PollLayoutType
+} from "discord.js"
 import {
     allPermissionsChannels,
     classActivations,
@@ -241,7 +249,6 @@ async function checkEvents() {
                     }
                 }
             }
-            await clearCache()
         } catch (err) {
             console.error(`Erro ao buscar eventos da guild ${id} o evento pode não ter um canal de voz vinculado\n${err}`);
         }
@@ -278,7 +285,7 @@ client.once(Events.ClientReady, async c => {
     console.log('LOG - Comandos registrados');
 
     // Inicia o processo de checagem de eventos e membros nos servidores
-    setInterval(checkEvents, process.env.EVENT_CHECK_TIME * 60 * 1000);
+    setInterval(checkEvents, Number(process.env.EVENT_CHECK_TIME) * 60 * 1000);
     //setInterval(getMembers, 22 * 60 * 60 * 1000);
     //setInterval(clearCache, 60 * 60 * 1000); // 1 hora
 });
@@ -326,7 +333,7 @@ client.on(Events.InteractionCreate, async interaction => {
             let message = interaction.options.getString("message")
             const echoChannel = interaction.options.getChannel("channel", true);
 
-            if (echoChannel.isTextBased()) {
+            if (echoChannel.type !== ChannelType.GuildText) {
                 await interaction.reply({
                     content: "❌ O canal especificado não é um canal de texto.",
                     flags: MessageFlags.Ephemeral
