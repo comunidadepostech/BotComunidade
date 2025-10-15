@@ -1,4 +1,4 @@
-<img src="/data/postech.png"/>
+<img src="/assets/postech.png"/>
 
 # Bot Comunidade Pos Tech
 
@@ -26,9 +26,8 @@ Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades �
 ## Como instalar e executar (serviço interno)
 1. Certifique-se de que o Bot tenha as permissões necessárias no servidor (o cargo deve estar apenas embaixo do cargo admin ou Community Managers)
 2. O Bot precisa de acesso ao banco de dados para funcionar corretamente.
-3. Configure o Github Actions para fazer o deploy do Bot usando a conexão com chave SSH da AWS EC2. ou pule para o passo 4.
-4. Crie a imagem usando `docker-compose up --build -d --remove-orphans` (AWS linux) ou inicie o bot com  `npm install && node .` ou `npm install && nvm run 20 .` (recomendado se for localmente)
-5. Crie e configure um arquivo .env na raiz do projeto com as seguintes variáveis de ambiente:
+<!-- 3. Configure o Github Actions para fazer o deploy do Bot usando a conexão com chave SSH da AWS EC2. ou pule para o passo 4. -->
+3. Crie e configure um arquivo .env na raiz do projeto com as seguintes variáveis de ambiente:
 ```
 EVENT_CHECK_TIME="1" #padrão 
 EVENT_DIFF_FOR_WARNING="30" #padrão 
@@ -36,15 +35,15 @@ PRIMARY_WEBHOOK_PORT="9999" #padrão
 ID="" #ID do bot
 MAX_CONCURRENT="1" #padrão 
 MAX_EVENTS_CACHE="300" #padrão 
-MYSQL_ROOT_PASSWORD=""
-MYSQLDATABASE=""
-MYSQLHOST=""
-MYSQLPASSWORD=""
-MYSQLPORT=""
-MYSQLUSER=""
 PUBLIC_KEY="" #Chave pública do bot
 TOKEN="" #Token do bot
+PRIMARY_WEBHOOK_PORT="" # porta do webhook
+MEMBERS_CHECK_DAY="1" # dia do mês para a checagem de membros dos servidores (recomendado 1 até 28)
+MONGODB_URI="" # URL do banco mongoDB
+N8N_ENDPOINT="" # endpoint de produção do n8n
+N8N_TOKEN="" # Header token do n8n para validação de origem
 ```
+4. Crie a imagem usando `docker-compose up --build -d --remove-orphans` ou inicie o bot com  `npm install && node .` ou `npm install && nvm run 20 .` (recomendado se for localmente para testes). A imagem contem 512Mb de ram e 1vCPU's então considere aumentar verticalmente os recursos se necessário!
 
 ## Comandos Disponíveis
 
@@ -83,7 +82,7 @@ Funciona para qualquer servidor.
 
 **Parâmetros**:
 - `channel` (obrigatório): Canal onde a mensagem será enviada
-- `message` (obrigatório): Conteúdo da mensagem que será replicada
+- `message` (obrigatório): Conteúdo da mensagem que será replicada (dica: use \n para pular linhas)
 
 **Exemplo de uso**: /echo ``channel: #anúncios`` ``message: Olá a todos! Bem-vindos ao servidor!``
 
@@ -184,9 +183,15 @@ O bot automaticamente:
 - O Bot pode cadastrar eventos automaticamente com uma integração de um Webhook que se mantem numa aplicação [n8n](https://n8n.io) mas também é possível cadastrar evento usando apenas HTTP POST com os parametros certos.
 
 ## Progresso de desenvolvimento e atualizações
-Para saber em detalhes o andamento do desenvolvimento acompanhe a aba de projetos e veja os commits da branch `experimental`.
+Para saber em detalhes o andamento do desenvolvimento acompanhe a aba de projetos e veja os commits das branches que estão em desenvolvimento.
 
-## Requisição de pull request na branch `stable`
+## Envio de enquetes para o webhook do n8n automaticamente
+- Quando as enquetes terminam o bot envia um POST para o webhook do n8n com os dados da enquete.
+
+## Contagem de membros mensalmente
+- Uma vez por mês o bot conta os membros de cada servidor no formato especificado e envia um POST para o webhook do n8n com os dados.
+
+## Requisição de pull request na branch `main`
 - Deve-se sempre testar o código por completo antes de fazer a requisição
-- Nunca dê um commit na branch `stable` se não for algo extremamente urgente ou um erro despercebido
-- Sempre utilize primeiro a branch `experimental` para fazer testes e implementar novas funcionalidades e atualizações e apenas após completas e testadas que se deve fazer o Pull Request
+- Nunca dê um commit na branch `main` se não for algo extremamente urgente ou um erro despercebido
+- Sempre utilize primeiro branches diferentes para fazer testes e implementar novas funcionalidades e atualizações e apenas após completas e testadas com flags que se deve fazer o Pull Request
