@@ -6,3 +6,5 @@ helpme.txt
 .env
 bot_test
 db
+diagram.svg
+logs
