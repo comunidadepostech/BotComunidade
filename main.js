@@ -36,7 +36,7 @@ const port = process.env.PRIMARY_WEBHOOK_PORT || 9999;
 webhook.use(bodyParser.json());
 
 // Registra a fonte usada na imagem de boas-vindas
-GlobalFonts.registerFromPath("./data/Coolvetica Hv Comp.otf", "normalFont")
+GlobalFonts.registerFromPath("./assets/Coolvetica Hv Comp.otf", "normalFont")
 
 // Define os acessos que o Bot precisa para poder funcionar corretamente
 const client = new Client({
@@ -834,7 +834,7 @@ webhook.post('/criarEvento', async (req, res) => {
             entityType: 2,
             channel: voiceChannel.id,
             description: description,
-            image: './data/postech.png'
+            image: './assets/postech.png'
         });
 
         // Responde o request com sucesso e registra o log
