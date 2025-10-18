@@ -22,14 +22,14 @@ const ping = new SlashCommandBuilder()
     .setDescription('Responde com Pong!')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
-// Echo serve para replicar uma mensagem para um ou mais canais definidos pelo usuário
+// Echo serve para replicar uma mensagem para um ou mais canais definidos pelo utilizador
 const echo = new SlashCommandBuilder()
     .setName("echo")
     .setDescription("Replica uma mensagem para determinado canal")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addChannelOption(option =>
+    .addStringOption(option =>
         option.setName("channel")
-            .setDescription("Canal no qual a mensagem deve ser enviada")
+            .setDescription("Canal no qual a mensagem deve ser enviada (deve ser exatamente igual)")
             .setRequired(true)
     )
     .addStringOption(option =>
@@ -38,6 +38,17 @@ const echo = new SlashCommandBuilder()
             .setRequired(true)
             .setMinLength(1)
     )
+    .addAttachmentOption(option =>
+        option.setName('attachment')
+            .setDescription("Anexo")
+            .setRequired(false)
+    )
+    .addAttachmentOption(option =>
+        option.setName('attachment2')
+            .setDescription("Anexo")
+            .setRequired(false)
+    )
+
 
 // Display serve para exibir os convites ativos do servidor
 const display = new SlashCommandBuilder()
