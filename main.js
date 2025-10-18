@@ -278,11 +278,17 @@ async function clearCache() {
 client.once(Events.ClientReady, async c => {
     console.info(`LOG - Inicializando cliente ${client.user.username} com ID ${client.user.id}`);
 
-    // Cadastra todos os comandos
-    await client.application.commands.set(
-        slashCommands.map(c => c.commandBuild)
+    // Cadastra todos os comandos em paralelo
+    await client.application.commands.set([]);
+    const guilds = await client.guilds.fetch();
+    await Promise.all(
+        [...guilds.values()].map(async (partialGuild) => {
+            const guild = await partialGuild.fetch();
+            if (!guild) return;
+            await guild.commands.set(slashCommands.map(c => c.commandBuild));
+            console.log(`LOG - Comandos registrados em ${guild.name}`);
+        })
     );
-    console.log('LOG - Comandos registrados');
 
     // Inicia o processo de checagem de eventos e membros nos servidores
     setInterval(checkEvents, Number(process.env.EVENT_CHECK_TIME) * 60 * 1000);
@@ -330,18 +336,28 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "echo":
-            let message = interaction.options.getString("message")
-            const echoChannel = interaction.options.getChannel("channel", true);
+            let message = interaction.options.getString("message", true);
+            const echoChannel = interaction.options.getString("channel", true);
+            const attachment = interaction.options.getAttachment("attachment") || null;
+            const attachment2 = interaction.options.getAttachment("attachment2") || null;
 
-            if (echoChannel.type !== ChannelType.GuildText) {
-                await interaction.reply({
-                    content: "❌ O canal especificado não é um canal de texto.",
-                    flags: MessageFlags.Ephemeral
-                });
-                return;
+            const files = [];
+            if (attachment) files.push(attachment.url);
+            if (attachment2) files.push(attachment2.url);
+
+            const servers = await client.guilds.fetch();
+            for (const [id, partialGuild] of servers) {
+                const guild = await partialGuild.fetch();
+                const channels = await guild.channels.fetch();
+                for (let [id, channel] of channels) {
+                    if (channel.name === echoChannel){
+                        await channel.send({
+                            content: message.replace(/\\n/g, '\n'),
+                            files: files
+                        });
+                    }
+                }
             }
-
-            await echoChannel.send(message.replace(/\\n/g, '\n'))
 
             await interaction.reply({
                 content: `✅ Mensagem enviada para ${echoChannel} com sucesso!`,
