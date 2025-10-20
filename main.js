@@ -115,116 +115,73 @@ const globalQueue = new Queue(Number(process.env.MAX_CONCURRENT)); // ajusta con
 // Lista de todos os eventos que já foram avisados (para evitar duplicidade)
 let eventsSchedule = new Map(); // O(1)
 
-// Comando que é executado a cada determinado espaço de tempo
+// Checagem de eventos dos servidores
 async function checkEvents() {
-    let start = Date.now();
+    const start = Date.now();
     console.debug(`DEBUG - ${eventsSchedule.size} eventos avisados`);
 
     // Pega todos os servidores em que o bot está
     const guilds = await client.guilds.fetch();
 
-    for (const [id, partialGuild] of guilds) {
+    // Cria um array de promises (uma por guild)
+    const guildPromises = Array.from(guilds.values()).map(async (partialGuild) => {
+        const gStart = Date.now();
         try {
-            // força o fetch completo da guild
             const guild = await partialGuild.fetch();
+            console.time(`Guild ${guild.name} - fetch total`);
 
-            // Pega todos os eventos cadastrados no servidor
-            const events = await guild.scheduledEvents.fetch();
+            // Busca dados da guild em paralelo
+            const [events, channels, roles] = await Promise.all([
+                guild.scheduledEvents.fetch(),
+                guild.channels.fetch(),
+                guild.roles.fetch()
+            ]);
 
-            // Pega todos os canais do servidor
-            const channels = await guild.channels.fetch();
+            console.timeEnd(`Guild ${guild.name} - fetch total`);
 
-            // timestamp atual em ms
             const now = Date.now();
 
-            for (const event of events.values()) {
-
-                // Calcula a diferença de tempo entre o evento e o momento atual em minutos
+            // Processa eventos da guild em paralelo
+            const eventPromises = Array.from(events.values()).map(async (event) => {
                 const diffMinutes = Math.floor((event.scheduledStartTimestamp - now) / 1000 / 60);
 
-                // verifica se o evento ainda não começou e se ele não está na lista de eventos já avisados
-                if (diffMinutes > 0 && diffMinutes <= Number(process.env.EVENT_DIFF_FOR_WARNING) && !eventsSchedule.has(event.id)) {
+                if (
+                    diffMinutes > 0 &&
+                    diffMinutes <= Number(process.env.EVENT_DIFF_FOR_WARNING) &&
+                    !eventsSchedule.has(event.id)
+                ) {
+                    console.time(`Evento ${event.name} - aviso`);
 
-                    if (event.channelId === null) {
-                        // Filtra os canais do servidor para os canais de avisos envia o aviso neles todos
-                        const avisoChannels = channels.filter(c => c.type === 0 && c.name === classChannels[1].name);
-                        for (const [, channel] of avisoChannels) {
-                            if (!channel.isTextBased()) {
-                                console.warn(`Aviso ignorado: canal ${channel.name} não é de texto.`);
-                                continue;
-                            }
-                            // Pega os cargos do canal
-                            const overwrites = channel.permissionOverwrites.cache.filter(o => o.type === 0); // só cargos
+                    try {
+                        // Encontra canal do evento
+                        const eventChannel = event.channelId ? channels.get(event.channelId) : null;
 
-                            // Determina qual o cargo da turma vendo todos os cargos do servidor e filtrando pelo nome da categoria (que sempre deve ser a sigla da turma)
-                            const parentName = channel.parent?.name ?? null;
-                            if (!parentName) {
-                                console.warn(`Aviso ignorado: canal ${channel.id} sem categoria (parent null).`);
-                                continue;
-                            }
-                            const roles = await Promise.all(
-                                overwrites.map(async o => {
-                                    const role = await guild.roles.fetch(o.id).catch(() => null);
-                                    return role && role.name?.includes("Estudantes " + parentName) ? role : null;
-                                })
-                            );
-                            const classRole = roles.find(r => r !== null);
+                        // Encontra canal de avisos
+                        const avisoChannel = eventChannel
+                            ? channels.find(c => c.parentId === eventChannel.parentId && c.name === classChannels[1].name)
+                            : channels.find(c => c.type === 0 && c.name === classChannels[1].name);
 
-                            // Pega a hora do evento
-                            const date = new Date(event.scheduledStartTimestamp);
-                            const hours = date.toLocaleString("pt-BR", {
-                                timeZone: "America/Sao_Paulo",
-                                hour: "2-digit",
-                                minute: "2-digit"
-                            });
-
-                            await channel.send(
-                                `Boa noite, turma!!  ${classRole ? classRole.toString() : ""}\n` +
-                                "\n" +
-                                `Passando para lembrar vocês do nosso evento de hoje às ${hours} 🚀 \n` +
-                                `acesse o card do evento [aqui](${event.url})`
-                            );
-
-                            // Adiciona o evento na lista de eventos agendados para evitar duplicidade
-                            eventsSchedule.set(event.id, true)
-
-                            // Remove o primeiro item da lista quando ela atinge um limite determinado
-                            if (eventsSchedule.size === Number(process.env.MAX_EVENTS_CACHE)) {
-                                const firstKey = eventsSchedule.keys().next().value;
-                                eventsSchedule.delete(firstKey);
-                            }
-                        }
-                    } else {
-                        // Encontra o canal do evento
-                        const eventChannel = channels.get(event.channelId);
-
-                        if (!eventChannel) {
-                            console.warn(`Aviso ignorado: canal do evento ${event.id} não encontrado.`);
-                            continue;
+                        if (!avisoChannel) {
+                            console.warn(`Canal de aviso não encontrado para evento ${event.name}`);
+                            return;
                         }
 
+                        // Determina cargo da turma
+                        const overwrites = eventChannel
+                            ? eventChannel.permissionOverwrites.cache.filter(o => o.type === 0)
+                            : avisoChannel.permissionOverwrites.cache.filter(o => o.type === 0);
 
-                        // Encontra o canal de avisos
-                        const target = channels.find(c =>
-                            c.parentId === eventChannel.parentId && // Nome da classe
-                            c.name === classChannels[1].name // Nome do canal de avisos
-                        );
+                        const parentName = eventChannel?.parent?.name ?? avisoChannel.parent?.name ?? null;
+                        if (!parentName) {
+                            console.warn(`Evento ${event.name}: sem categoria associada`);
+                            return;
+                        }
 
-                        // Pega o cargo da turma do evento
-                        const overwrites = await eventChannel.permissionOverwrites.cache.filter(o => o.type === 0); // só cargos
+                        const classRole = overwrites
+                            .map(o => roles.get(o.id))
+                            .find(r => r && r.name.includes("Estudantes " + parentName));
 
-                        // Determina qual o cargo da turma vendo todos os cargos do servidor e filtrando pelo nome da categoria (que sempre deve ser a sigla da turma)
-                        let classRole = await Promise.all(
-                            overwrites.map(async o => {
-                                const role = await guild.roles.fetch(o.id);
-                                return role.name.includes("Estudantes " + eventChannel.parent.name) ? role : null;
-                            })
-                        );
-
-                        // Filtra os cargos vazios
-                        classRole = classRole.filter(r => r !== null)[0];
-
-                        // Pega a hora do evento
+                        // Pega hora formatada
                         const date = new Date(event.scheduledStartTimestamp);
                         const hours = date.toLocaleString("pt-BR", {
                             timeZone: "America/Sao_Paulo",
@@ -232,30 +189,43 @@ async function checkEvents() {
                             minute: "2-digit"
                         });
 
-                        // Envia o aviso no canal de avisos
-                        await target.send(`Boa noite, turma!!  ${classRole}\n` +
-                            "\n" +
-                            `Passando para lembrar vocês do nosso evento de hoje às ${hours} 🚀 \n` +
-                            `acesse o card do evento [aqui](${event.url})`)
+                        // Envia aviso
+                        await avisoChannel.send(
+                            `Boa noite, turma!! ${classRole.toString()}\n\n` +
+                            `Passando para lembrar vocês do nosso evento de hoje às ${hours} 🚀\n` +
+                            `acesse o card do evento [aqui](${event.url})`
+                        );
 
-                        // Adiciona o evento na lista de eventos agendados para evitar duplicidade
-                        eventsSchedule.set(event.id, true)
-
-                        // Remove o primeiro item da lista quando ela atinge um limite determinado
+                        // Marca evento como avisado
+                        eventsSchedule.set(event.id, true);
                         if (eventsSchedule.size === Number(process.env.MAX_EVENTS_CACHE)) {
                             const firstKey = eventsSchedule.keys().next().value;
                             eventsSchedule.delete(firstKey);
                         }
+
+                        console.timeEnd(`Evento ${event.name} - aviso`);
+                    } catch (err) {
+                        console.error(`Erro ao enviar aviso para evento ${event.name}:`, err);
                     }
                 }
-            }
+            });
+
+            // Aguarda todos os eventos dessa guild terminarem
+            await Promise.allSettled(eventPromises);
+
         } catch (err) {
-            console.error(`Erro ao buscar eventos da guild ${id} o evento pode não ter um canal de voz vinculado\n${err}`);
+            console.error(`Erro ao buscar eventos da guild ${partialGuild.id}:`, err);
+        } finally {
+            console.debug(`Guild ${partialGuild.id} processada em ${Date.now() - gStart}ms`);
         }
-    }
-    let end = Date.now()
-    console.debug(`DEBUG - tempo de execução do checkEvents: ${end - start}ms`);
+    });
+
+    // Aguarda todas as guilds terminarem
+    await Promise.allSettled(guildPromises);
+
+    console.debug(`DEBUG - tempo total de execução do checkEvents: ${Date.now() - start}ms`);
 }
+
 
 
 async function getMembers() {
