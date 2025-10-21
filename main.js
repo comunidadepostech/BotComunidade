@@ -115,115 +115,130 @@ const globalQueue = new Queue(Number(process.env.MAX_CONCURRENT)); // ajusta con
 // Lista de todos os eventos que já foram avisados (para evitar duplicidade)
 let eventsSchedule = new Map(); // O(1)
 
-// Checagem de eventos dos servidores
+// Comando que é executado a cada determinado espaço de tempo
 async function checkEvents() {
     const start = Date.now();
     console.debug(`DEBUG - ${eventsSchedule.size} eventos avisados`);
 
-    // Pega todos os servidores em que o bot está
     const guilds = await client.guilds.fetch();
+    const now = Date.now();
 
-    // Cria um array de promises (uma por guild)
-    const guildPromises = Array.from(guilds.values()).map(async (partialGuild) => {
-        const gStart = Date.now();
-        try {
-            const guild = await partialGuild.fetch();
-            console.time(`Guild ${guild.name} - fetch total`);
+    // Processa todos os servidores em paralelo
+    await Promise.allSettled(
+        Array.from(guilds.values()).map(async partialGuild => {
+            try {
+                const guild = await partialGuild.fetch();
+                const [events, channels] = await Promise.all([
+                    guild.scheduledEvents.fetch(),
+                    guild.channels.fetch()
+                ]);
 
-            // Busca dados da guild em paralelo
-            const [events, channels, roles] = await Promise.all([
-                guild.scheduledEvents.fetch(),
-                guild.channels.fetch(),
-                guild.roles.fetch()
-            ]);
+                // Processa todos os eventos do servidor em paralelo
+                await Promise.allSettled(
+                    Array.from(events.values()).map(async event => {
+                        const diffMinutes = Math.floor((event.scheduledStartTimestamp - now) / 1000 / 60);
 
-            console.timeEnd(`Guild ${guild.name} - fetch total`);
+                        if (
+                            diffMinutes > 0 &&
+                            diffMinutes <= Number(process.env.EVENT_DIFF_FOR_WARNING) &&
+                            !eventsSchedule.has(event.id)
+                        ) {
+                            // sem canal (manda aviso em todos canais de aviso)
+                            if (!event.channelId) {
+                                const avisoChannels = channels.filter(
+                                    c => c.type === 0 && c.name === classChannels[1].name
+                                );
 
-            const now = Date.now();
+                                await Promise.allSettled(
+                                    avisoChannels.map(async channel => {
+                                        if (!channel.isTextBased()) return;
 
-            // Processa eventos da guild em paralelo
-            const eventPromises = Array.from(events.values()).map(async (event) => {
-                const diffMinutes = Math.floor((event.scheduledStartTimestamp - now) / 1000 / 60);
+                                        const parentName = channel.parent?.name;
+                                        if (!parentName) return;
 
-                if (
-                    diffMinutes > 0 &&
-                    diffMinutes <= Number(process.env.EVENT_DIFF_FOR_WARNING) &&
-                    !eventsSchedule.has(event.id)
-                ) {
-                    console.time(`Evento ${event.name} - aviso`);
+                                        const overwrites = channel.permissionOverwrites.cache.filter(o => o.type === 0);
+                                        const roles = await Promise.all(
+                                            overwrites.map(async o => {
+                                                const role = await guild.roles.fetch(o.id).catch(() => null);
+                                                return role?.name?.includes("Estudantes " + parentName) ? role : null;
+                                            })
+                                        );
 
-                    try {
-                        // Encontra canal do evento
-                        const eventChannel = event.channelId ? channels.get(event.channelId) : null;
+                                        const classRole = roles.find(r => r !== null);
+                                        const date = new Date(event.scheduledStartTimestamp);
+                                        const hours = date.toLocaleString("pt-BR", {
+                                            timeZone: "America/Sao_Paulo",
+                                            hour: "2-digit",
+                                            minute: "2-digit"
+                                        });
 
-                        // Encontra canal de avisos
-                        const avisoChannel = eventChannel
-                            ? channels.find(c => c.parentId === eventChannel.parentId && c.name === classChannels[1].name)
-                            : channels.find(c => c.type === 0 && c.name === classChannels[1].name);
+                                        await channel.send(
+                                            `Boa noite, turma!! ${classRole ? classRole.toString() : ""}\n\n` +
+                                            `Passando para lembrar vocês do nosso evento de hoje às ${hours} 🚀\n` +
+                                            `acesse o card do evento [aqui](${event.url})`
+                                        );
 
-                        if (!avisoChannel) {
-                            console.warn(`Canal de aviso não encontrado para evento ${event.name}`);
-                            return;
+                                        eventsSchedule.set(event.id, true);
+                                        if (eventsSchedule.size === Number(process.env.MAX_EVENTS_CACHE)) {
+                                            const firstKey = eventsSchedule.keys().next().value;
+                                            eventsSchedule.delete(firstKey);
+                                        }
+                                    })
+                                );
+                            } else {
+                                // evento com canal definido
+                                const eventChannel = channels.get(event.channelId);
+                                if (!eventChannel) return;
+
+                                const target = channels.find(
+                                    c => c.parentId === eventChannel.parentId &&
+                                        c.name === classChannels[1].name
+                                );
+                                if (!target) return;
+
+                                const overwrites = eventChannel.permissionOverwrites.cache.filter(o => o.type === 0);
+                                let classRole = await Promise.all(
+                                    overwrites.map(async o => {
+                                        const role = await guild.roles.fetch(o.id).catch(() => null);
+                                        return role?.name?.includes("Estudantes " + eventChannel.parent.name)
+                                            ? role
+                                            : null;
+                                    })
+                                );
+
+                                classRole = classRole.filter(r => r)[0];
+                                const date = new Date(event.scheduledStartTimestamp);
+                                const hours = date.toLocaleString("pt-BR", {
+                                    timeZone: "America/Sao_Paulo",
+                                    hour: "2-digit",
+                                    minute: "2-digit"
+                                });
+
+                                await target.send(
+                                    `Boa noite, turma!! ${classRole ?? ""}\n\n` +
+                                    `Passando para lembrar vocês do nosso evento de hoje às ${hours} 🚀\n` +
+                                    `acesse o card do evento [aqui](${event.url})`
+                                );
+
+                                eventsSchedule.set(event.id, true);
+                                if (eventsSchedule.size === Number(process.env.MAX_EVENTS_CACHE)) {
+                                    const firstKey = eventsSchedule.keys().next().value;
+                                    eventsSchedule.delete(firstKey);
+                                }
+                            }
                         }
+                    })
+                );
+            } catch (err) {
+                console.error(
+                    `Erro ao buscar eventos da guild ${partialGuild.id}: ${err}`
+                );
+            }
+        })
+    );
 
-                        // Determina cargo da turma
-                        const overwrites = eventChannel
-                            ? eventChannel.permissionOverwrites.cache.filter(o => o.type === 0)
-                            : avisoChannel.permissionOverwrites.cache.filter(o => o.type === 0);
-
-                        const parentName = eventChannel?.parent?.name ?? avisoChannel.parent?.name ?? null;
-                        if (!parentName) {
-                            console.warn(`Evento ${event.name}: sem categoria associada`);
-                            return;
-                        }
-
-                        const classRole = overwrites
-                            .map(o => roles.get(o.id))
-                            .find(r => r && r.name.includes("Estudantes " + parentName));
-
-                        // Pega hora formatada
-                        const date = new Date(event.scheduledStartTimestamp);
-                        const hours = date.toLocaleString("pt-BR", {
-                            timeZone: "America/Sao_Paulo",
-                            hour: "2-digit",
-                            minute: "2-digit"
-                        });
-
-                        // Envia aviso
-                        await avisoChannel.send(
-                            `Boa noite, turma!! ${classRole.toString()}\n\n` +
-                            `Passando para lembrar vocês do nosso evento de hoje às ${hours} 🚀\n` +
-                            `acesse o card do evento [aqui](${event.url})`
-                        );
-
-                        // Marca evento como avisado
-                        eventsSchedule.set(event.id, true);
-                        if (eventsSchedule.size === Number(process.env.MAX_EVENTS_CACHE)) {
-                            const firstKey = eventsSchedule.keys().next().value;
-                            eventsSchedule.delete(firstKey);
-                        }
-
-                        console.timeEnd(`Evento ${event.name} - aviso`);
-                    } catch (err) {
-                        console.error(`Erro ao enviar aviso para evento ${event.name}:`, err);
-                    }
-                }
-            });
-
-            // Aguarda todos os eventos dessa guild terminarem
-            await Promise.allSettled(eventPromises);
-
-        } catch (err) {
-            console.error(`Erro ao buscar eventos da guild ${partialGuild.id}:`, err);
-        } finally {
-            console.debug(`Guild ${partialGuild.id} processada em ${Date.now() - gStart}ms`);
-        }
-    });
-
-    // Aguarda todas as guilds terminarem
-    await Promise.allSettled(guildPromises);
-
-    console.debug(`DEBUG - tempo total de execução do checkEvents: ${Date.now() - start}ms`);
+    const end = Date.now();
+    console.debug(`DEBUG - tempo de execução do checkEvents: ${end - start}ms`);
 }
 
 
