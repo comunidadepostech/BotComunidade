@@ -20,4 +20,5 @@ export const serverNames = {
     "DTATBB": "1067199408778784868",
     "CTJTBB": "1086287162158358628",
     "DPMTBB": "1229573565783867563"
+    // para testes use 1387199697697116241
 }

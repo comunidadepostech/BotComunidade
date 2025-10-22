@@ -278,7 +278,7 @@ client.once(Events.ClientReady, async c => {
     // Inicia o processo de checagem de eventos e membros nos servidores
     setInterval(checkEvents, Number(process.env.EVENT_CHECK_TIME) * 60 * 1000);
     //setInterval(getMembers, 22 * 60 * 60 * 1000);
-    //setInterval(clearCache, 60 * 60 * 1000); // 1 hora
+    setInterval(clearCache, 60 * 60 * 1000); // 1 hora
 });
 
 // Interações com os comandos
@@ -803,6 +803,8 @@ webhook.post('/criarEvento', async (req, res) => {
         // Pega todos os servidores em que o bot está
         const guild = await client.guilds.fetch(serverNames[turma.replace(/\d+/g, '').replace(" ", "")]);
 
+        console.debug(`DEBUG - Servidor ${guild.name}`);
+
         if (!guild) {
             console.error(`Servidor de ${turma.replace(/\d+/g, '')} não encontrado`);
             res.status(500).json({status: 'erro', mensagem: `Servidor de ${turma.replace(/\d+/g, '')} não encontrado`});
@@ -811,6 +813,8 @@ webhook.post('/criarEvento', async (req, res) => {
         // Faz fetch dos canais do servidor e busca pelo canal de voz da turma
         const channels = await guild.channels.fetch();
         const voiceChannel = channels.find(c => c.name === classChannels[7].name + turma && c.type === 2);
+
+        console.debug(`DEBUG - Canal ${voiceChannel.name}`);
 
         let description = defaultEventDescription[tipo] instanceof Function;
         description = description ? defaultEventDescription[tipo](link) : defaultEventDescription[tipo];
@@ -831,7 +835,7 @@ webhook.post('/criarEvento', async (req, res) => {
         console.log(`LOG - Evento ${nomeEvento} criado com sucesso`);
         res.json({status: 'sucesso', evento: scheduledEvent});
     } catch (error) {
-        console.error(`Servidor de ${turma.replace(/\d+/g, '')} não encontrado ou a turma não corresponde ao cargo\n`, error);
+        console.error(`Servidor de ${turma.replace(/\d+/g, '').replace(" ", "")} não encontrado ou a turma não corresponde ao cargo\n`, error);
         res.status(500).json({status: 'erro', mensagem: `${error}`});
     }
 });
