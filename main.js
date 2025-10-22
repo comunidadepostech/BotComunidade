@@ -684,17 +684,6 @@ client.on('raw', async (packet) => {
                             },
                             body: JSON.stringify(body)
                         })
-
-                        /*try {
-
-
-                            console.log(JSON.stringify(poll_json, null, 4));
-
-                            //await db.savePoll(pollData.id, poll_json);
-
-                        } catch (err) {
-                            console.error("Erro ao processar poll:", err);
-                        }*/
                     }
                 });
             }
@@ -806,13 +795,13 @@ client.on(Events.GuildMemberAdd, async member => {
 });
 */
 
-// Endpoint para cadastros de eventos no servidores (não há tratamento de erros aqui, pois os dados já chegam no formato correto)
+// Endpoint para cadastros de eventos nos servidores (não há tratamento de erros aqui, pois os dados já chegam no formato correto)
 webhook.post('/criarEvento', async (req, res) => {
     console.debug('DEBUG - Dados recebidos: ', req.body);
     const {turma, nomeEvento, tipo, data_hora, link} = req.body;
     try {
         // Pega todos os servidores em que o bot está
-        const guild = await client.guilds.fetch(serverNames[turma.replace(/\d+/g, '')]);
+        const guild = await client.guilds.fetch(serverNames[turma.replace(/\d+/g, '').replace(" ", "")]);
 
         if (!guild) {
             console.error(`Servidor de ${turma.replace(/\d+/g, '')} não encontrado`);
