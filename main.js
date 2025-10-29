@@ -21,12 +21,13 @@ import {defaultRoles} from "./functions/defaultRoles.mjs"
 import {defaultTags} from "./functions/defaultTags.mjs";
 import {createCanvas, GlobalFonts, loadImage} from '@napi-rs/canvas'
 import {request} from 'undici'
-import {DataBaseConnect} from "./functions/database.mjs"
+import {DataBase} from "./functions/database.mjs"
 import express from 'express';
 import bodyParser from 'body-parser';
 import {serverNames} from "./functions/servers.mjs";
 import fetch from 'node-fetch';
 import {defaultEventDescription} from "./functions/defaultEventDescription.js";
+import crypto from "crypto";
 
 dotenv.config();
 
@@ -58,8 +59,36 @@ const client = new Client({
 
 
 
-// Conecta aos bancos de dados
-const db = await new DataBaseConnect();
+// Conecta ao bancos de dados
+const db = await new DataBase();
+await db.verify()
+
+
+
+export const defaultFlags = {
+    //comandos
+    invite: false,
+    echo: false,
+    display: false,
+    poll: false,
+    createclass: false,
+    extract: false,
+    event: false,
+    disable: false,
+    rating: false,
+    //eventos
+    checkEvents: false,
+    getMembers: false,
+    saveInteractions: false,
+    savePolls: false,
+    sendWelcomeMessage: false
+}
+
+// Cache de flags de funcionalidades
+// Carrega as flags de funcionalidades do banco de dados
+const flags = await db.getFlags()
+
+console.log(flags)
 
 
 
@@ -113,20 +142,21 @@ const globalQueue = new Queue(Number(process.env.MAX_CONCURRENT)); // ajusta con
 // Funções rotineiras
 
 // Lista de todos os eventos que já foram avisados (para evitar duplicidade)
-let eventsSchedule = new Map(); // O(1)
+let eventsSchedule = new Map();
 
 // Comando que é executado a cada determinado espaço de tempo
 async function checkEvents() {
-    const start = Date.now();
-    console.debug(`DEBUG - ${eventsSchedule.size} eventos avisados`);
+    //const start = Date.now();
+    //console.debug(`DEBUG - ${eventsSchedule.size} eventos avisados`);
 
     const guilds = await client.guilds.fetch();
-    const now = Date.now();
+    //const now = Date.now();
 
     // Processa todos os servidores em paralelo
     await Promise.allSettled(
         Array.from(guilds.values()).map(async partialGuild => {
             try {
+                //if (!flags[partialGuild.id]["checkEvents"]) {console.log(`Servidor: ${partialGuild.name} ignorado`); return}
                 const guild = await partialGuild.fetch();
                 const [events, channels] = await Promise.all([
                     guild.scheduledEvents.fetch(),
@@ -237,11 +267,9 @@ async function checkEvents() {
         })
     );
 
-    const end = Date.now();
-    console.debug(`DEBUG - tempo de execução do checkEvents: ${end - start}ms`);
+    //const end = Date.now();
+    //console.debug(`DEBUG - tempo de execução do checkEvents: ${end - start}ms`);
 }
-
-
 
 async function getMembers() {
 
@@ -255,7 +283,6 @@ async function clearCache() {
     });
     console.log('LOG - Caches do Discord.js limpos');
 }
-
 
 
 
@@ -281,6 +308,18 @@ client.once(Events.ClientReady, async c => {
     setInterval(clearCache, 60 * 60 * 1000); // 1 hora
 });
 
+// Define o que o bot deve fazer ao ser adicionado num servidor novo
+client.on(Events.GuildCreate, async guild => {
+    console.info(`LOG - ${client.user.username} adicionado ao servidor ${guild.name} com ID ${guild.id}`);
+
+    await guild.commands.set(slashCommands.map(c => c.commandBuild));
+    console.log(`LOG - Comandos registrados em ${guild.name}`);
+
+    flags[guild.id] = defaultFlags
+    await db.getFlags(guild.id)
+    console.log(`LOG - Flags do servidor ${guild.name} carregadas`);
+})
+
 // Interações com os comandos
 client.on(Events.InteractionCreate, async interaction => {
     switch (interaction.commandName) {
@@ -290,6 +329,7 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "invite":
+            //if (!flags[interaction.guildId]["invite"]) {await interaction.reply({flags: MessageFlags.Ephemeral, content: "❌ Comando desabilitado."}); break}
             try {
                 const channel = interaction.options.getChannel('channel');
                 const role = interaction.options.getRole('role');
@@ -303,7 +343,6 @@ client.on(Events.InteractionCreate, async interaction => {
                 });
 
                 // Insere o convite no banco de dados e no cache
-                cachedInvites[invite.code] = [role.id, interaction.guild.id];
                 await db.saveInvite(invite.code, role.id, interaction.guild.id);
 
                 // Responde com o link do convite
@@ -321,6 +360,7 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "echo":
+            //if (!flags[interaction.guildId]["echo"]) {await interaction.reply({flags: MessageFlags.Ephemeral, content: "❌ Comando desabilitado."}); break}
             let message = interaction.options.getString("message", true);
             const echoChannel = interaction.options.getString("channel", true);
             const attachment = interaction.options.getAttachment("attachment") || null;
@@ -352,6 +392,7 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "display":
+            //if (!flags[interaction.guildId]["display"]) {await interaction.reply({flags: MessageFlags.Ephemeral, content: "❌ Comando desabilitado."}); break}
             try {
                 const rows = await db.getAllInvites();
 
@@ -386,6 +427,7 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "poll":
+            //if (!flags[interaction.guildId]["poll"]) {await interaction.reply({flags: MessageFlags.Ephemeral, content: "❌ Comando desabilitado."}); break}
             try {
                 const question = interaction.options.getString('question');
                 const duration = interaction.options.getInteger('duration');
@@ -428,6 +470,7 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "createclass":
+            //if (!flags[interaction.guildId]["createclass"]) {await interaction.reply({flags: MessageFlags.Ephemeral, content: "❌ Comando desabilitado."}); break}
             // Responde de forma atrasada para evitar timeout
             await interaction.deferReply({flags: MessageFlags.Ephemeral});
 
@@ -566,11 +609,12 @@ client.on(Events.InteractionCreate, async interaction => {
                     content: `❌ Erro ao criar ${className}\n` + "```" + error + "```",
                     flags: MessageFlags.Ephemeral
                 });
-                return;
+                return
             }
-            break;
+            break
 
         case "extract":
+            //if (!flags[interaction.guildId]["extract"]) {await interaction.reply({flags: MessageFlags.Ephemeral, content: "❌ Comando desabilitado."}); break}
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             const channel = interaction.channel;
             let allMessages = new Map();
@@ -615,9 +659,10 @@ client.on(Events.InteractionCreate, async interaction => {
             channel.messages.cache.clear();
             allMessages = null;
 
-            break;
+            break
 
         case "event":
+            //if (!flags[interaction.guildId]["event"]) {await interaction.reply({flags: MessageFlags.Ephemeral, content: "❌ Comando desabilitado."}); break}
             const topic = interaction.options.getString('topic');
             const date = interaction.options.getString('date');
             const time = interaction.options.getString('time');
@@ -648,26 +693,93 @@ client.on(Events.InteractionCreate, async interaction => {
             })
 
             await interaction.reply({ content: "✅ Evento criado com sucesso!", flags: MessageFlags.Ephemeral });
-            break;
+            break
+
+        case "disable":
+            //if (!flags[interaction.guildId]["disable"]) {await interaction.reply({flags: MessageFlags.Ephemeral, content: "❌ Comando desabilitado."}); break}
+            const role = interaction.options.getRole('role');
+            const channels = await interaction.guild.channels.fetch();
+
+            await interaction.deferReply({flags: MessageFlags.Ephemeral});
+
+            for (const [_, channel] of channels) {
+                await channel.permissionOverwrites.edit(role.id, {
+                    SendMessages: false,
+                    ViewChannel: false,
+                    ReadMessageHistory: false,
+                    AddReactions: false
+                });
+            }
+
+            await interaction.editReply({flags: MessageFlags.Ephemeral, content: "✅ Cargo desabilitado com sucesso!"});
+            break
+
+        case "updateflag":
+            const flag = interaction.options.getString('flag');
+            const value = interaction.options.getString('value') === "true";
+
+            try {
+                flags[interaction.guild.id][flag] = value;
+                await db.updateFlag(interaction.guild.id, flag, value);
+                await interaction.reply({flags: MessageFlags.Ephemeral, content: "✅ Funcionalidade atualizada com sucesso!"});
+            } catch (error) {
+                await interaction.reply({flags: MessageFlags.Ephemeral, content: "Funcionalidade não encontrada tente /viewflags para ver as funcionalidades disponíveis"})
+            }
+            break
+
+        case "viewflags":
+            await interaction.reply({flags: MessageFlags.Ephemeral, content: JSON.stringify(flags, null, 2)});
+            break
+
+        case "setflags":
+            await db.setFlags(interaction.guild.id, defaultFlags)
+            await interaction.reply({
+                flags: MessageFlags.Ephemeral,
+                content: "✅ Funcionalidades atualizadas com sucesso!"
+            });
+            break
+
+        case "rating":
+            //if (!flags[interaction.guildId]["rating"]) {await interaction.reply({flags: MessageFlags.Ephemeral, content: "❌ Comando desabilitado."}); break}
+            const className2 = interaction.options.getRole('className');
+            const lessonName = interaction.options.getString('lessonName');
+            break
 
         default:
-            break;
+            break
     }
 });
 
 
 // Evento que é disparado quando uma enquete termina
 client.on('raw', async (packet) => {
-    if (!packet.t || !['MESSAGE_UPDATE'].includes(packet.t)) return;
     switch (packet.t) {
         case 'MESSAGE_UPDATE':
+            //if (!flags[packet.d.guild_id]["savePolls"]) break
+
+            //console.debug(packet.d);
+
             if (packet.d.poll?.results?.is_finalized) {
                 const pollData = packet.d;
                 globalQueue.enqueue({
                     processData: async () => {
-                        const d1 = new Date(pollData.poll.expiry.slice(0, 23)); // momento em que a enquete terminou
-                        const d2 = new Date(pollData.timestamp.slice(0, 23)); // momento em que a mensagem foi atual
+                        const d1 = Date.now() + 3 * 60 * 60 * 1000; // 3 horas antes (GMT-3), momento em que a enquete terminou
+                        const d2 = new Date(pollData.timestamp.slice(0, 23));
+
+                        // Descobre a turma que a enquete pertence
+                        const channel = await client.channels.fetch(pollData.channel_id);
+                        const className = channel.parent.name
+
+                        // Descobre o servidor
+                        const guild = await client.guilds.fetch(pollData.guild_id);
+                        const serverName = guild.name
+
+                        // Prepara o body para ser enviado para o n8n
                         let body = {
+                            created_by: pollData.author.global_name,
+                            guild: serverName,
+                            poll_category: className,
+                            poll_hash: crypto.createHash('sha1').update(pollData.poll.question.text).digest('hex'),
                             question: pollData.poll.question.text, // a pergunta da enquete
                             answers: pollData.poll.answers.map(answer => [{ // lista de respostas
                                 response: answer.poll_media.text,
@@ -687,7 +799,69 @@ client.on('raw', async (packet) => {
                     }
                 });
             }
-            break;
+            break
+        /*
+        case 'MESSAGE_CREATE':
+            //if (!flags[packet.d.guild_id]["saveInteractions"]) break
+            try {
+                if (![0, 11, 2].includes(packet.d.channel_type)) break
+
+                //console.debug(packet.d);
+
+                // Descobre dados do canal
+                const channel = await client.channels.fetch(packet.d.channel_id);
+
+                // Descobre o servidor
+                const guild = await client.guilds.fetch(packet.d.guild_id);
+                const serverName = guild.name
+
+                // Descobre o maior cargo do membro pela posição hierárquica
+                const member = await guild.members.fetch(packet.d.author.id);
+                const roles = member.roles.cache.filter(role => role.id !== guild.id);
+                const sortedRoles = roles.sort((a, b) => b.position - a.position);
+
+                // Descobre o horário da mensagem
+                const data = new Date(packet.d.timestamp);
+                const localTime = data.toLocaleString('pt-BR', {timeZone: 'America/Sao_Paulo'});
+
+                const body = {
+                    created_by: packet.d.author.global_name,
+                    guild: serverName,
+                    className: channel.parent.name,
+                    message: packet.d.content,
+                    timestamp: localTime,
+                    id: packet.d.id,
+                    authorRole: sortedRoles.first().name
+                }
+
+                console.log(await client.channels.fetch(channel.parent.id))
+
+                if (packet.d.channel_type == 11) {
+
+                }
+
+                packet.d.channel_type === 11 ? body.thread = channel.name : body.channel = channel.name
+                packet.d.channel_type === 11 ? body.className =  : body.className = channel.parent.name,
+
+                console.debug(body);
+
+                globalQueue.enqueue({
+                    processData: async () => {
+                        await fetch(process.env.N8N_ENDPOINT + '/salvarInteracao', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'token': process.env.N8N_TOKEN
+                            },
+                            body: JSON.stringify(body)
+                        })
+                    }
+                })
+            } catch (error) {
+                console.log("LOG - Cargo do aluno não encontrado, ignorando interação")
+            }
+            break;*/
+
         default:
             break;
     }
@@ -697,6 +871,8 @@ client.on('raw', async (packet) => {
 /*
 // Evento que é disparado quando um novo membro entra no servidor
 client.on(Events.GuildMemberAdd, async member => {
+    //if (!flags[member.guild.id]["sendWelcomeMessage"]) return;
+
     await globalQueue.enqueue({processData: async (invite, options) => {
         try {
             console.info(`LOG - Processando entrada de ${member.user.username}`);
@@ -735,9 +911,6 @@ client.on(Events.GuildMemberAdd, async member => {
 
                 targetChannel.send({ files: [attachment] });
             }
-
-
-                Feature esperando a API do discord resolver se implementarão a funcionalidade de obter o invite diretamente pela interação
 
             // Tenta resolver o invite diretamente
             let used_invite;
@@ -799,6 +972,11 @@ client.on(Events.GuildMemberAdd, async member => {
 webhook.post('/criarEvento', async (req, res) => {
     console.debug('DEBUG - Dados recebidos: ', req.body);
     const {turma, nomeEvento, tipo, data_hora, link} = req.body;
+
+    if (nomeEvento.length > 100) {
+        res.status(403).json({status: 'erro', mensagem: "O nome da aula ultrapassa 100 caracteres, busque reduzir a quantidade de caracteres."});
+    }
+
     try {
         // Pega todos os servidores em que o bot está
         const guild = await client.guilds.fetch(serverNames[turma.replace(/\d+/g, '').replace(" ", "")]);
@@ -854,9 +1032,7 @@ process.on('SIGINT', async () => {
     client.removeAllListeners();
 
     // Fecha conexão com banco de dados
-    if (db && db.close) {
-        await db.close();
-    }
+    await db.endConnection();
 
     // Destrói o cliente Discord
     await client.destroy();
@@ -868,13 +1044,14 @@ process.on('SIGINT', async () => {
 process.on('SIGTERM', async () => {
     console.log('LOG - Recebido SIGTERM - desligando graciosamente...');
 
+    // Limpa timers e listeners
     client.removeAllListeners();
 
-    if (db && db.close) {
-        await db.close();
-    }
+    // Fecha conexão com banco de dados
+    await db.endConnection();
 
-    client.destroy();
+    // Destrói o cliente Discord
+    await client.destroy();
 
     console.log('LOG - Desligamento completo');
     process.exit(0);
