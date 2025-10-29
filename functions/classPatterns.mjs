@@ -96,7 +96,7 @@ export const classActivations = [
             "\n" +
             "🔧 MS Visual Studio for Students\n" +
             "\n" +
-            "🎓 Benefícios Microsoft: Acesse várias ferramentas e recursos exclusivos para estudantes, como o [Microsoft 365 para web](https://www.microsoft.com/pt-br/education/products/office), o [Azure for Students](https://azure.microsoft.com/pt-br/pricing/purchase-options/azure-account/search) e o [Visual Studio](https://www.linkedin.com/pulse/visual-studio-dev-essentials-free-thiago-adriano/)\n" +
+            "🎓 Benefícios Microsoft: Acesse várias ferramentas e recursos exclusivos para estudantes, como o [Microsoft 365 Web](https://www.microsoft.com/pt-br/education/products/office), o [Azure for Students](https://azure.microsoft.com/pt-br/pricing/purchase-options/azure-account/search) e o [Visual Studio](https://www.linkedin.com/pulse/visual-studio-dev-essentials-free-thiago-adriano/)\n" +
             "\n" +
             "Para acessar esses benefícios, você precisa adicionar o seu email da FIAP.\n" +
             "Qualquer dúvida, estamos por aqui para ajudar. 😉"
