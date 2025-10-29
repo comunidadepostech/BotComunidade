@@ -198,6 +198,45 @@ const event = new SlashCommandBuilder()
             .setRequired(true)
     );
 
+const disable = new SlashCommandBuilder()
+    .setName('disable')
+    .setDescription('Desabilita um cargo (remove todas as permissões)')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addRoleOption(option =>
+        option.setName('role')
+            .setDescription('Cargo a ser desabilitado')
+            .setRequired(true)
+    );
+
+const updateFlag = new SlashCommandBuilder()
+    .setName('updateflag')
+    .setDescription('Desabilita ou habilita uma função do Bot para o servidor atual')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addStringOption(option =>
+        option.setName('flag')
+            .setDescription('Função a ser desabilitada ou habilitada')
+            .setRequired(true)
+    )
+    .addStringOption(option =>
+        option.setName('value')
+            .setDescription('Defina true para habilitar ou false para desabilitar')
+            .setRequired(true)
+            .addChoices(
+                { name: 'true', value: "true" },
+                { name: 'false', value: 'false' }
+            )
+    )
+
+const viewflags = new SlashCommandBuilder()
+    .setName('viewflags')
+    .setDescription('Retorna as funções do Bot e seus estados para o servidor atual')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+
+const setflags = new SlashCommandBuilder()
+    .setName('setflags')
+    .setDescription('Define o conjunto de flags padrão para novos servidores')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+
 export const slashCommands = [
     {name: "invite", commandBuild: invite},
     {name: "ping", commandBuild: ping},
@@ -207,4 +246,8 @@ export const slashCommands = [
     {name: "createclass", commandBuild: createclass},
     {name: "extract", commandBuild: extract},
     {name: "event", commandBuild: event},
+    {name: "disable", commandBuild: disable},
+    {name: "updateFlag", commandBuild: updateFlag},
+    {name: "flags", commandBuild: viewflags},
+    {name: "setflags", commandBuild: setflags}
 ]
