@@ -15,6 +15,7 @@ Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades �
   - [/createclass](#createclass)
   - [/extract](#extract)
   - [/event](#event)
+  - [/disable](#disable)
 - [Funcionalidades Automáticas](#funcionalidades-automáticas)
   - [Mensagens de Boas-Vindas](#sistema-de-boas-vindas)
   - [Armazenamento de enquetes](#atualização-constante-de-invites)
@@ -74,7 +75,7 @@ O bot responderá com "pong!" para confirmar que está funcionando.
 
 
 ### `/echo`
-Replica uma mensagem para um canal.
+Replica uma mensagem para todos os canais que contem o mesmo nome **em todos os servidores**.
 
 Funciona para qualquer servidor.
 
@@ -83,6 +84,8 @@ Funciona para qualquer servidor.
 **Parâmetros**:
 - `channel` (obrigatório): Canal onde a mensagem será enviada
 - `message` (obrigatório): Conteúdo da mensagem que será replicada (dica: use \n para pular linhas)
+- `attachment1` (opcional): Anexo 1 da mensagem
+- `attachment2` (opcional): Anexo 2 da mensagem
 
 **Exemplo de uso**: /echo ``channel: #anúncios`` ``message: Olá a todos! Bem-vindos ao servidor!``
 
@@ -162,6 +165,19 @@ Funciona para qualquer servidor.
 **Exemplos de uso**:
 - /event ``topic: aula`` ``date: 2025-11-01`` ``time: 20:00`` ``description: descrição`` ``link: https://teste.com`` ``background: [imagem de fundo]``
 
+### `/disable`
+Desabilita um cargo do servidor.
+
+Funciona para qualquer servidor.
+
+**Permissão necessária**: Administrador
+
+**Parâmetros**:
+- `role` (obrigatório): Cargo a ser desabilitado
+
+**Exemplo de uso**:
+- /disable ``role: @Estudantes teste``
+
 ## Funcionalidades Automáticas
 
 ### Mensagens de Boas-Vindas
@@ -182,16 +198,8 @@ O bot automaticamente:
 ### Cadastro de eventos através com Webhook
 - O Bot pode cadastrar eventos automaticamente com uma integração de um Webhook que se mantem numa aplicação [n8n](https://n8n.io) mas também é possível cadastrar evento usando apenas HTTP POST com os parametros certos.
 
-## Progresso de desenvolvimento e atualizações
-Para saber em detalhes o andamento do desenvolvimento acompanhe a aba de projetos e veja os commits das branches que estão em desenvolvimento.
-
 ## Envio de enquetes para o webhook do n8n automaticamente
 - Quando as enquetes terminam o bot envia um POST para o webhook do n8n com os dados da enquete.
 
 ## Contagem de membros mensalmente
 - Uma vez por mês o bot conta os membros de cada servidor no formato especificado e envia um POST para o webhook do n8n com os dados.
-
-## Requisição de pull request na branch `main`
-- Deve-se sempre testar o código por completo antes de fazer a requisição
-- Nunca dê um commit na branch `main` se não for algo extremamente urgente ou um erro despercebido
-- Sempre utilize primeiro branches diferentes para fazer testes e implementar novas funcionalidades e atualizações e apenas após completas e testadas com flags que se deve fazer o Pull Request

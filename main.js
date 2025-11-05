@@ -2,7 +2,6 @@
 import dotenv from 'dotenv'
 import {
     AttachmentBuilder,
-    ChannelType,
     Client,
     Events,
     GatewayIntentBits,
@@ -19,8 +18,7 @@ import {
 import {slashCommands} from "./functions/slashCommands.mjs"
 import {defaultRoles} from "./functions/defaultRoles.mjs"
 import {defaultTags} from "./functions/defaultTags.mjs";
-import {createCanvas, GlobalFonts, loadImage} from '@napi-rs/canvas'
-import {request} from 'undici'
+import {GlobalFonts} from '@napi-rs/canvas'
 import {DataBase} from "./functions/database.mjs"
 import express from 'express';
 import bodyParser from 'body-parser';
@@ -59,36 +57,10 @@ const client = new Client({
 
 
 
-// Conecta ao bancos de dados
+// Conecta ao bancos de dados e verifica a existência das tabelas
 const db = await new DataBase();
-await db.verify()
-
-
-
-export const defaultFlags = {
-    //comandos
-    invite: false,
-    echo: false,
-    display: false,
-    poll: false,
-    createclass: false,
-    extract: false,
-    event: false,
-    disable: false,
-    rating: false,
-    //eventos
-    checkEvents: false,
-    getMembers: false,
-    saveInteractions: false,
-    savePolls: false,
-    sendWelcomeMessage: false
-}
-
-// Cache de flags de funcionalidades
-// Carrega as flags de funcionalidades do banco de dados
-const flags = await db.getFlags()
-
-console.log(flags)
+await db.connect();
+await db.verify();
 
 
 
@@ -146,17 +118,16 @@ let eventsSchedule = new Map();
 
 // Comando que é executado a cada determinado espaço de tempo
 async function checkEvents() {
-    //const start = Date.now();
+    const start = Date.now();
     //console.debug(`DEBUG - ${eventsSchedule.size} eventos avisados`);
 
     const guilds = await client.guilds.fetch();
-    //const now = Date.now();
+    const now = Date.now();
 
     // Processa todos os servidores em paralelo
     await Promise.allSettled(
         Array.from(guilds.values()).map(async partialGuild => {
             try {
-                //if (!flags[partialGuild.id]["checkEvents"]) {console.log(`Servidor: ${partialGuild.name} ignorado`); return}
                 const guild = await partialGuild.fetch();
                 const [events, channels] = await Promise.all([
                     guild.scheduledEvents.fetch(),
@@ -267,12 +238,8 @@ async function checkEvents() {
         })
     );
 
-    //const end = Date.now();
-    //console.debug(`DEBUG - tempo de execução do checkEvents: ${end - start}ms`);
-}
-
-async function getMembers() {
-
+    const end = Date.now();
+    console.debug(`DEBUG - tempo de execução do checkEvents: ${end - start}ms`);
 }
 
 // função para limpar o cache do discord
@@ -303,8 +270,7 @@ client.once(Events.ClientReady, async c => {
     );
 
     // Inicia o processo de checagem de eventos e membros nos servidores
-    setInterval(checkEvents, Number(process.env.EVENT_CHECK_TIME) * 60 * 1000);
-    //setInterval(getMembers, 22 * 60 * 60 * 1000);
+    setInterval(checkEvents, Number(process.env.EVENT_CHECK_TIME) * 60 * 1000); // minutos
     setInterval(clearCache, 60 * 60 * 1000); // 1 hora
 });
 
@@ -314,10 +280,6 @@ client.on(Events.GuildCreate, async guild => {
 
     await guild.commands.set(slashCommands.map(c => c.commandBuild));
     console.log(`LOG - Comandos registrados em ${guild.name}`);
-
-    flags[guild.id] = defaultFlags
-    await db.getFlags(guild.id)
-    console.log(`LOG - Flags do servidor ${guild.name} carregadas`);
 })
 
 // Interações com os comandos
@@ -329,7 +291,6 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "invite":
-            //if (!flags[interaction.guildId]["invite"]) {await interaction.reply({flags: MessageFlags.Ephemeral, content: "❌ Comando desabilitado."}); break}
             try {
                 const channel = interaction.options.getChannel('channel');
                 const role = interaction.options.getRole('role');
@@ -360,7 +321,6 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "echo":
-            //if (!flags[interaction.guildId]["echo"]) {await interaction.reply({flags: MessageFlags.Ephemeral, content: "❌ Comando desabilitado."}); break}
             let message = interaction.options.getString("message", true);
             const echoChannel = interaction.options.getString("channel", true);
             const attachment = interaction.options.getAttachment("attachment") || null;
@@ -392,7 +352,6 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "display":
-            //if (!flags[interaction.guildId]["display"]) {await interaction.reply({flags: MessageFlags.Ephemeral, content: "❌ Comando desabilitado."}); break}
             try {
                 const rows = await db.getAllInvites();
 
@@ -427,7 +386,6 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "poll":
-            //if (!flags[interaction.guildId]["poll"]) {await interaction.reply({flags: MessageFlags.Ephemeral, content: "❌ Comando desabilitado."}); break}
             try {
                 const question = interaction.options.getString('question');
                 const duration = interaction.options.getInteger('duration');
@@ -470,7 +428,6 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "createclass":
-            //if (!flags[interaction.guildId]["createclass"]) {await interaction.reply({flags: MessageFlags.Ephemeral, content: "❌ Comando desabilitado."}); break}
             // Responde de forma atrasada para evitar timeout
             await interaction.deferReply({flags: MessageFlags.Ephemeral});
 
@@ -614,7 +571,6 @@ client.on(Events.InteractionCreate, async interaction => {
             break
 
         case "extract":
-            //if (!flags[interaction.guildId]["extract"]) {await interaction.reply({flags: MessageFlags.Ephemeral, content: "❌ Comando desabilitado."}); break}
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             const channel = interaction.channel;
             let allMessages = new Map();
@@ -662,7 +618,6 @@ client.on(Events.InteractionCreate, async interaction => {
             break
 
         case "event":
-            //if (!flags[interaction.guildId]["event"]) {await interaction.reply({flags: MessageFlags.Ephemeral, content: "❌ Comando desabilitado."}); break}
             const topic = interaction.options.getString('topic');
             const date = interaction.options.getString('date');
             const time = interaction.options.getString('time');
@@ -696,7 +651,6 @@ client.on(Events.InteractionCreate, async interaction => {
             break
 
         case "disable":
-            //if (!flags[interaction.guildId]["disable"]) {await interaction.reply({flags: MessageFlags.Ephemeral, content: "❌ Comando desabilitado."}); break}
             const role = interaction.options.getRole('role');
             const channels = await interaction.guild.channels.fetch();
 
@@ -714,37 +668,6 @@ client.on(Events.InteractionCreate, async interaction => {
             await interaction.editReply({flags: MessageFlags.Ephemeral, content: "✅ Cargo desabilitado com sucesso!"});
             break
 
-        case "updateflag":
-            const flag = interaction.options.getString('flag');
-            const value = interaction.options.getString('value') === "true";
-
-            try {
-                flags[interaction.guild.id][flag] = value;
-                await db.updateFlag(interaction.guild.id, flag, value);
-                await interaction.reply({flags: MessageFlags.Ephemeral, content: "✅ Funcionalidade atualizada com sucesso!"});
-            } catch (error) {
-                await interaction.reply({flags: MessageFlags.Ephemeral, content: "Funcionalidade não encontrada tente /viewflags para ver as funcionalidades disponíveis"})
-            }
-            break
-
-        case "viewflags":
-            await interaction.reply({flags: MessageFlags.Ephemeral, content: JSON.stringify(flags, null, 2)});
-            break
-
-        case "setflags":
-            await db.setFlags(interaction.guild.id, defaultFlags)
-            await interaction.reply({
-                flags: MessageFlags.Ephemeral,
-                content: "✅ Funcionalidades atualizadas com sucesso!"
-            });
-            break
-
-        case "rating":
-            //if (!flags[interaction.guildId]["rating"]) {await interaction.reply({flags: MessageFlags.Ephemeral, content: "❌ Comando desabilitado."}); break}
-            const className2 = interaction.options.getRole('className');
-            const lessonName = interaction.options.getString('lessonName');
-            break
-
         default:
             break
     }
@@ -755,10 +678,6 @@ client.on(Events.InteractionCreate, async interaction => {
 client.on('raw', async (packet) => {
     switch (packet.t) {
         case 'MESSAGE_UPDATE':
-            //if (!flags[packet.d.guild_id]["savePolls"]) break
-
-            //console.debug(packet.d);
-
             if (packet.d.poll?.results?.is_finalized) {
                 const pollData = packet.d;
                 globalQueue.enqueue({
@@ -799,14 +718,12 @@ client.on('raw', async (packet) => {
                     }
                 });
             }
+            break // Enquetes
+
+        case 'MESSAGE_CREATE': // Mensagens
             break
-        /*
-        case 'MESSAGE_CREATE':
-            //if (!flags[packet.d.guild_id]["saveInteractions"]) break
             try {
                 if (![0, 11, 2].includes(packet.d.channel_type)) break
-
-                //console.debug(packet.d);
 
                 // Descobre dados do canal
                 const channel = await client.channels.fetch(packet.d.channel_id);
@@ -836,12 +753,13 @@ client.on('raw', async (packet) => {
 
                 console.log(await client.channels.fetch(channel.parent.id))
 
-                if (packet.d.channel_type == 11) {
-
+                if (packet.d.channel_type === 11) {
+                    body.thread = channel.name
+                    body.className = ""
+                } else {
+                    body.channel = channel.name
+                    body.className = channel.parent.name
                 }
-
-                packet.d.channel_type === 11 ? body.thread = channel.name : body.channel = channel.name
-                packet.d.channel_type === 11 ? body.className =  : body.className = channel.parent.name,
 
                 console.debug(body);
 
@@ -860,113 +778,13 @@ client.on('raw', async (packet) => {
             } catch (error) {
                 console.log("LOG - Cargo do aluno não encontrado, ignorando interação")
             }
-            break;*/
+            break;
 
         default:
             break;
     }
 });
 
-
-/*
-// Evento que é disparado quando um novo membro entra no servidor
-client.on(Events.GuildMemberAdd, async member => {
-    //if (!flags[member.guild.id]["sendWelcomeMessage"]) return;
-
-    await globalQueue.enqueue({processData: async (invite, options) => {
-        try {
-            console.info(`LOG - Processando entrada de ${member.user.username}`);
-
-            // Constroi e envia uma imagem de boas-vindas
-            async function sendWelcome(profile, targetChannel) {
-                const canvas = createCanvas(1401, 571);
-                const context = canvas.getContext('2d');
-
-                const background = await loadImage('./data/wallpaper.png');
-
-                // Cria um buffer com a imagem do usuário
-                const avatarUrl = profile.displayAvatarURL({ extension: 'png', size: 512 });
-                const { body } = await request(avatarUrl);
-                const avatarBuffer = Buffer.from(await body.arrayBuffer());
-                const avatar = await loadImage(avatarBuffer);
-
-                // Insere o fundo e corta a foto de perfil do usuário em formato de círculo
-                context.drawImage(background, 0, 0, canvas.width, canvas.height);
-                context.save();
-                context.beginPath();
-                context.arc(285, 285, 256, 0, Math.PI * 2, true);
-                context.closePath();
-                context.clip();
-                context.drawImage(avatar, 29, 29, 512, 512);
-                context.restore();
-
-                // Insere uma mensagem de boas-vindas que utiliza o nome do usuário
-                context.font = '150px normalFont';
-                context.fillStyle = '#ffffff';
-                context.fillText('Bem vindo!', 512+100, (canvas.height - 150+150)/2);
-                context.fillText(`${profile.displayName}`, 512+100, (canvas.height - 150+150)/2+150);
-
-                const pngBuffer = Buffer.from(await canvas.encode('png'));
-                const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
-
-                targetChannel.send({ files: [attachment] });
-            }
-
-            // Tenta resolver o invite diretamente
-            let used_invite;
-            await member.user.client.fetchInvite(invite)
-            const resolvedInvite = member.guild.invites.resolve(member.user.client);
-            console.debug(`DEBUG - Invite resolvido para ${member.user.username}:`, resolvedInvite);
-            used_invite = resolvedInvite.code;
-
-            if (!used_invite) {
-                console.error(`ERRO - Não foi possível obter o código do invite usado por ${member.user.username}`);
-                return; // encerra o processamento desse membro sem lançar erro
-            }
-
-            // Registra o log de entrada do membro
-            console.info(`LOG - ${member.user.username} entrou no servidor ${member.guild.name} com o código: ${used_invite}`);
-
-
-            db.query("SELECT role FROM invites WHERE invite = ?", [used_invite], async (err, rows) => {
-                    if (err) {
-                        console.error(`ERRO - Erro na consulta SQL:`, err);
-                        return;
-                    }
-
-                    // Verifica se há resultados
-                    if (!rows || rows.length === 0) {
-                        console.error(`ERRO - Nenhum cargo vinculado ao convite usado`);
-                        return;
-                    }
-
-                    const welcome_role = await member.guild.roles.cache.find(role => role.name === rows[0].role);
-                    if (!welcome_role) {
-                        console.error(`ERRO - Cargo ${rows[0].role} não encontrado no servidor`);
-                        return;
-                    }
-
-                    await member.roles.add(welcome_role);
-                    console.info(`LOG - ${member.user.username} adicionado ao cargo ${welcome_role.name}`);
-                }
-            );
-
-
-            // Busca o canal de boas-vindas e envia a mensagem
-            const welcomeChannel = member.guild.channels.cache.find(channel => channel.name === "✨│boas-vindas");
-            if (welcomeChannel) {
-                await welcomeChannel.send(`Olá ${member}, seja bem-vindo(a) a comunidade!`);
-                await sendWelcome(member, welcomeChannel).catch(err => {
-                    console.error(`ERRO - Não foi possível construir a imagem de boas-vindas para o usuário ${member.user.username}\n${err}`);
-                });
-            }
-
-        } catch (error) {
-            console.error(`ERRO - Não foi possível processar novo membro\n`, error);
-        }
-    }});
-});
-*/
 
 // Endpoint para cadastros de eventos nos servidores (não há tratamento de erros aqui, pois os dados já chegam no formato correto)
 webhook.post('/criarEvento', async (req, res) => {
