@@ -321,34 +321,65 @@ client.on(Events.InteractionCreate, async interaction => {
             break;
 
         case "echo":
+            // Responde de forma atrasada para evitar timeout
+            await interaction.deferReply({flags: MessageFlags.Ephemeral});
+
+            // Coleta os dados do comando
             let message = interaction.options.getString("message", true);
-            const echoChannel = interaction.options.getString("channel", true);
+            let echoChannel = interaction.options.getChannel("channel", true);
             const attachment = interaction.options.getAttachment("attachment") || null;
             const attachment2 = interaction.options.getAttachment("attachment2") || null;
+            const onlyForThisChannel = interaction.options.getInteger("only-for-this-channel") ?? false;
 
+            // Se não for canal único então ele atribui o nome do canal ao echoChannel ao invés do id
+            !onlyForThisChannel ? await client.channels.fetch(echoChannel.id).then(channel => {
+                echoChannel = channel.name;
+            }) : null
+
+            // Obtém a url dos arquivos anexados
             const files = [];
             if (attachment) files.push(attachment.url);
             if (attachment2) files.push(attachment2.url);
 
-            const servers = await client.guilds.fetch();
-            for (const [id, partialGuild] of servers) {
-                const guild = await partialGuild.fetch();
-                const channels = await guild.channels.fetch();
-                for (let [id, channel] of channels) {
-                    if (channel.name === echoChannel){
-                        await channel.send({
-                            content: message.replace(/\\n/g, '\n'),
-                            files: files
-                        });
-                    }
-                }
+            // Se não for canal único então busca em todos os servidores e envia para todos, do contrário envia para o canal especificado
+            if (!onlyForThisChannel) {
+                const servers = await client.guilds.fetch();
+
+                // Processa todos os servidores em paralelo
+                await Promise.allSettled(
+                    Array.from(servers.values()).map(async (partialGuild) => {
+                        const guild = await partialGuild.fetch();
+                        const channels = await guild.channels.fetch();
+
+                        // Processa todos os canais correspondentes em paralelo
+                        const matchingChannels = Array.from(channels.values()).filter(
+                            channel => channel.name === echoChannel
+                        );
+
+                        await Promise.allSettled(
+                            matchingChannels.map(channel =>
+                                channel.send({
+                                    content: message.replace(/\\n/g, '\n'),
+                                    files: files
+                                })
+                            )
+                        );
+                    })
+                );
+            } else {
+                await echoChannel.send({
+                    content: message.replace(/\\n/g, '\n'),
+                    files: files
+                });
             }
 
-            await interaction.reply({
+            await interaction.editReply({
                 content: `✅ Mensagem enviada para ${echoChannel} com sucesso!`,
                 flags: MessageFlags.Ephemeral
             });
+
             console.info(`LOG - echo ultilizado por ${interaction.user.username} em ${interaction.guild.name}`);
+
             break;
 
         case "display":
@@ -721,64 +752,107 @@ client.on('raw', async (packet) => {
             break // Enquetes
 
         case 'MESSAGE_CREATE': // Mensagens
-            break
             try {
-                if (![0, 11, 2].includes(packet.d.channel_type)) break
+                // Filtra a origem das mensagens
+                if (![0, 11, 2, 13].includes(packet.d.channel_type)) break
 
-                // Descobre dados do canal
-                const channel = await client.channels.fetch(packet.d.channel_id);
+                // Ignora mensagens de bots
+                if (packet.d.author.bot) break;
 
-                // Descobre o servidor
-                const guild = await client.guilds.fetch(packet.d.guild_id);
-                const serverName = guild.name
+                // Ignora mensagens do sistema (welcome, boost, pin, etc)
+                if (packet.d.type !== 0) break;
 
-                // Descobre o maior cargo do membro pela posição hierárquica
-                const member = await guild.members.fetch(packet.d.author.id);
-                const roles = member.roles.cache.filter(role => role.id !== guild.id);
-                const sortedRoles = roles.sort((a, b) => b.position - a.position);
+                // Ignora mensagens vazias (sem conteúdo de texto)
+                if (!packet.d.content || packet.d.content.trim() === '') break;
 
-                // Descobre o horário da mensagem
-                const data = new Date(packet.d.timestamp);
-                const localTime = data.toLocaleString('pt-BR', {timeZone: 'America/Sao_Paulo'});
+                // Ignora webhooks
+                if (packet.d.webhook_id) break;
 
-                const body = {
-                    created_by: packet.d.author.global_name,
-                    guild: serverName,
-                    className: channel.parent.name,
-                    message: packet.d.content,
-                    timestamp: localTime,
-                    id: packet.d.id,
-                    authorRole: sortedRoles.first().name
-                }
+                // Ignora mensagens com apenas menções
+                if (packet.d.content.match(/^<@!?\d+>$/)) break;
 
-                console.log(await client.channels.fetch(channel.parent.id))
+                // Ignora comandos (mensagens que começam com /)
+                if (packet.d.content.startsWith('/')) break;
 
-                if (packet.d.channel_type === 11) {
-                    body.thread = channel.name
-                    body.className = ""
-                } else {
-                    body.channel = channel.name
-                    body.className = channel.parent.name
-                }
+                // Ignora mensagens de threads automáticas
+                if (packet.d.flags && (packet.d.flags & 32)) break;
 
-                console.debug(body);
-
+                // Adiciona o processamento da mensagem a fila global
                 globalQueue.enqueue({
                     processData: async () => {
-                        await fetch(process.env.N8N_ENDPOINT + '/salvarInteracao', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'token': process.env.N8N_TOKEN
-                            },
-                            body: JSON.stringify(body)
-                        })
+                        try {
+                            // Descobre dados do canal
+                            const channel = await client.channels.fetch(packet.d.channel_id);
+                            if (!channel) {
+                                console.error('Channel not found:', packet.d.channel_id);
+                                return;
+                            }
+
+                            // Descobre o servidor
+                            const guild = await client.guilds.fetch(packet.d.guild_id);
+                            const serverName = guild.name;
+
+                            // Descobre o maior cargo do membro pela posição hierárquica
+                            const member = await guild.members.fetch(packet.d.author.id);
+                            const roles = member.roles.cache.filter(role => role.id !== guild.id);
+                            const sortedRoles = roles.sort((a, b) => b.position - a.position);
+
+                            // Verifica se há pelo menos um cargo
+                            const topRole = sortedRoles.first();
+                            if (!topRole) {
+                                console.log("LOG - Cargo do membro não encontrado, ignorando interação");
+                                return;
+                            }
+
+                            // Descobre o horário da mensagem
+                            const localTime = new Date(packet.d.timestamp).toISOString();
+
+                            const body = {
+                                createdBy: packet.d.author.global_name || 'Usuário desconhecido',
+                                guild: serverName,
+                                message: packet.d.content || null,
+                                timestamp: localTime,
+                                id: packet.d.id,
+                                authorRole: topRole.name
+                            };
+
+                            if (packet.d.channel_type === 11) {
+                                body.thread = channel.name;
+                                body.channel = null;
+
+                                if (channel.parent) {
+                                    const category = await client.channels.fetch(channel.parent.parent.id);
+                                    body.class = category?.name || null;
+                                } else {
+                                    body.class = null;
+                                }
+                            } else {
+                                body.channel = channel.name;
+                                body.thread = null;
+                                body.class = channel.parent?.name || null;
+                            }
+
+                            const response = await fetch(process.env.N8N_ENDPOINT + '/salvarInteracao', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'token': process.env.N8N_TOKEN
+                                },
+                                body: JSON.stringify(body)
+                            });
+
+                            if (!response.ok) {
+                                console.error('ERRO - N8N endpoint não acessível:', response.status, response.statusText);
+                            }
+                        } catch (error) {
+                            console.error('ERRO - Erro ao processar interação', error);
+                        }
                     }
-                })
+                });
             } catch (error) {
                 console.log("LOG - Cargo do aluno não encontrado, ignorando interação")
             }
-            break;
+            break; // Interações
 
         default:
             break;

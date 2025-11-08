@@ -27,7 +27,7 @@ const echo = new SlashCommandBuilder()
     .setName("echo")
     .setDescription("Replica uma mensagem para determinado canal")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addStringOption(option =>
+    .addChannelOption(option =>
         option.setName("channel")
             .setDescription("Canal no qual a mensagem deve ser enviada (deve ser exatamente igual)")
             .setRequired(true)
@@ -37,6 +37,15 @@ const echo = new SlashCommandBuilder()
             .setDescription("Conteúdo da mensagem")
             .setRequired(true)
             .setMinLength(1)
+    )
+    .addIntegerOption(option =>
+        option.setName('only-for-this-channel')
+            .setDescription("Se true então o bot enviará a mensagem apenas no canal especificado")
+            .setRequired(false)
+            .addChoices(
+                {name: "Sim", value: 1},
+                    {name: "Não", value: 0},
+            )
     )
     .addAttachmentOption(option =>
         option.setName('attachment')
@@ -48,6 +57,7 @@ const echo = new SlashCommandBuilder()
             .setDescription("Anexo")
             .setRequired(false)
     )
+
 
 
 // Display serve para exibir os convites ativos do servidor
@@ -208,35 +218,6 @@ const disable = new SlashCommandBuilder()
             .setRequired(true)
     );
 
-const updateFlag = new SlashCommandBuilder()
-    .setName('updateflag')
-    .setDescription('Desabilita ou habilita uma função do Bot para o servidor atual')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addStringOption(option =>
-        option.setName('flag')
-            .setDescription('Função a ser desabilitada ou habilitada')
-            .setRequired(true)
-    )
-    .addStringOption(option =>
-        option.setName('value')
-            .setDescription('Defina true para habilitar ou false para desabilitar')
-            .setRequired(true)
-            .addChoices(
-                { name: 'true', value: "true" },
-                { name: 'false', value: 'false' }
-            )
-    )
-
-const viewflags = new SlashCommandBuilder()
-    .setName('viewflags')
-    .setDescription('Retorna as funções do Bot e seus estados para o servidor atual')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-
-const setflags = new SlashCommandBuilder()
-    .setName('setflags')
-    .setDescription('Define o conjunto de flags padrão para novos servidores')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-
 export const slashCommands = [
     {name: "invite", commandBuild: invite},
     {name: "ping", commandBuild: ping},
@@ -246,8 +227,5 @@ export const slashCommands = [
     {name: "createclass", commandBuild: createclass},
     {name: "extract", commandBuild: extract},
     {name: "event", commandBuild: event},
-    {name: "disable", commandBuild: disable},
-    {name: "updateFlag", commandBuild: updateFlag},
-    {name: "flags", commandBuild: viewflags},
-    {name: "setflags", commandBuild: setflags}
+    {name: "disable", commandBuild: disable}
 ]
