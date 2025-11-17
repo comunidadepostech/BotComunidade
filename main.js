@@ -863,7 +863,7 @@ client.on('raw', async (packet) => {
 // Endpoint para cadastros de eventos nos servidores (não há tratamento de erros aqui, pois os dados já chegam no formato correto)
 webhook.post('/criarEvento', async (req, res) => {
     console.debug('DEBUG - Dados recebidos: ', req.body);
-    const {turma, nomeEvento, tipo, data_hora, link} = req.body;
+    const {turma, nomeEvento, tipo, data_hora, link, hora_fim} = req.body;
 
     if (nomeEvento.length > 100) {
         res.status(403).json({status: 'erro', mensagem: "O nome da aula ultrapassa 100 caracteres, busque reduzir a quantidade de caracteres."});
@@ -893,7 +893,7 @@ webhook.post('/criarEvento', async (req, res) => {
         const scheduledEvent = await guild.scheduledEvents.create({
             name: `${turma} - ${nomeEvento}`,
             scheduledStartTime: new Date(`${data_hora}`),
-            scheduledEndTime: new Date(new Date(`${data_hora}`).getTime() + 180 * 60 * 1000),
+            scheduledEndTime: new Date(new Date(`${hora_fim}`)),
             privacyLevel: 2,
             entityType: 2,
             channel: voiceChannel.id,
