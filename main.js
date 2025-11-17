@@ -893,7 +893,7 @@ webhook.post('/criarEvento', async (req, res) => {
         const scheduledEvent = await guild.scheduledEvents.create({
             name: `${turma} - ${nomeEvento}`,
             scheduledStartTime: new Date(`${data_hora}`),
-            scheduledEndTime: new Date(new Date(`${hora_fim}`)),
+            scheduledEndTime: new Date(`${hora_fim}`),
             privacyLevel: 2,
             entityType: 2,
             channel: voiceChannel.id,
