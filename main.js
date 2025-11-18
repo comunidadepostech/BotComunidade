@@ -1,4 +1,5 @@
 // Importa as dependencias
+import dotenv from 'dotenv'
 import {
     AttachmentBuilder,
     Client,
@@ -26,7 +27,7 @@ import fetch from 'node-fetch';
 import {defaultEventDescription} from "./functions/defaultEventDescription.js";
 import crypto from "crypto";
 
-process.loadEnvFile()
+dotenv.config();
 
 // Inicia o webhook para receber as informações de cadastro de aulas
 const webhook = express();
