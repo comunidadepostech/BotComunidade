@@ -418,6 +418,8 @@ client.on(Events.InteractionCreate, async interaction => {
 
         case "poll":
             try {
+                await interaction.deferReply({flags: MessageFlags.Ephemeral});
+
                 const question = interaction.options.getString('question');
                 const duration = interaction.options.getInteger('duration');
                 const multiselect = interaction.options.getInteger('allow-multiselect') || 0;
@@ -447,11 +449,11 @@ client.on(Events.InteractionCreate, async interaction => {
                     }
                 });
 
-                await interaction.reply({content: "✅ Enquete criada com sucesso!", flags: MessageFlags.Ephemeral});
+                await interaction.editReply({content: "✅ Enquete criada com sucesso!", flags: MessageFlags.Ephemeral});
 
             } catch (error) {
                 console.error(`ERRO - Falha ao criar enquete:`, error);
-                await interaction.reply({
+                await interaction.editReply({
                     content: "❌ Ocorreu um erro ao criar a enquete.\n" + error,
                     flags: MessageFlags.Ephemeral
                 });
