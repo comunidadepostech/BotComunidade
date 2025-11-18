@@ -33,7 +33,9 @@ export const classActivations = [
             "\n" +
             "Preparamos um **guia simples e objetivo** para te ajudar a manter seus compromissos do servidor organizados direto no seu e-mail.\n" +
             "\n" +
-            "🔗 https://youtu.be/QqyxxZwzsR8 e sincronize seus eventos com praticidade."
+            "🔗 https://youtu.be/QqyxxZwzsR8 e sincronize seus eventos com praticidade.\n" +
+            "\n" +
+            "{mention}"
     },
     {
         title: "Composição da Nota",
@@ -60,7 +62,7 @@ export const classActivations = [
     },
     {
         title: "Carteirinha de Estudante",
-        content: "Fala turma!!\n" +
+        content: "Fala turma! {mention}\n" +
             "\n" +
             "Gostaria de avisar que vocês tem acesso a carteirinha de estudante através do app \"FIAP\".\n" +
             "\n" +
@@ -99,7 +101,9 @@ export const classActivations = [
             "🎓 Benefícios Microsoft: Acesse várias ferramentas e recursos exclusivos para estudantes, como o [Microsoft 365 Web](https://www.microsoft.com/pt-br/education/products/office), o [Azure for Students](https://azure.microsoft.com/pt-br/pricing/purchase-options/azure-account/search) e o [Visual Studio](https://www.linkedin.com/pulse/visual-studio-dev-essentials-free-thiago-adriano/)\n" +
             "\n" +
             "Para acessar esses benefícios, você precisa adicionar o seu email da FIAP.\n" +
-            "Qualquer dúvida, estamos por aqui para ajudar. 😉"
+            "Qualquer dúvida, estamos por aqui para ajudar. 😉\n" +
+            "\n" +
+            "{mention}"
     },
     {
         title: "Boas Práticas para a Comunidade",
@@ -126,7 +130,7 @@ export const classActivations = [
     },
     {
         title: "E-mail Estudantil @fiap",
-        content: "Olá, turma!! Temos uma informação importante para vocês sobre a caixa de e-mail @‌fiap:\n" +
+        content: "Olá, {mention}!! Temos uma informação importante para vocês sobre a caixa de e-mail @‌fiap:\n" +
             "\n" +
             "- Referente as caixas de e-mail dos estudantes, o acesso é apenas para o benefício do pacote office e solicitação de algumas ferramentas (planos para estudantes);\n" +
             "\n" +
