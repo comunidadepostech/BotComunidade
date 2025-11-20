@@ -98,7 +98,7 @@ export class EventCommand extends BaseCommand {
             scheduledEndTime: new Date(`${endDate}T${endTime}:00-03:00`),
             privacyLevel: 2, // Guild Only
             entityType: 3, // External
-            description: description.replace(/\\n/g, '\n'),
+            description: description.replaceAll(String.raw`\n`, '\n'),
             image: `data:image/png;base64,${buffer.toString('base64')}`,
             entityMetadata: {location: link}
         })

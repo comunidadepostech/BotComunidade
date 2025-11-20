@@ -24,7 +24,7 @@ export class DisableCommand extends BaseCommand {
 
         await interaction.deferReply({flags: MessageFlags.Ephemeral});
 
-        for (const [_, channel] of channels) {
+        for (const [, channel] of channels) {
             if (channel.type === 4 && ["Alun", "Pós Tech", role.name.replace("Estudantes ", "")].includes(channel.name)) {
                 await channel.permissionOverwrites.edit(role.id, {
                     SendMessages: false,

@@ -28,7 +28,7 @@ import {Bot} from "./bot.js";
 
 
 // Carrega as variáveis de ambiente
-await process.loadEnvFile()
+process.loadEnvFile()
 
 
 async function main() {
@@ -133,8 +133,9 @@ async function main() {
     process.on('SIGINT', () => shutdown('SIGINT'));
     process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
-
-main().catch(error => {
+try {
+    await main()
+} catch (error) {
     console.error("ERRO - Falha fatal na inicialização do bot:", error);
     process.exit(1);
-});
+}

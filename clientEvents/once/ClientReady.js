@@ -99,10 +99,10 @@ export class ClientReady {
         setInterval(() => functionsWithInterval.checkEvents(), Number(process.env.EVENT_CHECK_TIME * 60 * 1000));
 
         // Força o bot a armazenar o cache de cada servidor
-        client.guilds.cache.forEach(async (guild) => {
+        for (let guild of client.guilds.cache) {
             await guild.channels.fetch();
             await guild.members.fetch();
             await guild.roles.fetch();
-        })
+        }
     }
 }

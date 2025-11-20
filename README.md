@@ -170,7 +170,7 @@ Funciona para qualquer servidor.
 
 
 ### `/disable`
-Desabilita uma turma do servidor
+Desabilita uma turma do servidor.
 
 Funciona apenas para servidores comuns.
 
