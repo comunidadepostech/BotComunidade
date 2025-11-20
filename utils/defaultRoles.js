@@ -1,65 +1,70 @@
+import {PermissionsBitField} from "discord.js";
+
 // permissionOverwrites do comando /create
 export const defaultRoles = {
     rolesForNewClasses: [
         {
             name: "Equipe Pós-Tech",
-            allow: ["ViewChannel"],
+            allow: [PermissionsBitField.Flags.ViewChannel],
             deny: []
         },
         {
             name: "Talent Lab",
-            allow: ["ViewChannel"],
+            allow: [PermissionsBitField.Flags.ViewChannel],
             deny: []
         },
         {
             name: "Gestor acadêmico",
             permissions: [
-                "ViewChannel",
-                "SendMessages",
-                "CreatePublicThreads",
-                "EmbedLinks",
-                "AttachFiles",
-                "AddReactions",
-                "MentionEveryone",
-                "ReadMessageHistory",
-                "SendPolls"
+                PermissionsBitField.Flags.ViewChannel,
+                PermissionsBitField.Flags.SendMessages,
+                PermissionsBitField.Flags.CreatePublicThreads,
+                PermissionsBitField.Flags.EmbedLinks,
+                PermissionsBitField.Flags.AttachFiles,
+                PermissionsBitField.Flags.AddReactions,
+                PermissionsBitField.Flags.MentionEveryone,
+                PermissionsBitField.Flags.ReadMessageHistory,
+                PermissionsBitField.Flags.SendPolls,
+                PermissionsBitField.Flags.UseVAD
             ],
             deny: []
         },
         {
             name: "Coordenação",
             allow: [
-                "ViewChannel",
-                "SendMessages",
-                "CreatePublicThreads",
-                "EmbedLinks",
-                "AttachFiles",
-                "AddReactions",
-                "MentionEveryone",
-                "ReadMessageHistory",
-                "SendPolls"
+                PermissionsBitField.Flags.ViewChannel,
+                PermissionsBitField.Flags.SendMessages,
+                PermissionsBitField.Flags.CreatePublicThreads,
+                PermissionsBitField.Flags.EmbedLinks,
+                PermissionsBitField.Flags.AttachFiles,
+                PermissionsBitField.Flags.AddReactions,
+                PermissionsBitField.Flags.MentionEveryone,
+                PermissionsBitField.Flags.ReadMessageHistory,
+                PermissionsBitField.Flags.SendPolls,
+                PermissionsBitField.Flags.UseVAD
             ],
             deny: []
         },
         {
             name: "Professores",
             allow: [
-                "ViewChannel",
-                "SendMessages",
-                "CreatePublicThreads",
-                "EmbedLinks",
-                "AttachFiles",
-                "AddReactions",
-                "MentionEveryone",
-                "ReadMessageHistory",
-                "SendPolls"
+                PermissionsBitField.Flags.ViewChannel,
+                PermissionsBitField.Flags.SendMessages,
+                PermissionsBitField.Flags.CreatePublicThreads,
+                PermissionsBitField.Flags.EmbedLinks,
+                PermissionsBitField.Flags.AttachFiles,
+                PermissionsBitField.Flags.AddReactions,
+                PermissionsBitField.Flags.MentionEveryone,
+                PermissionsBitField.Flags.ReadMessageHistory,
+                PermissionsBitField.Flags.SendPolls,
+                PermissionsBitField.Flags.UseVAD
             ],
             deny: []
         },
         {
             name: "className",
-            allow: ["ViewChannel"],
-            deny: ["SendPolls"]
+            allow: [PermissionsBitField.Flags.ViewChannel],
+            deny: [PermissionsBitField.Flags.SendPolls]
         }
     ]
 }

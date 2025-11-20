@@ -93,16 +93,14 @@ export class MySQLDatabase {
         let flags = await this.getFlags()
         for (let serverID of Object.keys(flags)) {
             flags[serverID][name] = defaultValue
-            await this.saveFlags({serverID : flags[serverID]})
+            await this.saveFlags(serverID, flags[serverID])
         }
     }
 
     async checkFlags(flags, defaultFlags, client) {
         if (Object.keys(flags).length === 0) {
-            if (!this.database) throw new Error("Banco de dados não inicializado");
-
-            for (let [, guild] of client.guilds.cache) {
-                console.debug(`DEBUG - Salvando flags padrão para ${guild.name}\n${defaultFlags}`)
+            for (const [, guild] of client.guilds.cache) {
+                console.debug(`DEBUG - Salvando flags padrão para ${guild.id}\n${JSON.stringify(defaultFlags)}`)
                 await this.saveFlags(guild.id, defaultFlags)
             }
 
@@ -110,15 +108,17 @@ export class MySQLDatabase {
         }
 
         if (Object.keys(flags[Object.keys(flags)[0]]).join() !== Object.keys(defaultFlags).join()) {
-            let differences = defaultFlags.keys().filter(x => !Object.keys(flags[Object.keys(flags)[0]]).includes(x))
+            let differences = Object.keys(defaultFlags).filter(x => !Object.keys(flags[Object.keys(flags)[0]]).includes(x))
 
             for (let difference of differences) {
-                console.debug(`Nova flag detectada: ${difference}`)
+                console.debug(`DEBUG - Nova flag detectada: ${difference}`)
                 await this.createNewFlag(difference, defaultFlags[difference])
             }
 
             return true
         }
+
+        return false
     }
 
     async endConnection() {

@@ -2,21 +2,11 @@ services:
   bot_comunidade:
     container_name: discordjs-bot-comunidade
     restart: on-failure:3
-    mem_limit: 512m
-    cpus: 1
     build:
       context: .
       dockerfile: Dockerfile
     command: node .
-    working_dir: /botComunidade
-    environment:
-      - EVENT_CHECK_TIME=${EVENT_CHECK_TIME}
-      - EVENT_DIFF_FOR_WARNING=${EVENT_DIFF_FOR_WARNING}
-      - ID=${ID}
-      - MAX_CONCURRENT=${MAX_CONCURRENT}
-      - MAX_EVENTS_CACHE=${MAX_EVENTS_CACHE}
-      - PUBLIC_KEY=${PUBLIC_KEY}
-      - TOKEN=${TOKEN}
+    working_dir: /bot
     ports:
       - "9999:9999"
       - "443:443"

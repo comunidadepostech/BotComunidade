@@ -1,6 +1,6 @@
 # Build
-FROM node:20.18.1
+FROM node:22.20.0-alpine
 WORKDIR ./bot
 COPY package.json package-lock.json ./
-RUN npm install
 COPY . .
+RUN npm install

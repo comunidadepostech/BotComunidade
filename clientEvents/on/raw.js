@@ -56,6 +56,8 @@ export class RawEvent {
 
             case 'MESSAGE_CREATE': // Mensagens
                 try {
+                    if (!this.flags[packet.d.guild_id]["saveInteractions"]) break
+
                     // Filtra a origem das mensagens
                     if (![0, 11, 2, 13].includes(packet.d.channel_type)) break
 

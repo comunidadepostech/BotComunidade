@@ -27,8 +27,8 @@ export class EchoCommand extends BaseCommand {
                         .setDescription("Enviar a mensagem apenas no canal especificado?")
                         .setRequired(false)
                         .addChoices(
-                            { name: "Sim", value: 1 },
-                            { name: "Não", value: 0 },
+                            { name: "true", value: 1 },
+                            { name: "false", value: 0 },
                         )
                 )
                 .addAttachmentOption(option =>
@@ -103,14 +103,8 @@ export class EchoCommand extends BaseCommand {
 
         } catch (error) {
             console.error("Ocorreu um erro inesperado no comando /echo:", error);
-            const errorMessage = '❌ Ocorreu um erro ao executar o comando. Verifique as permissões do bot no canal de destino.';
+            await interaction.editReply({ content: "❌ Ocorreu um erro ao executar o comando. Verifique as permissões do bot no canal de destino." });
 
-            // Garante que o usuário receba uma resposta, mesmo que o deferReply já tenha sido usado
-            if (interaction.replied || interaction.deferred) {
-                await interaction.editReply({ content: errorMessage });
-            } else {
-                await interaction.reply({ content: errorMessage, ephemeral: true });
-            }
         }
     }
 }

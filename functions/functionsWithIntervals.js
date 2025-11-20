@@ -134,12 +134,4 @@ export class functionsWithIntervals{
         //const end = Date.now();
         //console.debug(`DEBUG - tempo de execução do checkEvents: ${end - start}ms`);
     }
-
-    // async clearCache(){
-    //     await this.client.guilds.cache.forEach(guild => {
-    //         guild.members.cache.clear();
-    //         guild.channels.cache.clear();
-    //     });
-    //     console.log('LOG - Caches do Discord.js limpos');
-    // }
 }

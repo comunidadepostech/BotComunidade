@@ -1,4 +1,3 @@
-// javascript
 import { Events, MessageFlags } from "discord.js";
 
 export class InteractionCreate {

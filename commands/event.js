@@ -15,14 +15,42 @@ export class EventCommand extends BaseCommand {
                         .setRequired(true)
                 )
                 .addStringOption(option =>
-                    option.setName('date')
+                    option.setName('start-date')
                         .setDescription('Data (yyyy-MM-dd)')
                         .setRequired(true)
                 )
                 .addStringOption(option =>
-                    option.setName('time')
+                    option.setName('start-time')
                         .setDescription('Hora (HH:mm)')
                         .setRequired(true)
+                        .addChoices(
+                            {name: '18:00', value: '18:00'}, {name: '18:15', value: '18:15'}, {name: '18:30', value: '18:30'}, {name: '18:45', value: '18:45'},
+                            {name: '19:00', value: '19:00'}, {name: '19:15', value: '19:15'}, {name: '19:30', value: '19:30'}, {name: '19:45', value: '19:45'},
+                            {name: '20:00', value: '20:00'}, {name: '20:15', value: '20:15'}, {name: '20:30', value: '20:30'}, {name: '20:45', value: '20:45'},
+                            {name: '21:00', value: '21:00'}, {name: '21:15', value: '21:15'}, {name: '21:30', value: '21:30'}, {name: '21:45', value: '21:45'},
+                            {name: '22:00', value: '22:00'}, {name: '22:15', value: '22:15'}, {name: '22:30', value: '22:30'}, {name: '22:45', value: '22:45'},
+                            {name: '23:00', value: '23:00'}, {name: '23:15', value: '23:15'}, {name: '23:30', value: '23:30'}, {name: '23:45', value: '23:45'},
+                            {name: '24:00', value: '24:00'}
+                        )
+                )
+                .addStringOption(option =>
+                    option.setName('end-date')
+                        .setDescription('Data (yyyy-MM-dd)')
+                        .setRequired(true)
+                )
+                .addStringOption(option =>
+                    option.setName('end-time')
+                        .setDescription('Hora (HH:mm)')
+                        .setRequired(true)
+                        .addChoices(
+                            {name: '18:00', value: '18:00'}, {name: '18:15', value: '18:15'}, {name: '18:30', value: '18:30'}, {name: '18:45', value: '18:45'},
+                            {name: '19:00', value: '19:00'}, {name: '19:15', value: '19:15'}, {name: '19:30', value: '19:30'}, {name: '19:45', value: '19:45'},
+                            {name: '20:00', value: '20:00'}, {name: '20:15', value: '20:15'}, {name: '20:30', value: '20:30'}, {name: '20:45', value: '20:45'},
+                            {name: '21:00', value: '21:00'}, {name: '21:15', value: '21:15'}, {name: '21:30', value: '21:30'}, {name: '21:45', value: '21:45'},
+                            {name: '22:00', value: '22:00'}, {name: '22:15', value: '22:15'}, {name: '22:30', value: '22:30'}, {name: '22:45', value: '22:45'},
+                            {name: '23:00', value: '23:00'}, {name: '23:15', value: '23:15'}, {name: '23:30', value: '23:30'}, {name: '23:45', value: '23:45'},
+                            {name: '24:00', value: '24:00'}
+                        )
                 )
                 .addStringOption(option =>
                     option.setName('description')
@@ -45,8 +73,10 @@ export class EventCommand extends BaseCommand {
     // Sobrescreve o execute do BaseCommand
     async execute(interaction) {
         const topic = interaction.options.getString('topic');
-        const date = interaction.options.getString('date');
-        const time = interaction.options.getString('time');
+        const startDate = interaction.options.getString('start-date');
+        const startTime = interaction.options.getString('starttime');
+        const endDate = interaction.options.getString('start-date');
+        const endTime = interaction.options.getString('starttime');
         const description = interaction.options.getString('description');
         const link = interaction.options.getString('link');
         const background = interaction.options.getAttachment('background');
@@ -64,8 +94,8 @@ export class EventCommand extends BaseCommand {
 
         await interaction.guild.scheduledEvents.create({
             name: topic,
-            scheduledStartTime: new Date(`${date}T${time}:00-03:00`),
-            scheduledEndTime: new Date(new Date(`${date}T${time}:00-03:00`).getTime() + 180 * 60 * 1000), // Duração padrão de 3 horas
+            scheduledStartTime: new Date(`${startDate}T${startTime}:00-03:00`),
+            scheduledEndTime: new Date(`${endDate}T${endTime}:00-03:00`),
             privacyLevel: 2, // Guild Only
             entityType: 3, // External
             description: description.replace(/\\n/g, '\n'),

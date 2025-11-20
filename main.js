@@ -16,14 +16,15 @@ import {ClientReady} from "./clientEvents/once/ClientReady.js"
 import {GuildMemberAdd} from "./clientEvents/on/GuildMemberAdd.js";
 import {GuildCreate} from "./clientEvents/on/GuildCreate.js";
 import {InteractionCreate} from "./clientEvents/on/interactionCreate.js";
-import {EventsWebhook} from "./functions/webhooks/createEvent.js";
 import {Debug} from "./clientEvents/on/debug.js";
 import {Err} from "./clientEvents/on/error.js";
 import {Warning} from "./clientEvents/on/warning.js";
 import {GatewayIntentBits} from "discord.js";
+import {RawEvent} from "./clientEvents/on/raw.js";
+
+import {Webhook} from "./functions/webhooks/webhook.js";
 
 import {Bot} from "./bot.js";
-import {RawEvent} from "./clientEvents/on/raw.js";
 
 
 // Carrega as variáveis de ambiente
@@ -95,7 +96,7 @@ async function main() {
 
     bot.events = [
         new GuildCreate(bot.db),
-        new GuildMemberAdd(bot.db),
+        new GuildMemberAdd(bot.db, bot.flags),
         clientReady,
         new InteractionCreate(bot.commands, bot.flags),
         new Debug(),
@@ -106,15 +107,18 @@ async function main() {
     await bot.registerEvents();
 
     // Inicialização do Webhook
-    bot.webhook = new EventsWebhook();
-    await bot.webhook.createWebhook();
-    await bot.webhook.displayWebhook(bot.client);
+    bot.webhook = new Webhook();
+    await bot.webhook.start(bot.client);
 
     // Login
     await bot.login(process.env.TOKEN);
 
     // Verificação de flags
-    await bot.db.checkFlags(bot.flags, bot.defaultFlags, bot.client) ? bot.flags = await bot.db.getFlags() : null
+    let checkState = true
+    while (checkState) {
+        checkState = await bot.db.checkFlags(bot.flags, bot.defaultFlags, bot.client)
+        bot.flags = await bot.db.getFlags()
+    }
 
     // Configuração do Desligamento Seguro (Graceful Shutdown)
     const shutdown = async (signal) => {

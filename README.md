@@ -15,6 +15,7 @@ Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades �
   - [/createclass](#createclass)
   - [/extract](#extract)
   - [/event](#event)
+  - [/disable](#disable)
 - [Funcionalidades Automáticas](#funcionalidades-automáticas)
   - [Mensagens de Boas-Vindas](#sistema-de-boas-vindas)
   - [Armazenamento de enquetes](#atualização-constante-de-invites)
@@ -24,7 +25,7 @@ Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades �
 - [Requisição de pull request na branch Stable](#requisição-de-pull-request-na-branch-stable)
 
 ## Como instalar e executar (serviço interno)
-1. Certifique-se de que o Bot tenha as permissões necessárias no servidor (o cargo deve estar apenas embaixo do cargo admin ou Community Managers)
+1. Certifique-se de que o Bot tenha as permissões necessárias no servidor (o cargo deve estar apenas em baixo do cargo admin ou Community Managers)
 2. O Bot precisa de acesso ao banco de dados para funcionar corretamente.
 <!-- 3. Configure o Github Actions para fazer o deploy do Bot usando a conexão com chave SSH da AWS EC2. ou pule para o passo 4. -->
 3. Crie e configure um arquivo .env na raiz do projeto com as seguintes variáveis de ambiente:
@@ -33,17 +34,17 @@ EVENT_CHECK_TIME="1" #padrão
 EVENT_DIFF_FOR_WARNING="30" #padrão 
 PRIMARY_WEBHOOK_PORT="9999" #padrão 
 ID="" #ID do bot
-MAX_CONCURRENT="1" #padrão 
-MAX_EVENTS_CACHE="300" #padrão 
 PUBLIC_KEY="" #Chave pública do bot
 TOKEN="" #Token do bot
-PRIMARY_WEBHOOK_PORT="" # porta do webhook
+MYSQL_HOST="" # Host do MySQL
+MYSQL_USER="" # User do MySQL
+MYSQL_PASS="" # Senha do MySQL
+MYSQL_DB="" # Nome do banco MySQL
 MEMBERS_CHECK_DAY="1" # dia do mês para a checagem de membros dos servidores (recomendado 1 até 28)
-MONGODB_URI="" # URL do banco mongoDB
 N8N_ENDPOINT="" # endpoint de produção do n8n
 N8N_TOKEN="" # Header token do n8n para validação de origem
 ```
-4. Crie a imagem usando `docker-compose up --build -d --remove-orphans` ou inicie o bot com  `npm install && node .` ou `npm install && nvm run 20 .` (recomendado se for localmente para testes). A imagem contem 512Mb de ram e 1vCPU's então considere aumentar verticalmente os recursos se necessário!
+4. Crie a imagem usando `docker-compose up --build -d --remove-orphans` ou inicie o bot com  `npm install && node .` ou `npm install && nvm run 20 .` (recomendado se for localmente para testes).
 
 ## Comandos Disponíveis
 
@@ -74,7 +75,7 @@ O bot responderá com "pong!" para confirmar que está funcionando.
 
 
 ### `/echo`
-Replica uma mensagem para um canal.
+Replica uma mensagem para um ou todos os canais de todos os servidores.
 
 Funciona para qualquer servidor.
 
@@ -83,6 +84,9 @@ Funciona para qualquer servidor.
 **Parâmetros**:
 - `channel` (obrigatório): Canal onde a mensagem será enviada
 - `message` (obrigatório): Conteúdo da mensagem que será replicada (dica: use \n para pular linhas)
+- `Attachment1` (opcional): Anexo 1
+- `Attachment2` (opcional): Anexo 2
+- `only-for-this-channel` (opcional, padrão: não): Se sim, o bot enviará a mensagem apenas para o canal especificado
 
 **Exemplo de uso**: /echo ``channel: #anúncios`` ``message: Olá a todos! Bem-vindos ao servidor!``
 
@@ -153,14 +157,30 @@ Funciona para qualquer servidor.
 
 **Parâmetros**:
 - `topic` (obrigatório): Tópico do evento
-- `date` (obrigatório): Data do evento (formato: YYYY-MM-DD)
-- `time` (obrigatório): Hora do evento (formato: HH:MM, 24 horas)
+- `start-date` (obrigatório): Data do evento (formato: YYYY-MM-DD)
+- `start-time` (obrigatório): Hora do evento (formato: HH:MM, 24 horas)
+- `end-date` (obrigatório): Data final do evento (formato: YYYY-MM-DD)
+- `end-time` (obrigatório): Hora final do evento (formato: HH:MM, 24 horas)
 - `description` (obrigatório): Descrição do evento (dica: use \n para pular linhas)
 - `link` (obrigatório): Link relacionado ao evento (Ex: link de reunião)
 - `background` (obrigatório): Imagem de fundo para o evento (anexo)
 
 **Exemplos de uso**:
-- /event ``topic: aula`` ``date: 2025-11-01`` ``time: 20:00`` ``description: descrição`` ``link: https://teste.com`` ``background: [imagem de fundo]``
+- /event ``topic: aula`` ``date: 2025-11-01`` ``time: 20:00`` ``end-date: 2025-11-01`` ``end-time: 22:00`` ``description: descrição`` ``link: https://teste.com`` ``background: [imagem de fundo]``
+
+
+### `/disable`
+Desabilita uma turma do servidor
+
+Funciona apenas para servidores comuns.
+
+**Permissão necessária**: Administrador
+
+**Parâmetros**:
+- `role` (obrigatório): Cargo da turma
+
+**Exemplos de uso**:
+- /disable ``role: @Estudantes 11SOAT``
 
 ## Funcionalidades Automáticas
 
@@ -179,17 +199,19 @@ O bot automaticamente:
 ### Criação de invites diretamente no comando `/createclass`
 - Cria um convite para cada turma nova que já é vinculado ao novo cargo da turma e ao canal de FAQ correspondente do comando.
 
-### Cadastro de eventos através com Webhook
+### Cadastro de eventos com Webhook
 - O Bot pode cadastrar eventos automaticamente com uma integração de um Webhook que se mantem numa aplicação [n8n](https://n8n.io) mas também é possível cadastrar evento usando apenas HTTP POST com os parametros certos.
-
-## Progresso de desenvolvimento e atualizações
-Para saber em detalhes o andamento do desenvolvimento acompanhe a aba de projetos e veja os commits das branches que estão em desenvolvimento.
 
 ## Envio de enquetes para o webhook do n8n automaticamente
 - Quando as enquetes terminam o bot envia um POST para o webhook do n8n com os dados da enquete.
 
 ## Contagem de membros mensalmente
 - Uma vez por mês o bot conta os membros de cada servidor no formato especificado e envia um POST para o webhook do n8n com os dados.
+
+---
+
+## Progresso de desenvolvimento e atualizações
+Para saber em detalhes o andamento do desenvolvimento acompanhe a aba de projetos e veja os commits das branches que estão em desenvolvimento.
 
 ## Requisição de pull request na branch `main`
 - Deve-se sempre testar o código por completo antes de fazer a requisição

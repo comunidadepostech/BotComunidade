@@ -10,6 +10,8 @@
 // GUILD_FORUM (15): A channel for organizing discussions.
 //
 // Lembre-se o cargo já tem permiossões definidas no comando create, então não é necessário definir novamente aqui a não ser que queira adicionar mais permissões
+import {PermissionsBitField} from "discord.js";
+
 export const classChannels = [
     {name: "🙋‍♂️│apresente-se", type: 0, position: 0},
     {name: "🚨│avisos", type: 0, position: 1}, // Definido como especial (hardcoded na posição 1)
@@ -138,9 +140,9 @@ export const classActivations = [
             "\n" +
             "- O envio de comunicações em geral, é feito apenas através do **e-mail cadastrado pelo aluno ou aluna no ato da matrícula.**\n" +
             "\n" +
-            "**O acesso ao pacote office deve ser feito da seguinte forma:**\n" +
+            "**O acesso ao pacote office web deve ser feito da seguinte forma:**\n" +
             "\n" +
-            "**Link:** [Free Office 365 for Students and Educators | Microsoft Education](http://office.com/getoffice365)\n" +
+            "**Link:** [Free Office 365 web for Students and Educators | Microsoft Education](http://office.com/getoffice365)\n" +
             "**E-MAIL:** rm......@fiap.com.br (No lugar dos pontinhos será o número do seu rm)\n" +
             "**Senha:** DtNasc#...... (No lugar dos pontinhos sua data de nascimento no formato curto o ano, ex: 010698) No caso ficaria: DtNasc#010698 (As letras \"D\" e \"N\" são maiúsculas e fazem parte da senha) Seguindo o exemplo acima, para acessar utilizaríamos:\n" +
             "\n" +
@@ -155,21 +157,21 @@ export const classActivations = [
 ]
 
 export const classRolePermissions = [
-    'ChangeNickname',
-    'SendMessagesInThreads',
-    'CreatePublicThreads',
-    'AttachFiles',
-    'EmbedLinks',
-    'AddReactions',
-    'UseExternalEmojis',
-    'ReadMessageHistory',
-    'Connect',
-    'SendMessages',
-    'Speak',
-    'UseVAD',
-    'Stream',
-    'RequestToSpeak',
-    'UseExternalStickers'
+    PermissionsBitField.Flags.ChangeNickname,
+    PermissionsBitField.Flags.SendMessagesInThreads,
+    PermissionsBitField.Flags.CreatePublicThreads,
+    PermissionsBitField.Flags.AttachFiles,
+    PermissionsBitField.Flags.EmbedLinks,
+    PermissionsBitField.Flags.AddReactions,
+    PermissionsBitField.Flags.UseExternalEmojis,
+    PermissionsBitField.Flags.ReadMessageHistory,
+    PermissionsBitField.Flags.Connect,
+    PermissionsBitField.Flags.SendMessages,
+    PermissionsBitField.Flags.Speak,
+    PermissionsBitField.Flags.UseVAD,
+    PermissionsBitField.Flags.Stream,
+    PermissionsBitField.Flags.RequestToSpeak,
+    PermissionsBitField.Flags.UseExternalStickers
 ]
 
 export const somePermissionsChannels = ["✨│boas-vindas", "📃│regras"] // incluir faq-channel no código

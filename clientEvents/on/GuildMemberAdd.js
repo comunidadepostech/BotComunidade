@@ -1,22 +1,22 @@
-import {createCanvas, loadImage} from "@napi-rs/canvas";
-import {request} from "undici";
-import {AttachmentBuilder, Events} from "discord.js";
+import { createCanvas, loadImage } from "@napi-rs/canvas";
+import { request } from "undici";
+import { AttachmentBuilder, Events } from "discord.js";
 
 export class GuildMemberAdd {
-    constructor(client, db) {
+    constructor(db, flags) {
         this.name = Events.GuildMemberAdd;
         this.once = false;
 
-        this.client = client;
         this.db = db;
+        this.flags = flags
+
+        this.background = loadImage("assets/wallpaper.png")
     }
 
     // Constroi e envia uma imagem de boas-vindas
     async _sendWelcomeMessage(profile, targetChannel){
         const canvas = createCanvas(1401, 571);
         const context = canvas.getContext('2d');
-
-        const background = await loadImage('./data/wallpaper.png');
 
         // Cria um buffer com a imagem do usuário
         const avatarUrl = profile.displayAvatarURL({ extension: 'png', size: 512 });
@@ -25,7 +25,7 @@ export class GuildMemberAdd {
         const avatar = await loadImage(avatarBuffer);
 
         // Insere o fundo e corta a foto de perfil do usuário em formato de círculo
-        context.drawImage(background, 0, 0, canvas.width, canvas.height);
+        context.drawImage(await this.background, 0, 0, canvas.width, canvas.height);
         context.save();
         context.beginPath();
         context.arc(285, 285, 256, 0, Math.PI * 2, true);
@@ -43,11 +43,16 @@ export class GuildMemberAdd {
         const pngBuffer = Buffer.from(await canvas.encode('png'));
         const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
 
-        targetChannel.send({ content: "Olá, @Gabriel! Estamos muito felizes que você entrou na nossa **Comunidade Pos Tech!**", files: [attachment] });
+        targetChannel.send({ content: `Olá, ${profile}! Estamos muito felizes que você entrou na nossa **Comunidade Pos Tech!**`, files: [attachment] });
     }
 
     async execute(client, member) {
-        await this._sendWelcomeMessage(member, member.guild.channels.cache.find(channel => channel.name === "✨│boas-vindas"))
-        // Resolver como dar o cargo para o membro (essa feature ainda não existe sem gambiarra)
+        if (!this.flags[member.guild.id]["sendWelcomeMessage"]) return;
+
+        const welcomeChannel = member.guild.channels.cache.find(channel => channel.name === "✨│boas-vindas");
+
+        if (welcomeChannel) {
+            await this._sendWelcomeMessage(member, welcomeChannel);
+        }
     }
 }
