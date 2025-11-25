@@ -6,7 +6,7 @@ export class Err {
         this.once = false;
     }
 
-    async execute(_, packet){
+    async execute(packet){
         console.error(packet)
     }
 }
