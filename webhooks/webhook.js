@@ -1,5 +1,5 @@
 import express from 'express';
-import { handleCreateEvent } from './services/createEvent.js';
+import handleCreateEvent from './services/createEvent.js';
 
 // Para adicionar outro serviço em um novo endpoint, faça o seguinte:
 // 1. Crie o arquivo com a lógica (ex: './updateEvent.js')
@@ -9,23 +9,24 @@ import { handleCreateEvent } from './services/createEvent.js';
 //     handleUpdateEvent(req, res, client);
 // });
 
-export class Webhook {
+export default class Webhook {
     constructor() {
         this.app = express();
         this.port = process.env.PRIMARY_WEBHOOK_PORT;
     }
 
-    start(client) {
+    start(bot) {
         this.app.use(express.json());
 
         this.app.post('/criarEvento', (req, res) => {
-            handleCreateEvent(req, res, client);
+            handleCreateEvent(req, res, bot);
         });
 
         // Inicia o servidor para ouvir na porta definida
         this.app.listen(this.port, "0.0.0.0", () => {
-            console.log(`Webhook iniciado na porta: ${this.port}`);
+            console.log(`LOG - Webhook iniciado na porta: ${this.port}`);
         });
+
     }
 }
 
