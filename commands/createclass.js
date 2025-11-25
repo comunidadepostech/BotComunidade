@@ -29,11 +29,8 @@ export class CreateClassCommand extends BaseCommand {
         this.bot = bot
     }
 
-    /**
-     * interaction {interaction}
-    **/
     async #createCategory(interaction, className, guildRoles) {
-        const classCategory = await interaction.guild.channels.create({
+        return await interaction.guild.channels.create({
             name: className,
             type: ChannelType.GuildCategory,
             permissionOverwrites: [
@@ -124,8 +121,6 @@ export class CreateClassCommand extends BaseCommand {
             }
             ]
         })
-
-        return classCategory
     }
 
     async #createChannels(interaction, className, parent) {
@@ -214,7 +209,7 @@ export class CreateClassCommand extends BaseCommand {
     }
 
     async #createRole(interaction, className) {
-        const classRole = await interaction.guild.roles.create({
+        return await interaction.guild.roles.create({
             name: `Estudantes ${className}`,
             colors: {primaryColor: 3447003},
             mentionable: true, // Permite que o cargo seja mencionado
@@ -237,8 +232,6 @@ export class CreateClassCommand extends BaseCommand {
                 PermissionFlagsBits.UseExternalStickers
             ]
         });
-
-        return classRole
     }
 
     async #editChannels(guildChannels, classRole, classCategory) {
@@ -422,13 +415,11 @@ export class CreateClassCommand extends BaseCommand {
     }
 
     async #createInvite(inviteChannel) {
-        const invite = await inviteChannel.createInvite({
+        return await inviteChannel.createInvite({
             maxAge: 0, // Convite permanente
             maxUses: 0, // Convite ilimitado
             unique: true
         });
-
-        return invite
     }
 
 
