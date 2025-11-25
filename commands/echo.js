@@ -3,10 +3,10 @@ import { MessageFlags, PermissionFlagsBits, SlashCommandBuilder, ChannelType } f
 
 // Echo serve para replicar uma mensagem para um ou mais canais definidos pelo utilizador
 export class EchoCommand extends BaseCommand {
-    constructor(client) {
+    constructor(bot) {
         super(
             new SlashCommandBuilder()
-                .setName("echo")
+                .setName(import.meta.url.split('/').pop().replace('.js', ''))
                 .setDescription("Replica uma mensagem para determinado canal")
                 .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
                 .addChannelOption(option =>
@@ -42,7 +42,7 @@ export class EchoCommand extends BaseCommand {
                         .setRequired(false)
                 )
         );
-        this.client = client
+        this.bot = bot
     }
 
     // Sobrescreve o execute do BaseCommand
@@ -60,7 +60,7 @@ export class EchoCommand extends BaseCommand {
             if (attachment) files.push(attachment.url);
             if (attachment2) files.push(attachment2.url);
 
-            const formattedMessage = message.replace(/\\n/g, '\n');
+            const formattedMessage = message.replaceAll(/\\n/g, '\n');
             const payload = { content: formattedMessage, files: files };
 
             if (isOnlyForThisChannel) {
@@ -72,7 +72,7 @@ export class EchoCommand extends BaseCommand {
             } else {
                 // Cenário 2: Enviar para todos os canais com o mesmo nome
                 const targetChannelName = echoChannel.name;
-                const guilds = await this.client.guilds.cache;
+                const guilds = await this.bot.client.guilds.cache;
                 const sendPromises = [];
 
                 // Itera sobre todos os servidores que o bot está
@@ -103,7 +103,7 @@ export class EchoCommand extends BaseCommand {
 
         } catch (error) {
             console.error("Ocorreu um erro inesperado no comando /echo:", error);
-            await interaction.editReply({ content: "❌ Ocorreu um erro ao executar o comando. Verifique as permissões do bot no canal de destino." });
+            await interaction.editReply({ content: "❌ Ocorreu um erro ao executar o comando.\nDica: Verifique as permissões do bot no canal de destino." });
 
         }
     }
