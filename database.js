@@ -1,8 +1,8 @@
 import mysql from "mysql2/promise";
 
 export class MySQLDatabase {
+    #client = null
     constructor(host, user, password, database, waitForConnections = true) {
-        this._client = null
         this.host = host
         this.user = user
         this.password = password
@@ -11,7 +11,7 @@ export class MySQLDatabase {
     }
 
     async connect() {
-        this._client = await mysql.createConnection({
+        this.#client = await mysql.createConnection({
             host: this.host,
             user: this.user,
             password: this.password,
@@ -21,42 +21,42 @@ export class MySQLDatabase {
     }
 
     async verifyTables() {
-        await this._client.query(`CREATE TABLE IF NOT EXISTS invites (
+        await this.#client.query(`CREATE TABLE IF NOT EXISTS invites (
             invite CHAR(10) PRIMARY KEY,
             role VARCHAR(100) NOT NULL,
             server_id VARCHAR(19) NOT NULL
         )`);
 
-        await this._client.query(`CREATE TABLE IF NOT EXISTS flags (
+        await this.#client.query(`CREATE TABLE IF NOT EXISTS flags (
             server_id CHAR(19) NOT NULL PRIMARY KEY,
             flag TEXT NOT NULL
         )`);
     }
 
     async saveInvite(invite, role, serverId) {
-        await this._client.query(`INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`, [invite, role, serverId]);
+        await this.#client.query(`INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`, [invite, role, serverId]);
     }
 
     async getInvite(invite) {
-        const [rows] = await this._client.query(`SELECT * FROM invites WHERE invite = ?`, [invite]);
+        const [rows] = await this.#client.query(`SELECT * FROM invites WHERE invite = ?`, [invite]);
         return rows[0] || null;
     }
 
     async deleteInvite(invite) {
-        await this._client.query(`DELETE FROM invites WHERE invite = ?`, [invite]);
+        await this.#client.query(`DELETE FROM invites WHERE invite = ?`, [invite]);
     }
 
     async getAllInvites() {
-        const [rows] = await this._client.query(`SELECT * FROM invites`);
+        const [rows] = await this.#client.query(`SELECT * FROM invites`);
         return rows;
     }
 
     async getFlags(serverId = null) {
         let rows = [];
         if (serverId) {
-            [rows] = await this._client.query(`SELECT * FROM flags WHERE server_id = ?`, [serverId])
+            [rows] = await this.#client.query(`SELECT * FROM flags WHERE server_id = ?`, [serverId])
         } else {
-            [rows] = await this._client.query(`SELECT * FROM flags`)
+            [rows] = await this.#client.query(`SELECT * FROM flags`)
         }
 
         const flags = {};
@@ -68,7 +68,7 @@ export class MySQLDatabase {
     }
 
     async updateFlag(serverId, flagName, value) {
-        const [rows] = await this._client.query(`SELECT flag FROM flags WHERE server_id = ?`, [serverId]);
+        const [rows] = await this.#client.query(`SELECT flag FROM flags WHERE server_id = ?`, [serverId]);
 
         let flags = {};
         if (rows.length > 0 && rows[0].flag) {
@@ -77,7 +77,7 @@ export class MySQLDatabase {
 
         flags[flagName] = value;
 
-        await this._client.query(
+        await this.#client.query(
             `INSERT INTO flags (server_id, flag)
              VALUES (?, ?)
              ON DUPLICATE KEY UPDATE flag = VALUES(flag)`,
@@ -86,7 +86,7 @@ export class MySQLDatabase {
     }
 
     async saveFlags(guildId, flags) {
-        await this._client.query(`INSERT INTO flags (server_id, flag) VALUES (?, ?) ON DUPLICATE KEY UPDATE flag = VALUES(flag)`, [guildId, JSON.stringify(flags)])
+        await this.#client.query(`INSERT INTO flags (server_id, flag) VALUES (?, ?) ON DUPLICATE KEY UPDATE flag = VALUES(flag)`, [guildId, JSON.stringify(flags)])
     }
 
     async createNewFlag(name, defaultValue){
@@ -122,6 +122,6 @@ export class MySQLDatabase {
     }
 
     async endConnection() {
-        await this._client.end();
+        await this.#client.end();
     }
 }
