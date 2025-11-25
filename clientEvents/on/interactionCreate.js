@@ -1,24 +1,19 @@
 import { Events, MessageFlags } from "discord.js";
 
 export class InteractionCreate {
-    constructor(commands, flags){
+    constructor(bot){
         this.name = Events.InteractionCreate;
         this.once = false;
-        this.commands = commands;
-        this.flags = flags;
+        this.bot = bot
     }
 
-    async execute(client, interaction){
+    async execute(interaction){
         if (!interaction.isCommand()) return;
 
-        const command = this.commands.get(interaction.commandName);
+        const command = this.bot.commands.get(interaction.commandName);
 
-        if (!this.flags[interaction.guildId][command.name] && !command.alwaysEnabled) {
-            if (!interaction.replied && !interaction.deferred) {
-                await interaction.reply({ content: "❌ Este comando está desabilitado neste servidor.", flags: MessageFlags.Ephemeral });
-            } else {
-                await interaction.editReply({ content: "❌ Este comando está desabilitado neste servidor." });
-            }
+        if (!this.bot.flags[interaction.guildId][command.name] && !command.alwaysEnabled) {
+            await interaction.reply({ content: "❌ Este comando está desabilitado neste servidor.", flags: MessageFlags.Ephemeral });
             return;
         }
 
