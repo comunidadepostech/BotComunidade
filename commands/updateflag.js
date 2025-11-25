@@ -3,10 +3,10 @@ import {MessageFlags, PermissionFlagsBits, SlashCommandBuilder} from 'discord.js
 
 // Comando de teste, serve para saber se o ‘Bot’ está a responder para ajudar na resolução de problemas
 export class UpdateFlagCommand extends BaseCommand {
-    constructor(db, flags) {
+    constructor(bot) {
         super(
             new SlashCommandBuilder()
-                .setName('updateflag')
+                .setName(import.meta.url.split('/').pop().replace('.js', ''))
                 .setDescription('Desabilita ou habilita uma função do Bot para o servidor atual')
                 .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
                 .addStringOption(option =>
@@ -25,8 +25,7 @@ export class UpdateFlagCommand extends BaseCommand {
                 ),
             { alwaysEnabled: true }
         )
-        this._db = db
-        this.flags = flags
+        this.bot = bot
     }
 
     // Sobrescreve o execute do BaseCommand
@@ -38,25 +37,22 @@ export class UpdateFlagCommand extends BaseCommand {
         await interaction.deferReply({flags: MessageFlags.Ephemeral})
 
         // Verificar se as flags da guilda existem
-        if (!this.flags[guildId]) {
+        if (!this.bot.flags[guildId]) {
             await interaction.reply({flags: MessageFlags.Ephemeral, content: "Funcionalidades não foram inicializadas para este servidor. Contate um administrador."})
             return;
         }
 
         // Verificar se a flag específica existe
-        if (!(flag in this.flags[guildId])) {
+        if (!(flag in this.bot.flags[guildId])) {
             await interaction.reply({flags: MessageFlags.Ephemeral, content: "Funcionalidade não encontrada. Use /viewflags para ver as funcionalidades disponíveis"})
             return;
         }
 
-        this.flags[guildId][flag] = value;
-        await this._db.updateFlag(guildId, flag, value);
+        this.bot.flags[guildId][flag] = value;
+        await this.bot.db.updateFlag(guildId, flag, value);
 
         // Recarregar os comandos do servidor após atualizar a flag
-        const clientReady = interaction.client._clientReadyInstance;
-        if (clientReady) {
-            await clientReady._updateCommandsForGuild(interaction.guild);
-        }
+        await this.bot.updateCommandsForGuild(interaction.guild);
 
         await interaction.editReply({flags: MessageFlags.Ephemeral, content: "✅ Funcionalidade atualizada com sucesso!"});
     }
