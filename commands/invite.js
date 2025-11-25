@@ -3,10 +3,10 @@ import {MessageFlags, PermissionFlagsBits, SlashCommandBuilder} from 'discord.js
 
 // Comando de invite, cria um convite que pode ser vinculado a um cargo e a um canal específico.
 export class InviteCommand extends BaseCommand {
-    constructor(db) {
+    constructor(bot) {
         super(
             new SlashCommandBuilder()
-                .setName('invite')
+                .setName(import.meta.url.split('/').pop().replace('.js', ''))
                 .setDescription('Cria um convite para o servidor')
                 .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
                 .addChannelOption(option =>
@@ -20,7 +20,7 @@ export class InviteCommand extends BaseCommand {
                         .setRequired(true)
                 )
         )
-        this._db = db
+        this.bot = bot
     }
 
     // Sobrescreve o execute do BaseCommand
@@ -38,7 +38,7 @@ export class InviteCommand extends BaseCommand {
             });
 
             // Insere o convite no banco de dados e no cache
-            await this._db.saveInvite(invite.code, role.id, interaction.guild.id);
+            await this.bot.db.saveInvite(invite.code, role.id, interaction.guild.id);
 
             // Responde com o link do convite
             await interaction.reply({
