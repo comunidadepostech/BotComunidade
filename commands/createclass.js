@@ -211,7 +211,7 @@ export class CreateClassCommand extends BaseCommand {
     async #createRole(interaction, className) {
         return await interaction.guild.roles.create({
             name: `Estudantes ${className}`,
-            colors: {primaryColor: 3447003},
+            color: 3447003,
             mentionable: true, // Permite que o cargo seja mencionado
             hoist: true, // Exibe o cargo na lista de membros
             permissions: [
@@ -395,6 +395,7 @@ export class CreateClassCommand extends BaseCommand {
 
     async #givePermissionsForDefaultChannels(classRole, channels, faqChannel) {
         for (const channel of channels.values()) {
+            // This condition is for a general channel. Please verify the name "Alun" is correct.
             if (channel.name === "Alun") {
                 await channel.permissionOverwrites.edit(classRole, {
                     [PermissionFlagsBits.ReadMessageHistory]: true,
@@ -403,7 +404,9 @@ export class CreateClassCommand extends BaseCommand {
                     [PermissionFlagsBits.CreatePublicThreads]: true
                 })
             }
-            if (["Pós Tech", faqChannel.name].includes(channel.name)) {
+            // This condition is for the specific FAQ channel.
+            // We check by ID to be precise and avoid changing permissions on the "Pós Tech" category by mistake.
+            else if (channel.id === faqChannel.id) {
                 await channel.permissionOverwrites.edit(classRole, {
                     [PermissionFlagsBits.ReadMessageHistory]: true,
                     [PermissionFlagsBits.SendMessages]: false,
