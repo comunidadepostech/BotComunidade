@@ -3,20 +3,20 @@ import {MessageFlags, PermissionFlagsBits, SlashCommandBuilder} from 'discord.js
 
 // Display serve para exibir os convites ativos do servidor
 export class DisplayCommand extends BaseCommand {
-    constructor(db) {
+    constructor(bot) {
         super(
             new SlashCommandBuilder()
-                .setName("display")
+                .setName(import.meta.url.split('/').pop().replace('.js', ''))
                 .setDescription("Exibe os convites ativos do servidor")
                 .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         )
-        this._db = db
+        this.bot = bot
     }
 
     // Sobrescreve o execute do BaseCommand
     async execute(interaction) {
         try {
-            const rows = await this._db.getAllInvites();
+            const rows = await this.bot.db.getAllInvites();
 
             // Verifica se há convites do banco de dados
             if (rows.length === 0) {
@@ -31,9 +31,10 @@ export class DisplayCommand extends BaseCommand {
 
             // Formata a resposta com os convites
             let response = "Convites ativos:\n";
-            rows.forEach(invite => {
+            for (let invite of rows) {
                 response += `**${interaction.guild.roles.cache.get(invite.role)} --> **https://discord.gg/${invite.invite}\n`;
-            });
+            }
+
             await interaction.reply({
                 content: response,
                 flags: MessageFlags.Ephemeral
