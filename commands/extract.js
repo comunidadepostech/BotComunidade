@@ -6,7 +6,7 @@ export class ExtractCommand extends BaseCommand {
     constructor() {
         super(
             new SlashCommandBuilder()
-                .setName("extract")
+                .setName(import.meta.url.split('/').pop().replace('.js', ''))
                 .setDescription("Extrai o conteúdo do chat e retorna um arquivo .txt")
                 .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         )
@@ -25,7 +25,9 @@ export class ExtractCommand extends BaseCommand {
             if (lastId) options.before = lastId;
             const messages = await channel.messages.fetch(options);
             if (messages.size === 0) break;
-            messages.forEach(message => allMessages.set(message.id, message));
+            for (let message of messages) {
+                allMessages.set(message.id, message)
+            }
             lastId = messages.last().id;
         }
 
@@ -35,19 +37,13 @@ export class ExtractCommand extends BaseCommand {
             .filter(msg => {
                 const content = msg.content.trim();
                 if (!content) return false;
-                // Ignora mensagens com formatação/markup indesejado
-                return !(content.includes('\\-\\-boundary') ||
-                    content.includes('Content-Disposition') ||
-                    content.startsWith('poll:') ||
-                    /^<t:\d+(:[a-zA-Z])?>$/.test(content));
-
             });
 
         // Formata as mensagens com data, usuário e mensagem
         let output = "";
-        sortedMessages.forEach(msg => {
-            output += `[${msg.createdAt.toLocaleString("pt-BR")}] ${msg.author.tag}: ${msg.content}\n\n`;
-        });
+        for (let message of sortedMessages) {
+            output += `[${message.createdAt.toLocaleString("pt-BR")}] ${message.author.tag}: ${message.content}\n\n`;
+        }
 
         const textBuffer = Buffer.from(output, "utf-8");
         const fileAttachment = new AttachmentBuilder(textBuffer, { name: "chat_history.txt" });
