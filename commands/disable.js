@@ -1,12 +1,12 @@
 import { BaseCommand } from './baseCommand.js';
-import {MessageFlags, PermissionFlagsBits, SlashCommandBuilder} from 'discord.js';
+import {ChannelType, MessageFlags, PermissionFlagsBits, SlashCommandBuilder} from 'discord.js';
 
 // Comando de teste, serve para saber se o ‘Bot’ está a responder para ajudar na resolução de problemas
 export class DisableCommand extends BaseCommand {
     constructor() {
         super(
             new SlashCommandBuilder()
-                .setName('disable')
+                .setName(import.meta.url.split('/').pop().replace('.js', ''))
                 .setDescription('Desabilita um cargo (remove todas as permissões)')
                 .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
                 .addRoleOption(option =>
@@ -24,25 +24,32 @@ export class DisableCommand extends BaseCommand {
 
         await interaction.deferReply({flags: MessageFlags.Ephemeral});
 
-        for (const [, channel] of channels) {
-            if (channel.type === 4 && ["Alun", "Pós Tech", role.name.replace("Estudantes ", "")].includes(channel.name)) {
-                await channel.permissionOverwrites.edit(role.id, {
-                    SendMessages: false,
-                    ViewChannel: false,
-                    ReadMessageHistory: false,
-                    AddReactions: false
-                });
-            }
+        for (const channel of channels.values()) {
+            const roleNameWithoutPrefix = role.name.replace("Estudantes ", "");
+            const shouldDisable = (channel.type === ChannelType.GuildCategory && ["Alun", "Pós Tech", roleNameWithoutPrefix].includes(channel.name)) ||
+                (["🎥│gravações", "🚨│avisos"].includes(channel.name) && channel.parent?.name === roleNameWithoutPrefix) ||
+                (channel.name.includes("faq"));
 
-            if (["🎥│gravações", "🚨│avisos"].includes(channel.name) && channel.parent?.name === role.name.replace("Estudantes ", "")) {
-                await channel.permissionOverwrites.edit(role.id, {
-                    SendMessages: false,
-                    ViewChannel: false,
-                    ReadMessageHistory: false,
-                    AddReactions: false
-                });
+            if (shouldDisable) {
+                const permissionsToDisable = {
+                    [PermissionFlagsBits.SendMessages]: false,
+                    [PermissionFlagsBits.ViewChannel]: false,
+                    [PermissionFlagsBits.ReadMessageHistory]: false,
+                    [PermissionFlagsBits.AddReactions]: false
+                };
+                await channel.permissionOverwrites.edit(role.id, permissionsToDisable);
             }
         }
+
+        await interaction.guild.roles.edit(
+            role.id,
+            {
+                [PermissionFlagsBits.SendMessages]: false,
+                [PermissionFlagsBits.ViewChannel]: false,
+                [PermissionFlagsBits.ReadMessageHistory]: false,
+                [PermissionFlagsBits.AddReactions]: false
+            }
+        )
 
         await interaction.editReply({flags: MessageFlags.Ephemeral, content: "✅ Cargo desabilitado com sucesso!"});
     }
