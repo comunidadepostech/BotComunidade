@@ -6,7 +6,7 @@ export class PollCommand extends BaseCommand {
     constructor() {
         super(
             new SlashCommandBuilder()
-                .setName('poll')
+                .setName(import.meta.url.split('/').pop().replace('.js', ''))
                 .setDescription('Cria uma enquete interativa')
                 .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
                 .addStringOption(option =>
@@ -110,7 +110,7 @@ export class PollCommand extends BaseCommand {
                 interaction.options.getString('option8'),
                 interaction.options.getString('option9'),
                 interaction.options.getString('option10')
-            ].filter(option => option); // Remove opções vazias
+            ].filter(Boolean); // Remove opções vazias
 
             let filteredOptions = options.filter(option => option !== null && option !== undefined);
             const pollAnswers = filteredOptions.map(option => ({text: option}));

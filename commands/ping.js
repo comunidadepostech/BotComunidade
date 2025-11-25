@@ -6,7 +6,7 @@ export class PingCommand extends BaseCommand {
     constructor() {
         super(
             new SlashCommandBuilder()
-                .setName("ping")
+                .setName(import.meta.url.split('/').pop().replace('.js', ''))
                 .setDescription('Responde com Pong!')
                 .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
             { alwaysEnabled: true }
