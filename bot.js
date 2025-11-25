@@ -14,6 +14,7 @@ import {ViewFlagsCommand} from "./commands/viewflags.js";
 
 import {MySQLDatabase} from "./database.js";
 import Webhook from "./webhooks/webhook.js";
+import Scheduler from "./scheduler/scheduler.js";
 
 import {GuildCreate} from "./clientEvents/on/GuildCreate.js";
 import {GuildMemberAdd} from "./clientEvents/on/GuildMemberAdd.js";
@@ -95,6 +96,7 @@ export class Bot {
             new MessageCreate(this)
         ]
         this.webhook = new Webhook()
+        this.scheduler = new Scheduler(this)
     }
 
     async updateCommandsForGuild(partialGuild) {
