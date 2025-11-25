@@ -3,14 +3,11 @@ import { request } from "undici";
 import { AttachmentBuilder, Events } from "discord.js";
 
 export class GuildMemberAdd {
-    constructor(db, flags) {
+    constructor(bot) {
         this.name = Events.GuildMemberAdd;
         this.once = false;
-
-        this.db = db;
-        this.flags = flags
-
         this.background = loadImage("assets/wallpaper.png")
+        this.bot = bot
     }
 
     // Constroi e envia uma imagem de boas-vindas
@@ -46,8 +43,8 @@ export class GuildMemberAdd {
         targetChannel.send({ content: `Olá, ${profile}! Estamos muito felizes que você entrou na nossa **Comunidade Pos Tech!**`, files: [attachment] });
     }
 
-    async execute(client, member) {
-        if (!this.flags[member.guild.id]["sendWelcomeMessage"]) return;
+    async execute(member) {
+        if (!this.bot.flags[member.guild.id]["sendWelcomeMessage"]) return;
 
         const welcomeChannel = member.guild.channels.cache.find(channel => channel.name === "✨│boas-vindas");
 
