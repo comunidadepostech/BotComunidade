@@ -6,7 +6,7 @@ export class EventCommand extends BaseCommand {
     constructor() {
         super(
             new SlashCommandBuilder()
-                .setName('event')
+                .setName(import.meta.url.split('/').pop().replace('.js', ''))
                 .setDescription('Cria um evento')
                 .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
                 .addStringOption(option =>
@@ -74,9 +74,9 @@ export class EventCommand extends BaseCommand {
     async execute(interaction) {
         const topic = interaction.options.getString('topic');
         const startDate = interaction.options.getString('start-date');
-        const startTime = interaction.options.getString('starttime');
-        const endDate = interaction.options.getString('start-date');
-        const endTime = interaction.options.getString('starttime');
+        const startTime = interaction.options.getString('start-time');
+        const endDate = interaction.options.getString('end-date');
+        const endTime = interaction.options.getString('end-time');
         const description = interaction.options.getString('description');
         const link = interaction.options.getString('link');
         const background = interaction.options.getAttachment('background');
@@ -92,16 +92,22 @@ export class EventCommand extends BaseCommand {
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
-        await interaction.guild.scheduledEvents.create({
-            name: topic,
-            scheduledStartTime: new Date(`${startDate}T${startTime}:00-03:00`),
-            scheduledEndTime: new Date(`${endDate}T${endTime}:00-03:00`),
-            privacyLevel: 2, // Guild Only
-            entityType: 3, // External
-            description: description.replaceAll(String.raw`\n`, '\n'),
-            image: `data:image/png;base64,${buffer.toString('base64')}`,
-            entityMetadata: {location: link}
-        })
+        try {
+            await interaction.guild.scheduledEvents.create({
+                name: topic,
+                scheduledStartTime: new Date(`${startDate}T${startTime}:00-03:00`),
+                scheduledEndTime: new Date(`${endDate}T${endTime}:00-03:00`),
+                privacyLevel: 2, // Guild Only
+                entityType: 3, // External
+                description: description.replaceAll(String.raw`\n`, '\n'),
+                image: `data:image/png;base64,${buffer.toString('base64')}`,
+                entityMetadata: {location: link}
+            })
+        } catch (error) {
+            await interaction.reply({ content: `❌ Erro ao criar o evento!\n` + "```" + `${error.message}` + "```", flags: MessageFlags.Ephemeral });
+            return
+        }
+
 
         await interaction.reply({ content: "✅ Evento criado com sucesso!", flags: MessageFlags.Ephemeral });
     }
