@@ -2,22 +2,9 @@ import mysql from "mysql2/promise";
 
 export class MySQLDatabase {
     #client = null
-    constructor(host, user, password, database, waitForConnections = true) {
-        this.host = host
-        this.user = user
-        this.password = password
-        this.database = database
-        this.waitForConnections = waitForConnections
-    }
 
-    async connect() {
-        this.#client = await mysql.createConnection({
-            host: this.host,
-            user: this.user,
-            password: this.password,
-            database: this.database,
-            waitForConnections: this.waitForConnections
-        });
+    async connect(url) {
+        this.#client = await mysql.createConnection(url)
     }
 
     async verifyTables() {

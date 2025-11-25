@@ -7,6 +7,8 @@ services:
       dockerfile: Dockerfile
     command: node .
     working_dir: /bot
+    env_file:
+      - ".env"
     ports:
       - "9999:9999"
       - "443:443"

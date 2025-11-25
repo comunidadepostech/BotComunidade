@@ -44,13 +44,7 @@ export class Bot {
                 retries: 1
             }
         });
-        this.db = this.db = new MySQLDatabase(
-            process.env.MYSQL_HOST,
-            process.env.MYSQL_USER,
-            process.env.MYSQL_PASS,
-            process.env.MYSQL_DB,
-            true
-        )
+        this.db = this.db = new MySQLDatabase()
         this.commands = [
             new PingCommand(),
             new InviteCommand(this),

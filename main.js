@@ -5,15 +5,14 @@ import path from "node:path";
 
 
 // Carrega as variáveis de ambiente
-// console.log(__dirname, process.cwd())
-fs.existsSync(path.resolve(import.meta.dirname, '.env')) ? process.loadEnvFile("./.env") : process.loadEnvFile("./.dockerenv")
+process.loadEnvFile("./.env")
 GlobalFonts.registerFromPath("./assets/Coolvetica Hv Comp.otf", "normalFont");
 
 async function main() {
     const bot = new Bot();
 
     // Conexão com Banco de Dados
-    await bot.db.connect()
+    await bot.db.connect(process.env.MYSQL_URL)
         .then(() => console.log('LOG - Conexão com o banco de dados estabelecida'))
         .catch(error => {console.error('ERRO - Falha ao conectar ao banco de dados:', error.message); process.exit(0)})
     await bot.db.verifyTables()
