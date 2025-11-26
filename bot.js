@@ -71,7 +71,7 @@ export class Bot {
 
             //eventos
             checkEvents: false,
-            getMembers: false,
+            saveMembers: false,
             saveInteractions: false,
             savePolls: false,
             sendWelcomeMessage: false
