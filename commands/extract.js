@@ -25,7 +25,7 @@ export class ExtractCommand extends BaseCommand {
             if (lastId) options.before = lastId;
             const messages = await channel.messages.fetch(options);
             if (messages.size === 0) break;
-            for (let message of messages) {
+            for (const [, message] of messages) {
                 allMessages.set(message.id, message)
             }
             lastId = messages.last().id;
@@ -34,10 +34,7 @@ export class ExtractCommand extends BaseCommand {
         // Ordena as mensagens em ordem cronológica e inclui apenas as que têm conteúdo de texto
         const sortedMessages = Array.from(allMessages.values())
             .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
-            .filter(msg => {
-                const content = msg.content.trim();
-                if (!content) return false;
-            });
+            .filter(msg => msg.content?.trim());
 
         // Formata as mensagens com data, usuário e mensagem
         let output = "";
@@ -49,9 +46,5 @@ export class ExtractCommand extends BaseCommand {
         const fileAttachment = new AttachmentBuilder(textBuffer, { name: "chat_history.txt" });
 
         await interaction.editReply({ content: "Histórico coletado:", files: [fileAttachment] });
-
-        // limpa o cache e as mensagens para economizar memória
-        channel.messages.cache.clear();
-        allMessages = null;
     }
 }
