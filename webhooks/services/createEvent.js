@@ -1,4 +1,5 @@
 import {serverNames} from "../../utils/servers.js";
+import logger from "../../utils/logger.js";
 
 // Para testes use o seguinte comando (modifique-o como quiser e lembre-se de ter a turma "test" cadastrada):
 // curl -X POST localhost/criarEvento -H "Content-Type: application/json" -d '{"turma": "test","nomeEvento": "Aula de Teste via API","tipo": "Live","data_hora": "2025-12-20T19:00:00-03:00","fim": "2025-12-20T21:00:00-03:00","link": "https://meet.google.com/seu-link-da-aula"}'
@@ -61,13 +62,13 @@ async function createScheduledEvent(bot, eventData) {
 }
 
 export default async function handleCreateEvent(req, res, client) {
-    console.debug('DEBUG - Dados recebidos para criar evento: ', req.body);
+    logger.debug('Dados recebidos para criar evento: ', req.body);
     try {
         const scheduledEvent = await createScheduledEvent(client, req.body);
-        console.log(`LOG - Evento ${scheduledEvent.name} criado com sucesso`);
+        logger.log(`Evento ${scheduledEvent.name} criado com sucesso`);
         res.status(201).json({ status: 'sucesso', evento: scheduledEvent });
     } catch (error) {
-        console.error(`ERRO - Falha ao criar evento via webhook:`, error);
+        logger.error(`Falha ao criar evento via webhook:`, error);
         res.status(500).json({ status: 'erro', mensagem: JSON.stringify(error.message.json, null, 2) });
     }
 }
