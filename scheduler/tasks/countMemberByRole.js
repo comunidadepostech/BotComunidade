@@ -1,4 +1,3 @@
-import fetch from "node-fetch";
 import logger from "../../utils/logger.js";
 import getTimeUntilNextMonth from "../../utils/getTimeUntilNextMonth.js";
 
@@ -12,10 +11,10 @@ export default class CountMembersByRole {
         const roles = await guild.roles.fetch();
         const members = await guild.members.fetch();
 
-        const roleCounts = {};
+        const roleCounts = []
 
         roles.forEach(role => {
-            if (role.name) roleCounts[role.name] = members.filter(member => member.roles.cache.has(role.id)).size;
+            if (role.name) roleCounts.push({roleName: role.name, count: members.filter(member => member.roles.cache.has(role.id)).size});
         });
 
         return roleCounts;
@@ -24,6 +23,7 @@ export default class CountMembersByRole {
     async execute() {
         let payload = {}
         for (const guild of this.bot.client.guilds.cache.values()) {
+            if (this.bot.flags[guild.id]['saveMembers'] === false) continue;
             payload[guild.name] = await this.#getMembersByRole(guild);
         }
 

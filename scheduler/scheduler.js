@@ -13,10 +13,6 @@ export default class Scheduler {
 
     async start() {
         for (const task of this.tasks) {
-            // Executa cada uma das tasks uma vez para acelerar o debug (deve ser desativado)
-            //task.instance.execute().catch((error) => logger.error(`Erro ao executar ${task.instance.name}: ${error}`))
-            task.instance.execute().catch((error) => logger.error(`Erro ao executar ${task.instance.name}: ${error}`))
-
             if (task.timeInMinutes === 0) {
                 setTimeout(() => task.instance.execute().catch((error) => logger.error(`Erro ao executar ${task.instance.name}: ${error}`)), getTimeUntilNextMonth(task.instance.name))
             } else {
