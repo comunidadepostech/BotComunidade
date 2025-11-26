@@ -20,9 +20,7 @@ import logger from "./utils/logger.js";
 import {GuildCreate} from "./clientEvents/on/GuildCreate.js";
 import {GuildMemberAdd} from "./clientEvents/on/GuildMemberAdd.js";
 import {InteractionCreate} from "./clientEvents/on/interactionCreate.js";
-import {Debug} from "./clientEvents/on/debug.js";
 import {Err} from "./clientEvents/on/error.js";
-import {Warning} from "./clientEvents/on/warning.js";
 import {ClientReady} from "./clientEvents/once/ClientReady.js";
 import {MessageUpdate} from "./clientEvents/on/MessageUpdate.js";
 import {MessageCreate} from "./clientEvents/on/MessageCreate.js";
@@ -84,9 +82,7 @@ export class Bot {
             new GuildMemberAdd(this),
             new ClientReady(),
             new InteractionCreate(this),
-            new Debug(),
             new Err(),
-            new Warning(),
             new MessageUpdate(this),
             new MessageCreate(this)
         ]
