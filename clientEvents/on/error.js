@@ -1,4 +1,5 @@
 import {Events} from "discord.js";
+import logger from "../../utils/logger.js";
 
 export class Err {
     constructor(){
@@ -7,6 +8,6 @@ export class Err {
     }
 
     async execute(packet){
-        console.error(packet)
+        logger.error(packet)
     }
 }
