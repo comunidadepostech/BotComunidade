@@ -1,9 +1,12 @@
+import logger from "../../utils/logger.js";
+
 export default class CheckGuildsEvents {
     constructor(bot) {
         this.events = new Map()
         this.maxCacheSize = Number(process.env.MAX_EVENTS_CACHE);
         this.bot = bot
         this.name = import.meta.url.split('/').pop().replace('.js', '')
+        this.announcementChannelName = "🚨│avisos"
     }
 
     #formatMessage(event, classRole) {
@@ -44,7 +47,7 @@ export default class CheckGuildsEvents {
     async #processGuild(now, partialGuild) {
         try {
             if (!this.bot.flags[partialGuild.id]['checkEvents']) {
-                console.log(`LOG - Avisos de ${partialGuild.name} ignorados`);
+                logger.warn(`Avisos de ${partialGuild.name} ignorados`);
                 return;
             }
 
@@ -56,7 +59,7 @@ export default class CheckGuildsEvents {
 
             await Promise.allSettled(Array.from(events.values()).map(this.#processEvent.bind(this, now, channels)));
         } catch (err) {
-            console.error(`Erro ao buscar eventos da guild ${partialGuild.id}: ${err}`);
+            logger.error(`Erro ao buscar eventos da guild ${partialGuild.id}: ${err}`);
         }
     }
 
@@ -73,19 +76,17 @@ export default class CheckGuildsEvents {
     }
 
     async #handleEventReminder(event, channels) {
-        const announcementChannelName = "🚨│avisos";
-
         if (event.channelId === null) {
-            const avisoChannels = channels.filter(c => c.type === 0 && c.name === announcementChannelName);
+            const avisoChannels = channels.filter(c => c.type === 0 && c.name === this.announcementChannelName);
             await Promise.allSettled(avisoChannels.map(channel => this.#sendReminder(event, channel)));
         } else {
             const eventChannel = channels.get(event.channelId);
             if (!eventChannel) throw new Error(`Canal de evento não encontrado: ${event.channelId}`);
 
             const targetChannel = channels.find(
-                c => c.parentId === eventChannel.parentId && c.name === announcementChannelName
+                c => c.parentId === eventChannel.parentId && c.name === this.announcementChannelName
             );
-            if (!targetChannel) throw new Error(`Canal de aviso não encontrado: ${announcementChannelName}`);
+            if (!targetChannel) throw new Error(`Canal de aviso não encontrado: ${this.announcementChannelName}`);
 
             await this.#sendReminder(event, targetChannel);
         }
