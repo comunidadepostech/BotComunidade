@@ -1,5 +1,6 @@
 import { BaseCommand } from './baseCommand.js';
 import { MessageFlags, PermissionFlagsBits, SlashCommandBuilder, ChannelType } from 'discord.js';
+import logger from "../utils/logger.js";
 
 // Echo serve para replicar uma mensagem para um ou mais canais definidos pelo utilizador
 export class EchoCommand extends BaseCommand {
@@ -60,7 +61,7 @@ export class EchoCommand extends BaseCommand {
             if (attachment) files.push(attachment.url);
             if (attachment2) files.push(attachment2.url);
 
-            const formattedMessage = message.replaceAll(/\\n/g, '\n');
+            const formattedMessage = message.replaceAll("\\n", '\n');
             const payload = { content: formattedMessage, files: files };
 
             if (isOnlyForThisChannel) {
@@ -88,7 +89,7 @@ export class EchoCommand extends BaseCommand {
                     // Adiciona as promessas de envio a um array
                     for (const channel of matchingChannels.values()) {
                         sendPromises.push(
-                            channel.send(payload).catch(err => console.error(`Falha ao enviar para ${channel.id} em ${guild.name}:`, err))
+                            channel.send(payload).catch(err => logger.error(`Falha ao enviar para ${channel.id} em ${guild.name}:`, err))
                         );
                     }
                 }
@@ -102,9 +103,8 @@ export class EchoCommand extends BaseCommand {
             }
 
         } catch (error) {
-            console.error("Ocorreu um erro inesperado no comando /echo:", error);
-            await interaction.editReply({ content: "❌ Ocorreu um erro ao executar o comando.\nDica: Verifique as permissões do bot no canal de destino." });
-
+            await interaction.editReply({ content: "❌ Ocorreu um erro ao executar o comando." });
+            throw new Error(error);
         }
     }
 }
