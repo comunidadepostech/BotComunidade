@@ -1,4 +1,5 @@
 import {Events} from "discord.js";
+import logger from "../../utils/logger.js";
 
 export class ClientReady {
     constructor() {
@@ -7,6 +8,6 @@ export class ClientReady {
     }
 
     async execute() {
-        console.log("LOG - Bot iniciado")
+        logger.log("LOG - Bot iniciado")
     }
 }
