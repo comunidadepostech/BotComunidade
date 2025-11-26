@@ -1,7 +1,6 @@
 import {GlobalFonts} from '@napi-rs/canvas'
 import {Bot} from "./bot.js";
-import fs from "node:fs"
-import path from "node:path";
+import logger from "./utils/logger.js";
 
 
 // Carrega as variáveis de ambiente
@@ -13,17 +12,17 @@ async function main() {
 
     // Conexão com Banco de Dados
     await bot.db.connect(process.env.MYSQL_URL)
-        .then(() => console.log('LOG - Conexão com o banco de dados estabelecida'))
-        .catch(error => {console.error('ERRO - Falha ao conectar ao banco de dados:', error.message); process.exit(0)})
+        .then(() => logger.log('Conexão com o banco de dados estabelecida'))
+        .catch(error => {logger.error('Falha ao conectar ao banco de dados:', error.message); process.exit(0)})
     await bot.db.verifyTables()
-        .then(() => console.log("LOG - Tabelas verificadas"));
+        .then(() => logger.log("Tabelas verificadas"));
 
     bot.flags = await bot.db.getFlags();
 
     // Login
     await bot.login(process.env.TOKEN)
-        .then(() => console.log('LOG - Bot conectado ao Discord'))
-        .catch(error => console.error('ERRO - Falha ao conectar ao Discord:', error.message));
+        .then(() => logger.log('Bot conectado ao Discord'))
+        .catch(error => logger.error('ERRO - Falha ao conectar ao Discord:', error.message));
 
     bot.webhook.start(bot);
 
@@ -33,22 +32,22 @@ async function main() {
         checkState = await bot.db.checkFlags(bot.flags, bot.defaultFlags, bot.client)
         bot.flags = await bot.db.getFlags()
     }
-    console.log("LOG - Todas as flags foram verificadas")
+    logger.log("Todas as flags foram verificadas")
 
     await bot.scheduler.start()
-    console.log("LOG - Scheduler iniciado")
+    logger.log("Scheduler iniciado")
 
-    await bot.build().then(() => console.log('LOG - Bot totalmente carregado'))
+    await bot.build().then(() => logger.log('Bot totalmente carregado'))
 
     // Configuração do Desligamento Seguro (Graceful Shutdown)
     const shutdown = async (signal) => {
-        console.log(`LOG - Recebido ${signal} - desligando graciosamente...`);
+        logger.log(`Recebido ${signal} - desligando graciosamente...`);
 
         bot.client.removeAllListeners();
         await bot.db.endConnection();
         await bot.client.destroy();
 
-        console.log('LOG - Desligamento completo');
+        logger.log('Desligamento completo');
         process.exit(0);
     };
 
@@ -58,6 +57,6 @@ async function main() {
 try {
     await main()
 } catch (error) {
-    console.error("ERRO - Falha fatal na inicialização do bot:", error);
+    logger.error("Falha fatal na inicialização do bot:", error);
     process.exit(1);
 }

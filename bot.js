@@ -15,6 +15,7 @@ import {ViewFlagsCommand} from "./commands/viewflags.js";
 import {MySQLDatabase} from "./database.js";
 import Webhook from "./webhooks/webhook.js";
 import Scheduler from "./scheduler/scheduler.js";
+import logger from "./utils/logger.js";
 
 import {GuildCreate} from "./clientEvents/on/GuildCreate.js";
 import {GuildMemberAdd} from "./clientEvents/on/GuildMemberAdd.js";
@@ -100,7 +101,7 @@ export class Bot {
         try {
             guild = await partialGuild.fetch();
         } catch (fetchError) {
-            console.error(`ERRO - Falha ao fazer fetch da guild ${partialGuild.id}`, fetchError);
+            logger.error(`Falha ao fazer fetch da guild ${partialGuild.id}`, fetchError);
             return;
         }
 
@@ -112,7 +113,7 @@ export class Bot {
 
         // Se não existir flags no cache (servidor novo ou DB não lido)
         if (!guildFlags) {
-            console.warn(`LOG - Sem flags encontradas para ${guild.name}. Inicializando com padrões...`);
+            logger.warn(`Sem flags encontradas para ${guild.name}. Inicializando com padrões...`);
 
             try {
                 // Salva os padrões no DB
@@ -124,10 +125,10 @@ export class Bot {
                 // Define guildFlags para o resto da função poder usar
                 guildFlags = this.defaultFlags;
 
-                console.log(`LOG - Flags padrão salvas para ${guild.name}`);
+                logger.log(`Flags padrão salvas para ${guild.name}`);
 
             } catch (error) {
-                console.error(`ERRO - Falha ao inicializar flags no DB para ${guild.name}`, error);
+                logger.error(`Falha ao inicializar flags no DB para ${guild.name}`, error);
                 // Se não conseguir salvar no DB, não registra nada
                 await guild.commands.set([]);
                 return;
@@ -149,17 +150,14 @@ export class Bot {
         // Registra o array filtrado
         try {
             await guild.commands.set(enabledBuilds);
-            console.log(`LOG - Comandos sincronizados para ${guild.name}. (${enabledBuilds.length} registrados)`);
+            logger.log(`Comandos sincronizados para ${guild.name}. (${enabledBuilds.length} registrados)`);
         } catch (err) {
-            console.error(
-                `ERRO - Falha ao sincronizar comandos para ${guild.name}`,
-                err.message || err
-            );
+            logger.error(`Falha ao sincronizar comandos para ${guild.name}` + err);
         }
     }
 
     async build(){
-        console.log(`LOG - Inicializado com o cliente ${this.client.user.username} de ID ${this.client.user.id}`);
+        logger.log(`Inicializado com o cliente ${this.client.user.username} de ID ${this.client.user.id}`);
 
         const guilds = this.client.guilds.cache.values();
 
@@ -169,7 +167,7 @@ export class Bot {
         });
 
         // Executa todas as sincronizações em paralelo
-        await Promise.all(syncPromises).then(() => console.log("LOG - Comandos carregados"));
+        await Promise.all(syncPromises).then(() => logger.log("Comandos carregados"));
 
         // Força o bot a armazenar o cache de cada servidor
         for (let guild of guilds) {
@@ -188,15 +186,15 @@ export class Bot {
                 this.client.on(event.name, async (...args) => await event.execute(...args));
             }
         }
-        console.log("LOG - Eventos carregados")
+        logger.log("Eventos carregados")
     }
 
     async login(token) {
         try {
             await this.client.login(token);
-            console.log(`LOG - Conexão com Discord criada`);
+            logger.log(`Conexão com Discord criada`);
         } catch (error) {
-            console.error(`ERRO - Bot não iniciado\n${error}`);
+            logger.error(`Bot não iniciado\n${error}`);
             process.exit(-1)
         }
     }
