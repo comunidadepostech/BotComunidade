@@ -46,11 +46,11 @@ export class InviteCommand extends BaseCommand {
                 flags: MessageFlags.Ephemeral // Faz a resposta ser visível apenas para quem executou o comando
             });
         } catch (error) {
-            console.error(`Erro ao criar convite:`, error);
             await interaction.reply({
                 content: `❌ Ocorreu um erro ao criar o convite. Verifique se tenho permissões suficientes.\n` + "```" + error + "```",
                 flags: MessageFlags.Ephemeral
             });
+            throw new Error("Erro ao criar convite" + error)
         }
     }
 }
