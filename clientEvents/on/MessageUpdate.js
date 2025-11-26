@@ -1,6 +1,5 @@
 import {Events} from "discord.js";
 import crypto from "node:crypto";
-import fetch from "node-fetch";
 
 export class MessageUpdate {
     constructor(bot){
@@ -37,9 +36,7 @@ export class MessageUpdate {
                 duration: `${((now - expirity) / 1000 / 60 / 60).toFixed(0)}` // horas
             };
 
-            //console.debug(JSON.stringify(body, null, 2))
-
-            fetch(process.env.N8N_ENDPOINT + '/salvarEnquete', {
+            await fetch(process.env.N8N_ENDPOINT + '/salvarEnquete', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
