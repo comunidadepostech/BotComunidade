@@ -1,4 +1,5 @@
-import {Events} from "discord.js";
+import {ChannelType, Events} from "discord.js";
+import logger from "../../utils/logger.js";
 
 export class MessageCreate {
     constructor(bot){
@@ -8,46 +9,39 @@ export class MessageCreate {
     }
 
     async execute(interaction){
-        if (!this.bot.flags[interaction.guildId]["saveInteractions"] ||
+        if (
+            !this.bot.flags[interaction.guildId]["saveInteractions"] ||
 
             // Filtra a origem das mensagens
-            ![0, 11, 2, 13].includes(interaction.type) ||
+            ![0, 11, 2, 13].includes(interaction.type)
+        ) return;
 
-            // Ignora mensagens de bots
+        // Ignora mensagens do sistema, bots, webhooks, vazias, apenas menções, comandos ou threads automáticas
+        if (
+            interaction.author.system ||
             interaction.author.bot ||
-
-            // Ignora mensagens vazias (sem conteúdo de texto)
-            !interaction.content || interaction.content.trim() === '' ||
-
-            // Ignora webhooks
             interaction.webhookId ||
-
-            // Ignora mensagens com apenas menções
-            !interaction.content.match(/^<@!?\d+>$/) ||
-
-            // Ignora comandos (mensagens que começam com /)
-            interaction.content.startsWith('/') ||
-
-            // Ignora mensagens de threads automáticas
-            packet.d.flags && (packet.d.flags & 32)
-        ) return
+            !interaction.content?.trim() ||
+            interaction.content.match(/^<@!?\d+>$/) ||
+            interaction.content.startsWith('/')
+        ) return;
 
         // Descobre dados do canal
-        const channel = await this.bot.client.channels.fetch(interaction.guildId);
+        const channel = await this.bot.client.channels.fetch(interaction.channelId);
 
         // Descobre o servidor
         let guildName = await this.bot.client.guilds.fetch(interaction.guildId);
         guildName = guildName.name;
 
         // Descobre o maior cargo do membro pela posição hierárquica
-        const member = await guild.members.fetch(interaction.author.id);
-        const roles = member.roles.cache.filter(role => role.id !== guild.id);
+        const member = await interaction.guild.members.fetch(interaction.author.id);
+        const roles = member.roles.cache.filter(role => role.id !== interaction.guild.id);
         const sortedRoles = roles.sort((a, b) => b.position - a.position);
 
         // Verifica se há pelo menos um cargo
         const firstRole = sortedRoles.first();
         if (!firstRole) {
-            console.log("LOG - Cargo do membro não encontrado, ignorando interação");
+            logger.warn(`Cargo do membro não encontrado, ignorando interação em ${interaction.guildId}`);
             return;
         }
 
@@ -64,7 +58,7 @@ export class MessageCreate {
         };
 
         body.thread = interaction.type === ChannelType.GuildText ? channel.name : null;
-        body.channel = interaction.type !== ChannelType.GuildText ? channel.name : null;
+        body.channel = interaction.type === ChannelType.GuildText ? null : channel.name;
         body.class = channel.parent
             ? (await this.bot.client.channels.fetch(channel.parent.id))?.name || null
             : null;
@@ -79,7 +73,7 @@ export class MessageCreate {
         });
 
         if (!response.ok) {
-            console.error('ERRO - N8N endpoint não acessível:', response.status, response.statusText);
+            logger.error('N8N endpoint não acessível:', response.status, response.statusText);
         }
     }
 }
