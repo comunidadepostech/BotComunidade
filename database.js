@@ -1,4 +1,5 @@
 import mysql from "mysql2/promise";
+import logger from "./utils/logger.js";
 
 export class MySQLDatabase {
     #client = null
@@ -39,7 +40,7 @@ export class MySQLDatabase {
     }
 
     async getFlags(serverId = null) {
-        let rows = [];
+        let rows;
         if (serverId) {
             [rows] = await this.#client.query(`SELECT * FROM flags WHERE server_id = ?`, [serverId])
         } else {
@@ -87,7 +88,7 @@ export class MySQLDatabase {
     async checkFlags(flags, defaultFlags, client) {
         if (Object.keys(flags).length === 0) {
             for (const [, guild] of client.guilds.cache) {
-                console.debug(`DEBUG - Salvando flags padrão para ${guild.id}\n${JSON.stringify(defaultFlags)}`)
+                logger.debug(`DEBUG - Salvando flags padrão para ${guild.id}\n${JSON.stringify(defaultFlags)}`)
                 await this.saveFlags(guild.id, defaultFlags)
             }
 
@@ -98,7 +99,7 @@ export class MySQLDatabase {
             let differences = Object.keys(defaultFlags).filter(x => !Object.keys(flags[Object.keys(flags)[0]]).includes(x))
 
             for (let difference of differences) {
-                console.debug(`DEBUG - Nova flag detectada: ${difference}`)
+                logger.debug(`DEBUG - Nova flag detectada: ${difference}`)
                 await this.createNewFlag(difference, defaultFlags[difference])
             }
 
