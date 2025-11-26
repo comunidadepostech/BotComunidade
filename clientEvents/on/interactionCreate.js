@@ -1,4 +1,5 @@
 import { Events, MessageFlags } from "discord.js";
+import logger from "../../utils/logger.js";
 
 export class InteractionCreate {
     constructor(bot){
@@ -19,9 +20,9 @@ export class InteractionCreate {
 
         try {
             await command.execute(interaction);
-            console.log(`LOG - Comando ${interaction.commandName} executado por ${interaction.user.username} em ${interaction.guild.name}`)
+            logger.command(`Comando ${interaction.commandName} executado por ${interaction.user.username} em ${interaction.guild.name}`)
         } catch (error) {
-            console.error(`Erro ao executar o comando ${interaction.commandName}:`, error);
+            logger.error(`Erro ao executar o comando ${interaction.commandName}: ${error}`);
         }
     }
 }
