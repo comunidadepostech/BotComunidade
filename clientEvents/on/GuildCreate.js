@@ -1,4 +1,5 @@
 import {Events} from "discord.js";
+import logger from "../../utils/logger.js";
 
 export class GuildCreate {
     constructor(bot){
@@ -8,10 +9,10 @@ export class GuildCreate {
     }
 
     async execute(guild){
-        console.info(`LOG - ${this.bot.client.user.username} adicionado ao servidor ${guild.name} com ID ${guild.id}`);
+        logger.log(`${this.bot.client.user.username} adicionado ao servidor ${guild.name} com ID ${guild.id}`);
 
         this.bot.flags[guild.id] = this.bot.defaultFlags
         await this.bot.db.getFlags(guild.id)
-        console.log(`LOG - Flags do servidor ${guild.name} carregadas`);
+        logger.log(`Flags do servidor ${guild.name} carregadas`);
     }
 }
