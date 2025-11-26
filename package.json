@@ -14,17 +14,11 @@
   "dependencies": {
     "@discordjs/rest": "^2.5.1",
     "@napi-rs/canvas": "^0.1.77",
-    "axios": "^1.11.0",
-    "base-64": "^1.0.0",
-    "body-parser": "^2.2.0",
     "crypto": "^1.0.1",
-    "discord-api-types": "^0.38.16",
     "discord.js": "^14.21.0",
     "express": "^5.1.0",
     "mysql2": "^3.15.3",
-    "node-fetch": "^3.3.2",
-    "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7",
-    "undici": "^7.13.0"
+    "typescript": "^5.9.3",
+    "undici": "^7.16.0"
   }
 }
