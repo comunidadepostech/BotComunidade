@@ -128,11 +128,11 @@ export class PollCommand extends BaseCommand {
             await interaction.reply({content: "✅ Enquete criada com sucesso!", flags: MessageFlags.Ephemeral});
 
         } catch (error) {
-            console.error(`ERRO - Falha ao criar enquete:`, error);
             await interaction.reply({
                 content: "❌ Ocorreu um erro ao criar a enquete.\n" + error,
                 flags: MessageFlags.Ephemeral
             });
+            throw new Error("Falha ao crar enquete" + error)
         }
     }
 }
