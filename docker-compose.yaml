@@ -1,0 +1,15 @@
+services:
+  bot_comunidade:
+    container_name: discordjs-bot-comunidade
+    restart: on-failure:3
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: node .
+    working_dir: /bot
+    env_file:
+      - ".env"
+    ports:
+      - "9999:9999"
+      - "443:443"
+
