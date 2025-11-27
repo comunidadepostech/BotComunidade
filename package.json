@@ -1,10 +1,14 @@
 {
   "name": "bot-comunidade",
   "version": "Undefined",
-  "main": "main.js",
+  "main": "dist/main.js",
   "directories": {},
   "type": "module",
-  "scripts": {},
+  "scripts": {
+    "start": "npm run build && npm run test && node dist/main.js",
+    "test": "node dist/tests/test.js",
+    "build": "tsc -p tsconfig.json"
+  },
   "author": "Comunidade Pos Tech Fiap",
   "engines": {
     "node": "22.20.0"

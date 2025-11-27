@@ -6,12 +6,14 @@ export class GuildMemberAdd {
     constructor(bot) {
         this.name = Events.GuildMemberAdd;
         this.once = false;
-        this.background = loadImage("assets/wallpaper.png")
+        this.background = null
         this.bot = bot
     }
 
     // Constroi e envia uma imagem de boas-vindas
     async _sendWelcomeMessage(profile, targetChannel){
+        this.background = await loadImage("../../assets/wallpaper.png")
+
         const canvas = createCanvas(1401, 571);
         const context = canvas.getContext('2d');
 
@@ -22,7 +24,7 @@ export class GuildMemberAdd {
         const avatar = await loadImage(avatarBuffer);
 
         // Insere o fundo e corta a foto de perfil do usuário em formato de círculo
-        context.drawImage(await this.background, 0, 0, canvas.width, canvas.height);
+        context.drawImage(this.background, 0, 0, canvas.width, canvas.height);
         context.save();
         context.beginPath();
         context.arc(285, 285, 256, 0, Math.PI * 2, true);

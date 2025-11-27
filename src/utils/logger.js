@@ -51,6 +51,10 @@ class Logger {
     command(message) {
         this.#log('log', message, this.colors.green);
     }
+
+    test(message) {
+        this.#log("test", message, this.colors.green)
+    }
 }
 
 export default new Logger();

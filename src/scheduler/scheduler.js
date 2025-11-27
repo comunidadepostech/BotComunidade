@@ -6,8 +6,8 @@ import getTimeUntilNextMonth from "../utils/getTimeUntilNextMonth.js";
 export default class Scheduler {
     constructor(botInstance) {
         this.tasks = [
-            {instance: new CheckGuildsEvents(botInstance), timeInMinutes: Number(process.env.EVENT_CHECK_TIME)},
-            {instance: new CountMembersByRole(botInstance), timeInMinutes: 0}
+            { instance: new CheckGuildsEvents(botInstance), timeInMinutes: Number(process.env.EVENT_CHECK_TIME) },
+            { instance: new CountMembersByRole(botInstance), timeInMinutes: 0 }
         ]
     }
 
