@@ -1,10 +1,11 @@
 import {GlobalFonts} from '@napi-rs/canvas'
 import {Bot} from "./bot.js";
 import logger from "./utils/logger.js";
+import fs from "node:fs"
 
 
 // Carrega as variáveis de ambiente
-process.loadEnvFile("./.env")
+if (fs.existsSync("./.env")) process.loadEnvFile("./.env")
 GlobalFonts.registerFromPath("./assets/Coolvetica Hv Comp.otf", "normalFont");
 
 async function main() {
