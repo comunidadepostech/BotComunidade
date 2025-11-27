@@ -16,6 +16,6 @@ export class ViewFlagsCommand extends BaseCommand {
 
     // Sobrescreve o execute do BaseCommand
     async execute(interaction) {
-        await interaction.reply({flags: MessageFlags.Ephemeral, content: "```py\n" + JSON.stringify(this.bot.flags, null, 2) + "```"});
+        await interaction.reply({flags: MessageFlags.Ephemeral, content: "```py\n" + JSON.stringify(this.bot.flags[interaction.guildId], null, 2) + "```"});
     }
 }
