@@ -62,13 +62,13 @@ async function createScheduledEvent(bot, eventData) {
 }
 
 export default async function handleCreateEvent(req, res, client) {
-    logger.debug('Dados recebidos para criar evento: ', req.body);
+    logger.debug(`Dados recebidos para criar evento: ${req.body}`)
     try {
         const scheduledEvent = await createScheduledEvent(client, req.body);
         logger.log(`Evento ${scheduledEvent.name} criado com sucesso`);
         res.status(201).json({ status: 'sucesso', evento: scheduledEvent });
     } catch (error) {
-        logger.error(`Falha ao criar evento via webhook:`, error);
+        logger.error(`Falha ao criar evento via webhook: ${error}`);
         res.status(500).json({ status: 'erro', mensagem: JSON.stringify(error.message.json, null, 2) });
     }
 }
