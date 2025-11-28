@@ -35,12 +35,17 @@ export default class CountMembersByRole {
             roleName: string;
             count: number;
         }
+
+        interface Payload {
+            guildName: string;
+            data: RoleCount[]
+        }
         
-        let payload: { [key: string]: RoleCount[] } = {}
+        let payload: Payload[] = []
 
         for (const guild of this.bot.client.guilds.cache.values()) {
             if (this.bot.flags[guild.id]['saveMembers'] === false) continue;
-            payload[guild.name] = await this.#getMembersByRole(guild);
+            payload.push({guildName: guild.name, data: await this.#getMembersByRole(guild)}) 
         }
 
         const res = await fetch(`${process.env.N8N_ENDPOINT}/salvarMembros`, {
@@ -51,6 +56,8 @@ export default class CountMembersByRole {
             },
             body: JSON.stringify(payload)
         })
+
+        logger.debug(JSON.stringify(payload))
 
         if (!res.ok) {
             logger.error(`Erro ao enviar dados para o n8n: ${res.status} - ${res.statusText} - ${res.url}`)
