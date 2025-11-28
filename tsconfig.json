@@ -1,13 +1,12 @@
 {
   "compilerOptions": {
-    "target": "es6",
-    "module": "nodenext",
+    "target": "es2024",
+    "module": "node20",
     "moduleResolution": "nodenext",
     "rootDir": "./src",
     "outDir": "./dist",
-    "allowJs": true,
-    "checkJs": false,
-    "strict": false
+    "allowJs": false,
+    "strict": true
   },
   "include": [
     "./src/**/*"
