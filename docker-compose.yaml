@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: node .
+    command: npm run start
     working_dir: /bot
     env_file:
       - ".env"
