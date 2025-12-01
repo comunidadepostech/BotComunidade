@@ -1,7 +1,8 @@
 import logger from "../../utils/logger.js";
 import getTimeUntilNextMonth from "../../utils/getTimeUntilNextMonth.js";
+import safeSetTimeout from "../../utils/safeTimeout.js";
 import { Bot } from "../../bot.js";
-import { Guild } from "discord.js";
+import {Collection, Guild, GuildMember, Role} from "discord.js";
 
 export default class CountMembersByRole {
     bot: Bot
@@ -13,8 +14,8 @@ export default class CountMembersByRole {
     }
 
     async #getMembersByRole(guild: Guild) {
-        const roles = await guild.roles.fetch();
-        const members = await guild.members.fetch();
+        const roles: Collection<string, Role> = await guild.roles.fetch();
+        const members: Collection<string, GuildMember> = await guild.members.fetch();
 
         interface RoleCount {
             roleName: string;
@@ -57,12 +58,10 @@ export default class CountMembersByRole {
             body: JSON.stringify(payload)
         })
 
-        logger.debug(JSON.stringify(payload))
-
         if (!res.ok) {
             logger.error(`Erro ao enviar dados para o n8n: ${res.status} - ${res.statusText} - ${res.url}`)
         }
 
-        setTimeout(() => this.execute().catch((error) => logger.error(`Erro ao executar ${this.name}: ${error}`)), getTimeUntilNextMonth(this.name))
+        safeSetTimeout(() => this.execute().catch((error) => logger.error(`Erro ao executar ${this.name}: ${error}`)), getTimeUntilNextMonth(this.name))
     }
 }

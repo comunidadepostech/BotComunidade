@@ -1,5 +1,5 @@
 import { BaseCommand } from './baseCommand.js';
-import { MessageFlags, PermissionFlagsBits, SlashCommandBuilder, ChannelType, ChatInputCommandInteraction, TextChannel } from 'discord.js';
+import { MessageFlags, PermissionFlagsBits, SlashCommandBuilder, ChannelType, ChatInputCommandInteraction, TextChannel, GuildBasedChannel, Attachment, GuildTextBasedChannel } from 'discord.js';
 import logger from "../utils/logger.js";
 import { Bot } from '../bot.js';
 
@@ -54,10 +54,10 @@ export class EchoCommand extends BaseCommand {
         try {
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-            const message = interaction.options.getString("message", true);
+            const message: string = interaction.options.getString("message", true);
             const echoChannel: TextChannel = interaction.options.getChannel("channel", true);
-            const attachment = interaction.options.getAttachment("attachment");
-            const attachment2 = interaction.options.getAttachment("attachment2");
+            const attachment: Attachment | null = interaction.options.getAttachment("attachment");
+            const attachment2: Attachment | null = interaction.options.getAttachment("attachment2");
             const isOnlyForThisChannel = interaction.options.getInteger("only-for-this-channel") === 1;
 
             const files = [];
@@ -76,26 +76,22 @@ export class EchoCommand extends BaseCommand {
             } else {
                 // Cenário 2: Enviar para todos os canais com o mesmo nome
                 const targetChannelName = echoChannel.name;
-                const guilds = this.bot.client.guilds.cache;
+                const guilds = this.bot.client.guilds.cache.values();
                 const sendPromises = [];
 
                 // Itera sobre todos os servidores que o bot está
-                for (const partialGuild of guilds.values()) {
-                    const guild = await partialGuild.fetch();
-                    const channels = guild.channels.cache;
+                for (const partialGuild of guilds) {
+                    const channels = partialGuild.channels.cache;
 
-                    // Filtra os canais pelo nome e tipo (texto)
-                    const matchingChannels = channels.filter(
-                        ch => ch.name === targetChannelName && ch.isTextBased()
-                    );
+                    // Filtra os canais pelo nome
+                    const matchingChannels = channels.filter(channel => channel.name === targetChannelName);
 
                     // Adiciona as promessas de envio a um array
                     for (const channel of matchingChannels.values()) {
-                        if (channel.isTextBased()) {
-                            sendPromises.push(
-                                channel.send(payload).catch((err: any) => logger.error(`Falha ao enviar para ${channel.id} em ${guild.name}:\n${err}`))
-                            );
-                        }
+                        if (!channel.isTextBased()) continue // não precisa disso mas o TS reclama se não colocar :)
+                        sendPromises.push(
+                            channel.send(payload).catch((err: any) => logger.error(`Falha ao enviar para ${channel.id} em ${partialGuild.name}:\n${err}`))
+                        );
                     }
                 }
 

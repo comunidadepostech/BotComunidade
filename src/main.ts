@@ -6,7 +6,7 @@ import fs from "node:fs"
 
 // Carrega as variáveis de ambiente
 if (fs.existsSync("./.env")) process.loadEnvFile("./.env")
-GlobalFonts.registerFromPath("./assets/Coolvetica Hv Comp.otf", "normalFont");
+GlobalFonts.registerFromPath("./src/assets/Coolvetica Hv Comp.otf", "normalFont");
 
 async function main() {
     const bot = new Bot();
@@ -35,10 +35,10 @@ async function main() {
     }
     logger.log("Todas as flags foram verificadas")
 
+    await bot.build().then(() => logger.log('Bot totalmente carregado'))
+
     await bot.scheduler.start()
     logger.log("Scheduler iniciado")
-
-    await bot.build().then(() => logger.log('Bot totalmente carregado'))
 
     // Configuração do Desligamento Seguro (Graceful Shutdown)
     const shutdown = async (signal: string) => {

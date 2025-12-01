@@ -64,7 +64,7 @@ async function createScheduledEvent(bot: Bot, eventData: { turma: string, nomeEv
         entityType: 2,
         channel: voiceChannel.id,
         description: description,
-        image: './assets/postech.png'
+        image: './src/assets/postech.png'
     });
 }
 
