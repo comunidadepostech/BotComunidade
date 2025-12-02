@@ -2,7 +2,7 @@ import { BaseCommand } from './baseCommand.js';
 import {MessageFlags, PermissionFlagsBits, SlashCommandBuilder, ChatInputCommandInteraction} from 'discord.js';
 
 // Comando de teste, serve para saber se o ‘Bot’ está a responder para ajudar na resolução de problemas
-export class PingCommand extends BaseCommand {
+export default class PingCommand extends BaseCommand {
     constructor() {
         super(
             new SlashCommandBuilder()

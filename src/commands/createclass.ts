@@ -15,12 +15,12 @@ import {
     GuildBasedChannel,
     CategoryChannel
 } from 'discord.js';
-import { Bot } from '../bot.js';
+import Bot from '../bot.js';
 
 
 // Comando de teste, serve para saber se o ‘Bot’ está a responder para ajudar na resolução de problemas
-export class CreateClassCommand extends BaseCommand {
-    bot: Bot;
+export default class CreateClassCommand extends BaseCommand {
+    readonly bot: Bot;
     constructor(bot: Bot) {
         super(
             new SlashCommandBuilder()

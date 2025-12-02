@@ -1,6 +1,6 @@
 import {serverNames} from "../../utils/servers.js";
 import logger from "../../utils/logger.js";
-import {Bot} from "../../bot.js";
+import Bot from "../../bot.js";
 import { Request, Response } from 'express';
 import { ChannelType } from "discord.js";
 

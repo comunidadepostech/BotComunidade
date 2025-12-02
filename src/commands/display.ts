@@ -1,9 +1,9 @@
 import { BaseCommand } from './baseCommand.js';
 import {MessageFlags, PermissionFlagsBits, SlashCommandBuilder, ChatInputCommandInteraction} from 'discord.js';
-import { Bot } from '../bot.js';
+import Bot from '../bot.js';
 
 // Display serve para exibir os convites ativos do servidor
-export class DisplayCommand extends BaseCommand {
+export default class DisplayCommand extends BaseCommand {
     bot: Bot;
     constructor(bot: Bot) {
         super(

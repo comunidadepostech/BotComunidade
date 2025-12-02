@@ -15,6 +15,7 @@ export class BaseCommand {
     }
 
     async execute(interaction: ChatInputCommandInteraction) {
+        await interaction.reply("Comando vazio")
         throw new Error(`O comando ${this.name} precisa de um método execute()!`);
     }
 }

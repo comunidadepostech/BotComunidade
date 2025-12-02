@@ -1,8 +1,8 @@
 import {Events, Guild} from "discord.js";
 import logger from "../../utils/logger.js";
-import { Bot } from "../../bot.js";
+import Bot from "../../bot.js";
 
-export class GuildCreate {
+export default class GuildCreate {
     name: string;
     once: boolean;
     bot: Bot;

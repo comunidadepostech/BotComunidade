@@ -3,7 +3,7 @@ import CountMembersByRole from "./tasks/countMemberByRole.js";
 import logger from "../utils/logger.js";
 import getTimeUntilNextMonth from "../utils/getTimeUntilNextMonth.js";
 import safeSetTimeout from "../utils/safeTimeout.js";
-import {Bot} from "../bot.js";
+import Bot from "../bot.js";
 
 export default class Scheduler {
     tasks: { instance: any; timeInMinutes: number; }[]

@@ -1,7 +1,7 @@
 import {Events} from "discord.js";
 import logger from "../../utils/logger.js";
 
-export class ClientReady {
+export default class ClientReady {
     name: string;
     once: boolean;
     constructor() {

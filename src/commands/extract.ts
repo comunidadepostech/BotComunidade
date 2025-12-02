@@ -2,7 +2,7 @@ import { BaseCommand } from './baseCommand.js';
 import {AttachmentBuilder, MessageFlags, PermissionFlagsBits, SlashCommandBuilder, ChatInputCommandInteraction, TextChannel} from 'discord.js';
 
 // Comando de teste, serve para saber se o ‘Bot’ está a responder para ajudar na resolução de problemas
-export class ExtractCommand extends BaseCommand {
+export default class ExtractCommand extends BaseCommand {
     constructor() {
         super(
             new SlashCommandBuilder()

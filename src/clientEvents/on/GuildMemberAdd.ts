@@ -1,10 +1,10 @@
 import { createCanvas, loadImage } from "@napi-rs/canvas";
 import { request } from "undici";
 import { AttachmentBuilder, TextChannel, Events, GuildBasedChannel, GuildMember } from "discord.js";
-import { Bot } from "../../bot.js";
+import Bot from "../../bot.js";
 import path from 'node:path';
 
-export class GuildMemberAdd {
+export default class GuildMemberAdd {
     bot: Bot
     name: string
     once: boolean

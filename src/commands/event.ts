@@ -1,8 +1,7 @@
 import { BaseCommand } from './baseCommand.js';
 import {MessageFlags, PermissionFlagsBits, SlashCommandBuilder, ChatInputCommandInteraction, Attachment } from 'discord.js';
 
-// Comando de teste, serve para saber se o ‘Bot’ está a responder para ajudar na resolução de problemas
-export class EventCommand extends BaseCommand {
+export default class EventCommand extends BaseCommand {
     constructor() {
         super (
             new SlashCommandBuilder()

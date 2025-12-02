@@ -1,7 +1,7 @@
 import express from 'express';
 import handleCreateEvent from './services/createEvent.js';
 import logger from "../utils/logger.js";
-import { Bot } from "../bot.js";
+import Bot from "../bot.js";
 
 // Para adicionar outro serviço em um novo endpoint, faça o seguinte:
 // 1. Crie o arquivo com a lógica (ex: './updateEvent.js')

@@ -1,8 +1,8 @@
 import {Events, CategoryChannel, ChannelType, Message, Role} from "discord.js";
 import logger from "../../utils/logger.js";
-import { Bot } from "../../bot.js";
+import Bot from "../../bot.js";
 
-export class MessageCreate {
+export default class MessageCreate {
     name: string;
     once: boolean;
     bot: Bot;

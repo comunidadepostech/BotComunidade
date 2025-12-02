@@ -2,7 +2,7 @@ import { BaseCommand } from './baseCommand.js';
 import {MessageFlags, PermissionFlagsBits, PollLayoutType, SlashCommandBuilder, ChatInputCommandInteraction, ChannelType, PollQuestionMedia} from 'discord.js';
 
 // Poll serve para criar uma enquete
-export class PollCommand extends BaseCommand {
+export default class PollCommand extends BaseCommand {
     constructor() {
         super(
             new SlashCommandBuilder()

@@ -1,8 +1,8 @@
 import { Events, MessageFlags, ChatInputCommandInteraction } from "discord.js";
 import logger from "../../utils/logger.js";
-import { Bot } from "../../bot.js";
+import Bot from "../../bot.js";
 
-export class InteractionCreate {
+export default class InteractionCreate {
     name: string;
     once: boolean;
     bot: Bot;

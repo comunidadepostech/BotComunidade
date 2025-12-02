@@ -185,6 +185,20 @@ Funciona apenas para servidores comuns.
 **Exemplos de uso**:
 - /disable ``role: @Estudantes 11SOAT``
 
+
+### `/exec`
+Executa algum evento do scheduler.
+
+Funciona apenas para servidores comuns.
+
+**Permissão necessária**: Administrador
+
+**Parâmetros**:
+- `command` (obrigatório): Comando a ser executado
+
+**Exemplos de uso**:
+- /exec ``command: Checagem de eventos do servidor``
+
 ---
 
 ## Funcionalidades Automáticas

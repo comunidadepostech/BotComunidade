@@ -1,16 +1,17 @@
-import { CreateClassCommand } from "./createclass.js";
-import { PingCommand } from "./ping.js";
-import { InviteCommand } from "./invite.js";
-import { EchoCommand } from "./echo.js";
-import { DisplayCommand } from "./display.js";
-import { PollCommand } from "./poll.js";
-import { ExtractCommand } from "./extract.js";
-import { EventCommand } from "./event.js";
-import { DisableCommand } from "./disable.js";
-import { UpdateFlagCommand } from "./updateflag.js";
-import { ViewFlagsCommand } from "./viewflags.js";
+import CreateClassCommand from "./createclass.js";
+import PingCommand from "./ping.js";
+import InviteCommand from "./invite.js";
+import EchoCommand from "./echo.js";
+import DisplayCommand from "./display.js";
+import PollCommand from "./poll.js";
+import ExtractCommand from "./extract.js";
+import EventCommand from "./event.js";
+import DisableCommand from "./disable.js";
+import UpdateFlagCommand from "./updateflag.js";
+import ViewFlagsCommand from "./viewflags.js";
+import ExecCommand from "./exec.js";
 
-import { Bot } from "../bot.js";
+import Bot from "../bot.js";
 
 export const commands: Function = (bot: Bot): Array<Object> => [
     new CreateClassCommand(bot),
@@ -23,5 +24,6 @@ export const commands: Function = (bot: Bot): Array<Object> => [
     new EventCommand(),
     new DisableCommand(),
     new UpdateFlagCommand(bot),
-    new ViewFlagsCommand(bot)
+    new ViewFlagsCommand(bot),
+    new ExecCommand(bot)
 ]

@@ -1,10 +1,10 @@
 import { BaseCommand } from './baseCommand.js';
 import {MessageFlags, PermissionFlagsBits, SlashCommandBuilder, ChatInputCommandInteraction, ChannelType, TextChannel, Role} from 'discord.js';
-import { Bot } from '../bot.js';
+import Bot from '../bot.js';
 
 // Comando de invite, cria um convite que pode ser vinculado a um cargo e a um canal específico.
-export class InviteCommand extends BaseCommand {
-    bot: Bot
+export default class InviteCommand extends BaseCommand {
+    readonly bot: Bot
     constructor(bot: Bot) {
         super(
             new SlashCommandBuilder()

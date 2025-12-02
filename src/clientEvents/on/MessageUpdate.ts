@@ -1,9 +1,9 @@
 import {Events, TextChannel, Message, PartialMessage} from "discord.js";
 import crypto from "node:crypto";
-import {Bot} from "../../bot.js";
+import Bot from "../../bot.js";
 
 
-export class MessageUpdate {
+export default class MessageUpdate {
     name: string;
     once: boolean;
     bot: Bot;

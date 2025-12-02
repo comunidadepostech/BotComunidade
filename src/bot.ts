@@ -10,7 +10,7 @@ import { commands } from "./commands/commands.js";
 import { BaseCommand } from "./commands/baseCommand.js";
 
 
-export class Bot {
+export default class Bot {
     public client: Client;
     public db: MySQLDatabase;
     public commands: Map<string, BaseCommand>;
@@ -48,6 +48,7 @@ export class Bot {
             extract: true,
             event: true,
             disable: false,
+            exec: false,
 
             //eventos
             checkEvents: false,
@@ -110,7 +111,7 @@ export class Bot {
             if (command.alwaysEnabled) {
                 return true;
             }
-            return guildFlags[command.name] === true;
+            return guildFlags[command.name];
         });
 
         // Pega os '.build'

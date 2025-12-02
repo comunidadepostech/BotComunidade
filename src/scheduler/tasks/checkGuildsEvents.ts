@@ -1,5 +1,5 @@
 import logger from "../../utils/logger.js";
-import { Bot } from "../../bot.js";
+import Bot from "../../bot.js";
 import { Guild, OverwriteResolvable, TextChannel, GuildScheduledEvent, Role, Channel, Collection, ChannelType, VoiceChannel } from "discord.js";
 
 export default class CheckGuildsEvents {

@@ -1,7 +1,7 @@
 import {Events} from "discord.js";
 import logger from "../../utils/logger.js";
 
-export class Err {
+export default class Err {
     name: string;
     once: boolean;
     constructor(){

@@ -125,24 +125,29 @@ export class MySQLDatabase {
     async checkFlags(flags: Record<string, any>, defaultFlags: Record<string, any>, client: Client): Promise<boolean> {
         await this.#ensureConnection();
 
+        logger.log("Verificando flags...")
+
         if (Object.keys(flags).length === 0) {
             for (const [, guild] of client.guilds.cache) {
-                logger.debug(`DEBUG - Salvando flags padrão para ${guild.id}\n${JSON.stringify(defaultFlags)}`)
+                logger.debug(`Salvando flags padrão para ${guild.id}\n${JSON.stringify(defaultFlags)}`)
                 await this.saveFlags(guild.id, defaultFlags)
             }
 
             return true
         }
 
-        if (Object.keys(flags[Object.keys(flags)[0]]).join() !== Object.keys(defaultFlags).join()) {
-            let differences = Object.keys(defaultFlags).filter(x => !Object.keys(flags[Object.keys(flags)[0]]).includes(x))
+        const firstGuildId = Object.keys(flags)[0];
+        const guildFlagKeys = new Set(Object.keys(flags[firstGuildId]));
+        const defaultFlagKeys = new Set(Object.keys(defaultFlags));
 
-            for (let difference of differences) {
-                logger.debug(`DEBUG - Nova flag detectada: ${difference}`)
-                await this.createNewFlag(difference, defaultFlags[difference])
+        const differences = [...defaultFlagKeys].filter(key => !guildFlagKeys.has(key));
+
+        if (differences.length > 0) {
+            for (const difference of differences) {
+                logger.debug(`Nova flag detectada: ${difference}`);
+                await this.createNewFlag(difference, defaultFlags[difference]);
             }
-
-            return true
+            return true;
         }
 
         return false

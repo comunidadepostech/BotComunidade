@@ -1,16 +1,17 @@
 import logger from "../../utils/logger.js";
 import getTimeUntilNextMonth from "../../utils/getTimeUntilNextMonth.js";
 import safeSetTimeout from "../../utils/safeTimeout.js";
-import { Bot } from "../../bot.js";
+import Bot from "../../bot.js";
 import {Collection, Guild, GuildMember, Role} from "discord.js";
 
 export default class CountMembersByRole {
     bot: Bot
     name: string
-
-    constructor(bot: Bot) {
+    debug: boolean
+    constructor(bot: Bot, debug: boolean = false) {
         this.bot = bot
         this.name = import.meta.url.split('/').pop()!.replace('.js', '')
+        this.debug = debug
     }
 
     async #getMembersByRole(guild: Guild) {
@@ -32,6 +33,8 @@ export default class CountMembersByRole {
     }
 
     async execute() {
+        logger.debug("Iniciando contagem de membros")
+
         interface RoleCount {
             roleName: string;
             count: number;
@@ -62,6 +65,10 @@ export default class CountMembersByRole {
             logger.error(`Erro ao enviar dados para o n8n: ${res.status} - ${res.statusText} - ${res.url}`)
         }
 
-        safeSetTimeout(() => this.execute().catch((error) => logger.error(`Erro ao executar ${this.name}: ${error}`)), getTimeUntilNextMonth(this.name))
+        logger.debug(`Contagem de membros executada, dados enviados para o n8n: ${payload}`)
+
+        if (!this.debug) {
+            safeSetTimeout(() => this.execute().catch((error) => logger.error(`Erro ao executar ${this.name}: ${error}`)), getTimeUntilNextMonth(this.name))
+        }
     }
 }

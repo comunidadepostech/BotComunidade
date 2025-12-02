@@ -1,10 +1,10 @@
 import { BaseCommand } from './baseCommand.js';
 import { MessageFlags, PermissionFlagsBits, SlashCommandBuilder, ChannelType, ChatInputCommandInteraction, TextChannel, GuildBasedChannel, Attachment, GuildTextBasedChannel } from 'discord.js';
 import logger from "../utils/logger.js";
-import { Bot } from '../bot.js';
+import Bot from '../bot.js';
 
 // Echo serve para replicar uma mensagem para um ou mais canais definidos pelo utilizador
-export class EchoCommand extends BaseCommand {
+export default class EchoCommand extends BaseCommand {
     bot: Bot;
     constructor(bot: Bot) {
         super(

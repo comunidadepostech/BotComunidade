@@ -1,5 +1,5 @@
 import {GlobalFonts} from '@napi-rs/canvas'
-import {Bot} from "./bot.js";
+import Bot from "./bot.js";
 import logger from "./utils/logger.js";
 import fs from "node:fs"
 
@@ -7,6 +7,7 @@ import fs from "node:fs"
 // Carrega as variáveis de ambiente
 if (fs.existsSync("./.env")) process.loadEnvFile("./.env")
 GlobalFonts.registerFromPath("./src/assets/Coolvetica Hv Comp.otf", "normalFont");
+logger.log("Fonte e variaveis de ambiente carregadas com sucesso. Iniciando o bot...")
 
 async function main() {
     const bot = new Bot();
