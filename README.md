@@ -18,6 +18,8 @@ Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades �
   - [/extract](#extract)
   - [/event](#event)
   - [/disable](#disable)
+  - [/exec](#exec)
+  - [/endpoll](#endpoll)
 - [Funcionalidades Automáticas](#funcionalidades-automáticas)
   - [Mensagens de Boas-Vindas](#sistema-de-boas-vindas)
   - [Armazenamento de enquetes](#atualização-constante-de-invites)
@@ -198,6 +200,20 @@ Funciona apenas para servidores comuns.
 
 **Exemplos de uso**:
 - /exec ``command: Checagem de eventos do servidor``
+
+
+### `/endpoll`
+Finaliza uma enquete enviada pelo bot
+
+Funciona em qualquer servidor
+
+**Permissão necessária**: Administrador
+
+**Parâmetros**:
+- `id` (obrigatório): ID da mensagem da enquete
+
+**Exemplos de uso**:
+- /endpoll ``id: 1445759167028789278``
 
 ---
 

@@ -34,6 +34,8 @@ export default class ExecCommand extends BaseCommand {
 
     // Sobrescreve o execute do BaseCommand
     async execute(interaction: ChatInputCommandInteraction): Promise<void> {
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral })
+
         const command: string = interaction.options.getString('comando')!;
 
         const avaliableComands = [
@@ -46,9 +48,9 @@ export default class ExecCommand extends BaseCommand {
                 await avaliableCommand.execute()
                     .catch(async (error: any) => {
                         logger.error(`Erro ao executar ${avaliableCommand.constructor.name} através de /exec: ${error}`)
-                        await interaction.reply({ content: "❌ Erro ao executar comando", flags: MessageFlags.Ephemeral })
+                        await interaction.editReply({ content: "❌ Erro ao executar comando" })
                     })
-                    .then(async () => await interaction.reply({ content: "✅ Execução feita!", flags: MessageFlags.Ephemeral }))
+                    .then(async () => await interaction.editReply({ content: "✅ Execução feita!" }))
                 return;
             }
         }

@@ -49,6 +49,7 @@ export default class Bot {
             event: true,
             disable: false,
             exec: false,
+            endpoll: true,
 
             //eventos
             checkEvents: false,

@@ -1,6 +1,7 @@
 import {Events, TextChannel, Message, PartialMessage} from "discord.js";
 import crypto from "node:crypto";
 import Bot from "../../bot.js";
+import logger from "../../utils/logger.js";
 
 
 export default class MessageUpdate {
@@ -40,7 +41,7 @@ export default class MessageUpdate {
                 duration: `${((now - expirity) / 1000 / 60 / 60).toFixed(0)}` // horas
             };
 
-            await fetch(process.env.N8N_ENDPOINT + '/salvarEnquete', {
+            const res = await fetch(process.env.N8N_ENDPOINT + '/salvarEnquete', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -48,6 +49,10 @@ export default class MessageUpdate {
                 },
                 body: JSON.stringify(body)
             })
+
+            if (!res.ok) {
+                logger.error(`Falha ao enviar enquete para o n8n: ${res.status}`)
+            }
         }
     }
 }

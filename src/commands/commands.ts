@@ -10,6 +10,7 @@ import DisableCommand from "./disable.js";
 import UpdateFlagCommand from "./updateflag.js";
 import ViewFlagsCommand from "./viewflags.js";
 import ExecCommand from "./exec.js";
+import EndPollCommand from "./endpoll.js";
 
 import Bot from "../bot.js";
 
@@ -25,5 +26,6 @@ export const commands: Function = (bot: Bot): Array<Object> => [
     new DisableCommand(),
     new UpdateFlagCommand(bot),
     new ViewFlagsCommand(bot),
-    new ExecCommand(bot)
+    new ExecCommand(bot),
+    new EndPollCommand(bot)
 ]
