@@ -36,8 +36,16 @@ export default class Webhook {
             }
         });
 
-        this.app.post('/enviarForms', (req, res) => {
-            handleSendLivePoll(req.body.turma);
+        this.app.post('/enviarForms', async (req, res) => {
+            try {
+                await handleSendLivePoll(bot, req);
+                res.status(201).json({ status: 'sucesso' });
+            } catch (error: any) {
+                logger.error(`Erro ao enviar link de feedback: ${error}`);
+                if (!res.headersSent) {
+                    res.status(500).json({ status: 'erro', mensagem: JSON.stringify(error.message.json, null, 2) });
+                }
+            }
         });
 
         // Inicia o servidor para ouvir na porta definida
