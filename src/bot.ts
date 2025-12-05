@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Guild, ClientEvents } from "discord.js";
+import { Client, GatewayIntentBits, Guild, ClientEvents, Partials, Options } from "discord.js";
 
 import { MySQLDatabase } from "./database.js";
 import Webhook from "./webhooks/webhook.js";
@@ -34,7 +34,16 @@ export default class Bot {
             rest: {
                 timeout: 10000,
                 retries: 1
-            }
+            },
+            partials: [
+                Partials.Message,
+                Partials.Channel,
+                Partials.Reaction
+            ],
+            makeCache: Options.cacheWithLimits({
+                ...Options.DefaultMakeCacheSettings,
+                MessageManager: 20000,
+            })
         });
         this.db = new MySQLDatabase()
         this.commands = new Map(commands(this).map((cmd: BaseCommand) => [cmd.name, cmd]));
@@ -151,10 +160,23 @@ export default class Bot {
         for (const event of this.events) {
             if (event.once) {
                 // Para eventos como 'ClientReady'
-                this.client.once(event.name, async (...args: ClientEvents[]) => await event.execute(...args));
+                this.client.once(event.name, async (...args: ClientEvents[]) => {
+                    try {
+                        await event.execute(...args)
+                    } catch (error: any) {
+                        logger.error(error as string)
+                    }
+
+                })
             } else {
                 // Para eventos como 'InteractionCreate'
-                this.client.on(event.name, async (...args: ClientEvents[]) => await event.execute(...args));
+                this.client.on(event.name, async (...args: ClientEvents[]) => {
+                    try {
+                        await event.execute(...args)
+                    } catch (error: any) {
+                        logger.error(error as string)
+                    }
+                });
             }
         }
         logger.log("Eventos carregados")

@@ -205,7 +205,7 @@ Funciona apenas para servidores comuns.
 ### `/endpoll`
 Finaliza uma enquete enviada pelo bot
 
-Funciona em qualquer servidor
+Funciona em qualquer servidor, mas apenas quando usado no mesmo canal em que a enquete foi criada
 
 **Permissão necessária**: Administrador
 

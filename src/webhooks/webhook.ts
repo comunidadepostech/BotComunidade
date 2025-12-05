@@ -2,6 +2,7 @@ import express from 'express';
 import handleCreateEvent from './services/createEvent.js';
 import logger from "../utils/logger.js";
 import Bot from "../bot.js";
+import handleSendLivePoll from "./services/sendLivePoll.js";
 
 // Para adicionar outro serviço em um novo endpoint, faça o seguinte:
 // 1. Crie o arquivo com a lógica (ex: './updateEvent.js')
@@ -13,7 +14,7 @@ import Bot from "../bot.js";
 
 export default class Webhook {
     private app: express.Application;
-    private port: string;
+    readonly port: string;
     constructor() {
         this.app = express();
         this.port = process.env.PRIMARY_WEBHOOK_PORT!;
@@ -22,15 +23,27 @@ export default class Webhook {
     start(bot: Bot) {
         this.app.use(express.json());
 
-        this.app.post('/criarEvento', (req, res) => {
-            handleCreateEvent(req, res, bot);
+        this.app.post('/criarEvento', async (req, res) => {
+            try {
+                await handleCreateEvent(req, res, bot);
+                logger.log(`Evento criado com sucesso`);
+                res.status(201).json({ status: 'sucesso' });
+            } catch (error: any) {
+                logger.error(`Erro ao cadastrar evento: ${error}`);
+                if (!res.headersSent) {
+                    res.status(500).json({ status: 'erro', mensagem: JSON.stringify(error.message.json, null, 2) });
+                }
+            }
+        });
+
+        this.app.post('/enviarForms', (req, res) => {
+            handleSendLivePoll(req.body.turma);
         });
 
         // Inicia o servidor para ouvir na porta definida
         this.app.listen(Number(this.port), "0.0.0.0", () => {
             logger.log(`Webhook iniciado na porta: ${this.port}`);
         });
-
     }
 }
 

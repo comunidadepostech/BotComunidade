@@ -27,7 +27,7 @@ export default class MessageCreate {
             interaction.webhookId ||
             !interaction.content?.trim() ||
             interaction.content.match(/^<@!?\d+>$/) ||
-            interaction.content.startsWith('/'),
+            interaction.content.startsWith('/') ||
             !interaction.guild
         ) return;
 
