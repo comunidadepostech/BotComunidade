@@ -65,7 +65,8 @@ export default class Bot {
             saveMembers: false,
             saveInteractions: false,
             savePolls: false,
-            sendWelcomeMessage: false
+            sendWelcomeMessage: false,
+            sendLiveForms: false
         }
         this.flags = {}
         this.events = events(this)
