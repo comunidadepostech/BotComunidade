@@ -2,14 +2,14 @@ import {serverNames} from "../../utils/servers.js";
 import logger from "../../utils/logger.js";
 import Bot from "../../bot.js";
 import { Request, Response } from 'express';
-import { ChannelType } from "discord.js";
+import {ChannelType, GuildScheduledEvent} from "discord.js";
 
 
 
 // Para testes use o seguinte comando (modifique-o como quiser e lembre-se de ter a turma "test" cadastrada):
 // curl -X POST localhost/criarEvento -H "Content-Type: application/json" -d '{"turma": "test","nomeEvento": "Aula de Teste via API","tipo": "Live","data_hora": "2025-12-20T19:00:00-03:00","fim": "2025-12-20T21:00:00-03:00","link": "https://meet.google.com/seu-link-da-aula"}'
 
-async function createScheduledEvent(bot: Bot, eventData: { turma: string, nomeEvento: string, tipo: string, data_hora: string, link: string, fim: string }) {
+async function createScheduledEvent(bot: Bot, eventData: { turma: string, nomeEvento: string, tipo: string, data_hora: string, link: string, fim: string }): Promise<GuildScheduledEvent> {
     const { turma, nomeEvento, tipo, data_hora, link, fim } = eventData
 
     // Discord não permite cadastrar eventos com o nome maior que 100 caracteres
@@ -70,5 +70,5 @@ async function createScheduledEvent(bot: Bot, eventData: { turma: string, nomeEv
 
 export default async function handleCreateEvent(req: Request, res: Response, bot: Bot) {
     logger.debug(`Dados recebidos para criar evento: ${JSON.stringify(req.body)}`)
-    await createScheduledEvent(bot, req.body);
+    return await createScheduledEvent(bot, req.body).then(event => event.id)
 }

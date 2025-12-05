@@ -25,9 +25,9 @@ export default class Webhook {
 
         this.app.post('/criarEvento', async (req, res) => {
             try {
-                await handleCreateEvent(req, res, bot);
+                const eventID: string = await handleCreateEvent(req, res, bot);
                 logger.log(`Evento criado com sucesso`);
-                res.status(201).json({ status: 'sucesso' });
+                res.status(201).json({ status: 'sucesso', eventID: eventID});
             } catch (error: any) {
                 logger.error(`Erro ao cadastrar evento: ${error}`);
                 if (!res.headersSent) {
