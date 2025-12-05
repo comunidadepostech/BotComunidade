@@ -42,18 +42,22 @@ export default class CreateClassCommand extends BaseCommand {
         this.bot = bot
     }
 
-    async #createCategory(interaction: ChatInputCommandInteraction, className: string, guildRoles: Collection<string, Role>): Promise<CategoryChannel> {
-        ["Equipe Pós-Tech", "Talent Lab", "Gestor acadêmico", "Coordenação", "Professores"].forEach(role => {
-            if (!guildRoles.has(role)) {
-                interaction.guild!.roles.create({ name: role })
+    async #createCategory(interaction: ChatInputCommandInteraction, className: string, guildRoles: Collection<string, Role>, newRole: Role): Promise<CategoryChannel> {
+        const roleNames = ["Equipe Pós-Tech", "Talent Lab", "Gestor acadêmico", "Coordenação", "Professores"];
+        for (const roleName of roleNames) {
+            if (!guildRoles.some(role => role.name === roleName)) {
+                await interaction.guild!.roles.create({ name: roleName });
             }
-        })
+        }
+        
+        const updatedGuildRoles = await interaction.guild!.roles.fetch();
+
         return await interaction.guild!.channels.create({
             name: className,
             type: ChannelType.GuildCategory,
             permissionOverwrites: [
                 {
-                id: guildRoles.find((role: Role) => role.name === "Equipe Pós-Tech")!.id,
+                id: updatedGuildRoles.find((role: Role) => role.name === "Equipe Pós-Tech")!.id,
                 allow: [
                     PermissionFlagsBits.ViewChannel,
                     PermissionFlagsBits.SendMessages,
@@ -69,7 +73,7 @@ export default class CreateClassCommand extends BaseCommand {
                 deny: []
             },
             {
-                id: guildRoles.find((role: Role) => role.name === "Talent Lab")!.id,
+                id: updatedGuildRoles.find((role: Role) => role.name === "Talent Lab")!.id,
                 allow: [
                     PermissionFlagsBits.ViewChannel,
                     PermissionFlagsBits.SendMessages,
@@ -85,7 +89,7 @@ export default class CreateClassCommand extends BaseCommand {
                 deny: []
             },
             {
-                id: guildRoles.find((role: Role) => role.name === "Gestor acadêmico")!.id,
+                id: updatedGuildRoles.find((role: Role) => role.name === "Gestor acadêmico")!.id,
                 allow: [
                     PermissionFlagsBits.ViewChannel,
                     PermissionFlagsBits.SendMessages,
@@ -101,7 +105,7 @@ export default class CreateClassCommand extends BaseCommand {
                 deny: []
             },
             {
-                id: guildRoles.find((role: Role) => role.name === "Coordenação")!.id,
+                id: updatedGuildRoles.find((role: Role) => role.name === "Coordenação")!.id,
                 allow: [
                     PermissionFlagsBits.ViewChannel,
                     PermissionFlagsBits.SendMessages,
@@ -117,7 +121,7 @@ export default class CreateClassCommand extends BaseCommand {
                 deny: []
             },
             {
-                id: guildRoles.find((role: Role) => role.name === "Professores")!.id,
+                id: updatedGuildRoles.find((role: Role) => role.name === "Professores")!.id,
                 allow: [
                     PermissionFlagsBits.ViewChannel,
                     PermissionFlagsBits.SendMessages,
@@ -133,11 +137,10 @@ export default class CreateClassCommand extends BaseCommand {
                 deny: []
             },
             {
-                id: guildRoles.find((role: Role) => role.name === `Estudantes ${className}`)!.id,
+                id: newRole.id,
                 allow: [PermissionFlagsBits.ViewChannel],
                 deny: [PermissionFlagsBits.SendPolls]
-            }
-            ]
+            }]
         })
     }
 
@@ -449,7 +452,7 @@ export default class CreateClassCommand extends BaseCommand {
        await this.#givePermissionsForDefaultChannels(classRole, channels, faqChannel)
 
         // Cria a categoria da turma
-        const classCategory = await this.#createCategory(interaction, className, roles)
+        const classCategory = await this.#createCategory(interaction, className, roles, classRole)
 
         // Cria os canais da turma
         await this.#createChannels(interaction, className, classCategory)
