@@ -59,6 +59,6 @@ async function main() {
 try {
     await main()
 } catch (error) {
-    logger.error(`ERRO - Falha fatal na inicialização do bot: ${error}`);
+    logger.error(`Falha fatal na inicialização do bot: ${error}`);
     process.exit(1);
 }
