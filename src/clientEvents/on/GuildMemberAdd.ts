@@ -18,7 +18,9 @@ export default class GuildMemberAdd {
 
     // Constroi e envia uma imagem de boas-vindas
     async #sendWelcomeMessage(profile: GuildMember, targetChannel: TextChannel){
-        this.background = await loadImage(path.join(__dirname, "../../assets/wallpaper.png"))
+        if (!this.background) {
+            this.background = await loadImage(path.join(process.cwd(), "src/assets/wallpaper.png"));
+        }
         
         const canvas = createCanvas(1401, 571);
         const context = canvas.getContext('2d');
