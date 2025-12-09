@@ -1,4 +1,4 @@
-import {Events, CategoryChannel, ChannelType, Message, Role} from "discord.js";
+import {Events, CategoryChannel, ChannelType, Message, Role, ForumChannel} from "discord.js";
 import logger from "../../utils/logger.js";
 import Bot from "../../bot.js";
 
@@ -17,7 +17,7 @@ export default class MessageCreate {
             !this.bot.flags[interaction.guildId as string]["saveInteractions"] ||
 
             // Filtra a origem das mensagens
-            ![0, 11, 2, 13].includes(interaction.type)
+            ![ChannelType.GuildText, ChannelType.PublicThread, ChannelType.GuildStageVoice, ChannelType.GuildVoice].includes(interaction.channel.type)
         ) return;
 
         // Ignora mensagens do sistema, bots, webhooks, vazias, apenas menções, comandos ou threads automáticas
@@ -76,14 +76,18 @@ export default class MessageCreate {
             class: null
         };
 
-        if (interaction.channel.type === ChannelType.GuildText) {
-            body.thread = channel.name;
-        } else {
+        if ([ChannelType.GuildText, ChannelType.GuildVoice, ChannelType.GuildStageVoice].includes(interaction.channel.type)) {
             body.channel = channel.name
-        }
-
-        if (channel.parent) {
-            body.class = (this.bot.client.channels.cache.get(channel.parent.id) as CategoryChannel).name
+            body.class = channel.parent?.name
+        } else {
+            body.thread = channel.name
+            body.channel = (this.bot.client.channels.cache.get(channel.parentId) as ForumChannel).name
+            body.class = (
+                this.bot.client.channels.cache.get(
+                    (this.bot.client.channels.cache.get(
+                        channel.parent.id
+                    ) as ForumChannel).parent!.id
+                ) as CategoryChannel).name
         }
 
         const response = await fetch(process.env.N8N_ENDPOINT + '/salvarInteracao', {
