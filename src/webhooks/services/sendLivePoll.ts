@@ -31,12 +31,12 @@ export default async function handleSendLivePoll(bot: Bot, req: any): Promise<vo
     // Busca o cargo da turma
     const role: Role | undefined = guild.roles.cache.find((role: Role) => role.name === `Estudantes ${classNameWithNumber}`)
 
-    for (const channel of guild.channels.cache.values()) {
-        if (channel.name !== "💬│bate-papo") continue // Filtra os canais que não correspondem ao bate papo
+    const channels = guild.channels.cache.filter(channel => channel.name === "💬│bate-papo").values()
 
-        if (!channel.isTextBased()) return // Verificação par ao ts não reclamar
-
+    for (const channel of channels) {
         const parentName: string = guild.channels.cache.get(channel.parentId!)!.name // Busca o nome da turma nas categorias
+
+        if (!channel.isTextBased()) continue
 
         // Verifica se o nome da categoria corresponde ao nome da turma e envia a mensagem
         if (parentName === classNameWithNumber) {
@@ -51,8 +51,8 @@ export default async function handleSendLivePoll(bot: Bot, req: any): Promise<vo
 
             return
         }
-
-        // Se não encontrar nada, devolve um erro
-        throw new Error("Nenhuma categoria com o nome da turma foi encontrado")
     }
+
+    // Se não encontrar nada, devolve um erro
+    throw new Error(`Nenhuma categoria com o nome da turma ${classNameWithNumber} foi encontrado`)
 }
