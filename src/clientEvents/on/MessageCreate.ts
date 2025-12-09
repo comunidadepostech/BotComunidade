@@ -23,8 +23,8 @@ export default class MessageCreate {
         // Ignora mensagens do sistema, bots, webhooks, vazias, apenas menções, comandos ou threads automáticas
         if (
             interaction.author.system ||
-            interaction.author.bot ||
-            interaction.webhookId ||
+            //interaction.author.bot ||
+            //interaction.webhookId ||
             !interaction.content?.trim() ||
             interaction.content.match(/^<@!?\d+>$/) ||
             interaction.content.startsWith('/') ||
