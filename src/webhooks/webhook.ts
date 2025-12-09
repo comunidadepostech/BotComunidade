@@ -3,6 +3,7 @@ import handleCreateEvent from './services/createEvent.js';
 import logger from "../utils/logger.js";
 import Bot from "../bot.js";
 import handleSendLivePoll from "./services/sendLivePoll.js";
+import removeEvent from "./services/removeEvent.js";
 
 // Para adicionar outro serviço em um novo endpoint, faça o seguinte:
 // 1. Crie o arquivo com a lógica (ex: './updateEvent.js')
@@ -42,6 +43,18 @@ export default class Webhook {
                 res.status(201).json({ status: 'sucesso' });
             } catch (error: any) {
                 logger.error(`Erro ao enviar link de feedback: ${error}`);
+                if (!res.headersSent) {
+                    res.status(500).json({ status: 'erro', mensagem: JSON.stringify(error.message.json, null, 2) });
+                }
+            }
+        });
+
+        this.app.post('/removerEvento', async (req, res) => {
+            try {
+                await removeEvent(bot, req);
+                res.status(201).json({ status: 'sucesso' });
+            } catch (error: any) {
+                logger.error(`Erro ao remover evento: ${error}`);
                 if (!res.headersSent) {
                     res.status(500).json({ status: 'erro', mensagem: JSON.stringify(error.message.json, null, 2) });
                 }
