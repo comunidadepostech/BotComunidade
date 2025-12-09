@@ -10,7 +10,7 @@ export default async function handleSendLivePoll(bot: Bot, req: any): Promise<vo
     // Formata o nome da turma com o número da frente
     const classNameWithNumber: string = req.body.evento.split(" - ")[0]
 
-    // Formata o nome da turma sem o númeo (para identificar o servidor)
+    // Formata o nome da turma sem o número (para identificar o servidor)
     const classNameWithoutNumber: string = classNameWithNumber.replaceAll(/\d+/g, '')
 
     // Se o servidor não for encontrado ignora o evento e registra um warn

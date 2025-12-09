@@ -1,6 +1,6 @@
 # Build
-FROM node:22.20.0-alpine
+FROM oven/bun
 WORKDIR /bot
 COPY package.json package-lock.json ./
+RUN bun install
 COPY . .
-RUN npm install

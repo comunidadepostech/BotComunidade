@@ -5,9 +5,9 @@
   "directories": {},
   "type": "module",
   "scripts": {
-    "start": "npm run build && node dist/main.js",
+    "start": "bun run build && bun dist/main.js",
     "test": "",
-    "debug": "npm run build && npm run test",
+    "debug": "bun run build && bun run test",
     "build": "tsc -p tsconfig.json"
   },
   "author": "Comunidade Pos Tech Fiap",
