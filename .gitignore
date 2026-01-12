@@ -1,14 +1,6 @@
 node_modules
-config.json
-test.js
-helpme.txt
 .idea
 .env
-bot_test
-db
-diagram.svg
 logs
 qodana.yaml
-.github
 .git
-dist
