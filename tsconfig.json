@@ -1,14 +1,23 @@
 {
   "compilerOptions": {
-    "target": "es2024",
-    "module": "node20",
-    "moduleResolution": "nodenext",
-    "rootDir": "./src",
-    "outDir": "./dist",
+    "target": "ESNext",
+    "module": "Preserve",
+    "moduleDetection": "force",
     "allowJs": false,
-    "strict": true
-  },
-  "include": [
-    "./src/**/*"
-  ]
+
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "useDefineForClassFields": true,
+    "forceConsistentCasingInFileNames": true
+  }
 }

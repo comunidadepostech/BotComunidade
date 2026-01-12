@@ -1,4 +1,4 @@
-<img src="/src/assets/postech.png"/>
+<img src="/assets/postech.png"/>
 
 # Bot Comunidade Pos Tech
 
