@@ -408,7 +408,7 @@ export default class CreateClassCommand extends BaseCommand {
 
     async #givePermissionsForDefaultChannels(classRole: Role, channels: Collection<string, Channel>, faqChannel: TextChannel): Promise<void> {
         for (const channel of channels.values()) {
-            if (channel.type === ChannelType.GuildText && channel.name === "Alun") {
+            if (channel.type === ChannelType.GuildCategory && channel.name === "Alun") {
                 await channel.permissionOverwrites.edit(classRole, {
                     "ReadMessageHistory": true,
                     "SendMessages": true,
