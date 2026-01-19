@@ -422,6 +422,13 @@ export default class CreateClassCommand extends BaseCommand {
                     "ViewChannel": true,
                     "CreatePublicThreads": true
                 })
+            } else if (channel.type === ChannelType.GuildCategory && channel.name === "Pós Tech") {
+                await channel.permissionOverwrites.edit(classRole, {
+                    "ReadMessageHistory": true,
+                    "SendMessages": false,
+                    "ViewChannel": true,
+                    "CreatePublicThreads": false
+                })
             }
         }
     }
