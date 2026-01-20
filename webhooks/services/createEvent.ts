@@ -66,6 +66,6 @@ export default async function handleCreateEvent(bot: Bot, req): Promise<GuildSch
         entityType: 2,
         channel: voiceChannel.id,
         description: description,
-        image: './src/assets/postech.png'
+        image: './assets/postech.png'
     });
 }
