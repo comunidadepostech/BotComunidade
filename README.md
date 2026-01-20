@@ -21,10 +21,14 @@ Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades �
   - [/exec](#exec)
   - [/endpoll](#endpoll)
 - [Funcionalidades Automáticas](#funcionalidades-automáticas)
-  - [Mensagens de Boas-Vindas](#sistema-de-boas-vindas)
-  - [Armazenamento de enquetes](#atualização-constante-de-invites)
-  - [Atualização constante de invites](#atualização-constante-de-invites)
+  - [Mensagens de Boas-Vindas](#mensagens-de-boas-vindas)
+  - [Armazenamento de enquetes](#armazenamento-de-enquetes)
   - [Criação de invites diretamente no comando /createclass](#criação-de-invites-diretamente-no-comando-createclass)
+  - [Cadastro de eventos com Webhook](#cadastro-de-eventos-com-webhook)
+  - [Envio de enquetes para o n8n automaticamente](#envio-de-enquetes-para-o-webhook-do-n8n-automaticamente)
+  - [Contagem de membros mensalmente](#contagem-de-membros-mensalmente)
+  - [Análise de Grupos de estudos](#análise-de-grupos-de-estudos)
+  
 - [Progresso de desenvolvimento e atualizações](#progresso-de-desenvolvimento-e-atualizações)
 - [Requisição de pull request na branch Stable](#requisição-de-pull-request-na-branch-stable)
 
@@ -238,14 +242,10 @@ Funciona em qualquer servidor, mas apenas quando usado no mesmo canal em que a e
 ### Contagem de membros mensalmente
 - Uma vez por mês o bot conta os membros de cada servidor no formato especificado e envia um POST para o webhook do n8n com os dados.
 
+### Análise de Grupos de estudos
+- O bot é capaz de coletar informações sobre os grupos de estudos quando eles estão a acontecer.
+
 ---
 
 ## Progresso de desenvolvimento e atualizações
 Para saber em detalhes o andamento do desenvolvimento acompanhe a aba de projetos e veja os commits das branches que estão em desenvolvimento.
-
----
-
-## Requisição de pull request na branch `main`
-- Deve-se sempre testar o código por completo antes de fazer a requisição
-- Nunca dê um commit na branch `main` se não for algo extremamente urgente ou um erro despercebido
-- Sempre utilize primeiro branches diferentes para fazer testes e implementar novas funcionalidades e atualizações e apenas após completas e testadas com flags que se deve fazer o Pull Request
