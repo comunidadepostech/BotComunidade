@@ -43,6 +43,9 @@ async function main() {
     await bot.scheduler.start()
     logger.log("Scheduler iniciado")
 
+    // Carrega todos os invites atuais dos servidores
+    bot.invites = await bot.getAllInvites()
+
     // Configuração do Desligamento Seguro (Graceful Shutdown)
     const shutdown = async (signal: string) => {
         logger.log(`Recebido ${signal} - desligando graciosamente...`);

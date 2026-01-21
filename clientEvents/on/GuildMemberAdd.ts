@@ -53,13 +53,35 @@ export default class GuildMemberAdd {
         await targetChannel.send({ content: `Olá, ${profile}! Estamos muito felizes que você entrou na nossa **Comunidade Pos Tech!**`, files: [attachment] });
     }
 
+    getUsedInvite(oldInvites: Map<string, number>, newInvites: Map<string, number>) {
+        for (const [code, uses] of newInvites) {
+            const oldUses = oldInvites.get(code) || 0;
+
+            if (uses > oldUses) {
+                return { code, uses, oldUses };
+            }
+        }
+
+        return null;
+    }
+
     async execute(member: GuildMember){
         if (!this.bot.flags[member.guild.id]["sendWelcomeMessage"]) return;
 
         const welcomeChannel: TextChannel = member.guild.channels.cache.find((channel: GuildBasedChannel): boolean => channel.name === "✨│boas-vindas") as TextChannel;
 
-        if (welcomeChannel) {
-            await this.#sendWelcomeMessage(member, welcomeChannel);
-        }
+        if (welcomeChannel) await this.#sendWelcomeMessage(member, welcomeChannel);
+
+        const updatedInvites = await this.bot.getAllInvites(member.guild)
+        const usedInvite = this.getUsedInvite(this.bot.invites.get(member.guild.id)!, updatedInvites as Map<string, number>)
+        if (!usedInvite) return;
+
+        const roleID = await this.bot.db.getRoleIDFromInvite(usedInvite.code)
+        if (!roleID) return;
+
+        const role = member.guild.roles.cache.get(roleID);
+        if (!role) return;
+
+        await member.roles.add(role)
     }
 }

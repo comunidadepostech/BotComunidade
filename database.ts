@@ -2,6 +2,9 @@ import mysql, { RowDataPacket } from "mysql2/promise";
 import logger from "./utils/logger.js";
 import { Client } from "discord.js";
 
+type InviteCode = string
+type RoleID = string
+
 export class MySQLDatabase {
     #client: mysql.Connection | null = null
     #url: string | null = null
@@ -39,12 +42,12 @@ export class MySQLDatabase {
         await this.#client!.query(`INSERT INTO invites (invite, role, server_id) VALUES (?, ?, ?)`, [invite, role, serverId]);
     }
 
-    async getInvite(invite: string): Promise<RowDataPacket | null> {
+    async getRoleIDFromInvite(invite: string): Promise<RoleID | null> {
         await this.#ensureConnection();
 
-        const [rows] = await this.#client!.query<RowDataPacket[]>(`SELECT * FROM invites WHERE invite = ?`, [invite]);
+        const [rows] = await this.#client!.query(`SELECT * FROM invites WHERE invite = ?`, [invite]);
 
-        return rows[0] || null;
+        return rows[0].role || null;
     }
 
     async deleteInvite(invite: string): Promise<void> {
