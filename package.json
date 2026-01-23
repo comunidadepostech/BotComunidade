@@ -1,6 +1,6 @@
 {
   "name": "bot-comunidade",
-  "version": "1.2.1",
+  "version": "1.3.1",
   "author": "Comunidade Pos Tech Fiap",
   "description": "",
   "main": "main.ts",
@@ -11,7 +11,7 @@
     "discord.js": "^14.21.0",
     "express": "^5.2.1",
     "mysql2": "^3.15.3",
-    "undici": "^7.16.0"
+    "undici": "7.18.2"
   },
   "directories": {},
   "engines": {

@@ -1,14 +1,17 @@
-import { Client, GatewayIntentBits, Guild, ClientEvents, Partials, Options } from "discord.js";
+import {Client, ClientEvents, GatewayIntentBits, Guild, Options, Partials} from "discord.js";
 
-import { MySQLDatabase } from "./database.js";
+import {MySQLDatabase} from "./database.js";
 import Webhook from "./webhooks/webhook.js";
 import Scheduler from "./scheduler/scheduler.js";
 import logger from "./utils/logger.js";
 
-import { events } from "./clientEvents/events.js";
-import { commands } from "./commands/commands.js";
-import { BaseCommand } from "./commands/baseCommand.js";
+import {events} from "./clientEvents/events.js";
+import {commands} from "./commands/commands.js";
+import {BaseCommand} from "./commands/baseCommand.js";
 
+type Uses = number
+type InviteCode = string
+type serverID = string
 
 export default class Bot {
     public client: Client;
@@ -19,6 +22,7 @@ export default class Bot {
     public events: Array<any>;
     public webhook: Webhook;
     public scheduler: Scheduler;
+    public invites: Map<serverID, Map<InviteCode, Uses>>;
     constructor() {
         this.client = new Client({
             intents: [
@@ -66,12 +70,14 @@ export default class Bot {
             saveInteractions: false,
             savePolls: false,
             sendWelcomeMessage: false,
-            sendLiveForms: false
+            sendLiveForms: false,
+            collectStudyGroupAnalysis: false
         }
         this.flags = {}
         this.events = events(this)
         this.webhook = new Webhook()
         this.scheduler = new Scheduler(this)
+        this.invites = new Map()
     }
 
 
@@ -185,6 +191,24 @@ export default class Bot {
             }
         }
         logger.log("Eventos carregados")
+    }
+
+    async getAllInvites(guild: Guild | null = null): Promise<Map<string, Map<string, number>> | Map<string, number>> {
+        let allInvites = new Map();
+
+        if (guild) {
+            const invites = await guild.invites.fetch()
+            return new Map(invites.map(invite => [invite.code, invite.uses!]))
+        } else {
+            for (const guild of this.client.guilds.cache.values()) {
+                const invites = await guild.invites.fetch()
+                const codes = new Map(invites.map(invite => [invite.code, invite.uses!]))
+
+                allInvites.set(guild.id, codes)
+            }
+        }
+
+        return allInvites
     }
 
     async login(token: string) {

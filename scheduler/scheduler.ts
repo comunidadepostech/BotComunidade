@@ -4,15 +4,13 @@ import logger from "../utils/logger.js";
 import getTimeUntilNextMonth from "../utils/getTimeUntilNextMonth.js";
 import safeSetTimeout from "../utils/safeTimeout.js";
 import Bot from "../bot.js";
-import CheckEndOfDiscordClass from "./tasks/checkEndOfDiscordClass.js";
 
 export default class Scheduler {
     tasks: { instance: any; timeInMinutes: number; }[]
     constructor(botInstance: Bot) {
         this.tasks = [
             { instance: new CheckGuildsEvents(botInstance), timeInMinutes: Number(process.env.EVENT_CHECK_TIME) },
-            { instance: new CountMembersByRole(botInstance), timeInMinutes: 0 },
-            { instance: new CheckEndOfDiscordClass(botInstance), timeInMinutes: Number(process.env.EVENT_CHECK_TIME) }
+            { instance: new CountMembersByRole(botInstance), timeInMinutes: 0 }
         ]
     }
 

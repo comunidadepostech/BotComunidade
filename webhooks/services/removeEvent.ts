@@ -3,7 +3,7 @@ import Bot from "../../bot.ts";
 import {serverNames} from "../../utils/servers.ts";
 
 export default async function removeEvent(bot: Bot, req: any): Promise<void> {
-    if (!req.body.evento) throw new Error("Para envir a mensagem é necessário especificar o 'evento' com a turma e título do evento separados por ' - '");
+    if (!req.body.evento) throw new Error("Para cancelar um evento é necessário especificar o 'evento' com a turma e título do evento separados por ' - '");
 
     // Formata o nome da turma com o número da frente
     const classNameWithNumber: string = req.body.evento.split(" - ")[0]
