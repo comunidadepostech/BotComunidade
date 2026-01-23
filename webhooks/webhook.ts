@@ -4,6 +4,7 @@ import logger from "../utils/logger.ts";
 import Bot from "../bot.ts";
 import handleSendLivePoll from "./services/sendLivePoll.ts";
 import removeEvent from "./services/removeEvent.ts";
+import sendWarning from "./services/sendWarning.ts";
 
 interface RouteHandler {
     path: string;
@@ -29,6 +30,11 @@ export default class Webhook {
             path: '/removerEvento',
             method: "post",
             handler: removeEvent
+        },
+        {
+            path: "/enviarAviso",
+            method: "post",
+            handler: sendWarning
         }
     ];
 
