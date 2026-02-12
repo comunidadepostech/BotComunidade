@@ -11,9 +11,9 @@ async function main() {
     const bot = new Bot();
 
     // Conexão com Banco de Dados e verificação/criação de tabelas
-    await bot.db.connect(process.env.MYSQL_URL as string)
+    await bot.db.connect(process.env.MYSQL_DATABASE_URL as string)
         .then(() => logger.log('Conexão com o banco de dados estabelecida'))
-        .catch(error => {throw new Error(`Falha ao conectar ao banco de dados: ${JSON.stringify(error, null, 2)}`)})
+        .catch(error => {throw new Error(`Falha ao conectar ao banco de dados: ${error}`)})
 
     await bot.db.verifyTables()
         .then(() => logger.log("Tabelas verificadas"));
@@ -22,7 +22,7 @@ async function main() {
     bot.flags = await bot.db.getFlags();
 
     // Login
-    await bot.login(process.env.TOKEN as string)
+    await bot.login(process.env.DISCORD_BOT_TOKEN as string)
         .then(() => logger.log('Bot conectado ao Discord'))
         .catch(error => {throw new Error(`ERRO - Falha ao conectar ao Discord: ${error}`)});
 
@@ -65,6 +65,6 @@ async function main() {
 try {
     await main()
 } catch (error) {
-    logger.error(`Falha fatal na inicialização do bot: ${error}`);
+    logger.error(`Falha fatal na inicialização do bot\n${error}`);
     process.exit(1);
 }

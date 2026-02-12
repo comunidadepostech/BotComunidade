@@ -1,17 +1,7 @@
 import Bot from "../../bot.js";
 import {Guild, GuildScheduledEvent, GuildScheduledEventStatus, VoiceBasedChannel} from "discord.js";
 import logger from "../../utils/logger.ts";
-
-interface EventData {
-    guildName: string;
-    maxParticipants: number;
-    startedAt: StartTimestamp | null;
-    endedAt: EndTimestamp | null;
-    class: string;
-}
-
-type StartTimestamp = number
-type EndTimestamp = number
+import {EventData} from "../../lib/types.ts";
 
 export default class StudyGroupAnalysis {
     private readonly bot: Bot
@@ -35,14 +25,14 @@ export default class StudyGroupAnalysis {
         // Ignora o evento se ele não tiver iniciado
         if (![GuildScheduledEventStatus.Active, GuildScheduledEventStatus.Completed].includes(event.status)) return
 
-        // Ignora o evento se ele não tiver um canal de voz vinculado
-        const channel = await this.bot.client.channels.fetch(event.channelId!) as VoiceBasedChannel;
-        if (!channel) return;
+        if (!event.channelId) return;
+
+        const channel = await this.bot.client.channels.fetch(event.channelId) as VoiceBasedChannel;
 
         // Adiciona o evento a lista caso ainda não exista
         if (!this.events.has(event.id)) {
             this.events.set(event.id, {
-                guildName: event.guild?.name || "Desconhecido",
+                guildName: event.guild!.name,
                 maxParticipants: 0,
                 startedAt: null,
                 endedAt: null,
@@ -53,7 +43,6 @@ export default class StudyGroupAnalysis {
         // Obtém os dados do evento
         const eventData = this.events.get(event.id)!;
 
-        // Força o fetch do canal para garantir dados atualizados
         await channel.fetch();
 
         // Verifica a presença de um membro com o cargo de professor
@@ -101,7 +90,7 @@ export default class StudyGroupAnalysis {
         })
 
         if (!res.ok) {
-            throw new Error(`Erro ao enviar dados para o n8n: ${res.status} - ${res.statusText} - ${res.url}`)
+            throw new Error(`Erro ao enviar dados para o n8n ao cadastrar grupo de estudos que terminou: ${res.status} - ${res.body}`)
         }
     }
 

@@ -1,5 +1,10 @@
 import { BaseCommand } from './baseCommand.js';
-import {ChannelType, MessageFlags, PermissionFlagsBits, SlashCommandBuilder, ChatInputCommandInteraction} from 'discord.js';
+import {
+    MessageFlags,
+    PermissionFlagsBits,
+    SlashCommandBuilder,
+    ChatInputCommandInteraction
+} from 'discord.js';
 
 // Comando de teste, serve para saber se o ‘Bot’ está a responder para ajudar na resolução de problemas
 export default class DisableCommand extends BaseCommand {
@@ -20,37 +25,18 @@ export default class DisableCommand extends BaseCommand {
 
     // Sobrescreve o execute do BaseCommand
     override async execute(interaction: ChatInputCommandInteraction): Promise<void> {
-        const role = interaction.options.getRole('role')!;
-        const channels = interaction.guild!.channels.cache.values();
+        const role = await interaction.guild!.roles.fetch(interaction.options.getRole('role')!.id)
+        const members = interaction.guild!.members.cache.values();
 
         await interaction.deferReply({flags: MessageFlags.Ephemeral});
 
-        for (const channel of channels) {
-            const roleNameWithoutPrefix = role.name.replace("Estudantes ", "");
-            const shouldDisable = (channel.type === ChannelType.GuildCategory && ["Alun", "Pós Tech", roleNameWithoutPrefix].includes(channel.name)) ||
-                (["🎥│gravações", "🚨│avisos"].includes(channel.name) && channel.parent?.name === roleNameWithoutPrefix) ||
-                (channel.name.includes("faq"));
+        if (!role) return;
 
-            if (shouldDisable) {
-                const permissionsToDisable = {
-                    [PermissionFlagsBits.SendMessages as unknown as string]: false,
-                    [PermissionFlagsBits.ViewChannel as unknown as string]: false,
-                    [PermissionFlagsBits.ReadMessageHistory as unknown as string]: false,
-                    [PermissionFlagsBits.AddReactions as unknown as string]: false
-                };
-                if ('permissionOverwrites' in channel) await channel.permissionOverwrites.edit(role.id, permissionsToDisable);
+        for (const member of members) {
+            if (member.roles.cache.has(role.id)) {
+                await member.roles.remove(role);
             }
         }
-
-        await interaction.guild!.roles.edit(
-            role.id,
-            {
-                [PermissionFlagsBits.SendMessages as unknown as string]: false,
-                [PermissionFlagsBits.ViewChannel as unknown as string]: false,
-                [PermissionFlagsBits.ReadMessageHistory as unknown as string]: false,
-                [PermissionFlagsBits.AddReactions as unknown as string]: false
-            }
-        )
 
         await interaction.editReply({content: "✅ Cargo desabilitado com sucesso!"});
     }
