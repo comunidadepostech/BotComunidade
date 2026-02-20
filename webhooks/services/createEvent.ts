@@ -43,13 +43,20 @@ export default async function handleCreateEvent(bot: Bot, req): Promise<GuildSch
             "Obs.: Todas as lives serão gravadas e disponibilizadas no dia seguinte para a turma no canal #gravações",
         "Mentoria": (link: string) => "Olá, turma!\n" +
             " \n" +
-            "Temos um encontro marcado, onde você terá a oportunidade de compartilhar seus conhecimentos, discutir suas dificuldades e contribuir para um ambiente positivo de estudos. \n" +
+            "Temos um encontro marcado, onde você terá a oportunidade de discutir suas dificuldades nessa fase e tomar melhor conhecimento de como melhorar seu projeto.\n" +
             "\n" +
             "Segue o link para a mentoria: " + link + "\n" +
             "\n" +
             "Não perca o bate papo da Mentoria!\n" +
             " \n" +
-            "Obs: Este momento não será gravado"
+            "Obs: Este momento não será gravado",
+        "Hackaton": (link: string) => "Preparem o café e os teclados! 🚀\n" +
+            "\n" +
+            "Chegou o momento de colocar a mão na massa! O Hackaton é o momento perfeito para aprendizado acelerado e muita colaboração.\n" +
+            "\n" +
+            "Acesse o evento aqui: " + link + "\n" +
+            "\n" +
+            "Fique atento aos prazos e às regras de entrega. Vamos com tudo!"
     }
 
     // Define qual a descrição do evento baseado no tipo de evento
