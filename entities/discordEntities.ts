@@ -1,5 +1,6 @@
 import {
-    ChatInputCommandInteraction, Client,
+    CategoryChannel, ChannelType,
+    ChatInputCommandInteraction, Client, Role,
     SlashCommandOptionsOnlyBuilder
 } from "discord.js";
 import FeatureFlagsService from "../services/FeatureFlagsService.ts";
@@ -23,4 +24,20 @@ export interface CommandContext {
     featureFlagsService: FeatureFlagsService;
     client: Client,
     commands: Command[]
+}
+
+export interface ClassCreateResult {
+    success: boolean;
+    className: string;
+    role: Role;
+    category: CategoryChannel;
+    inviteUrl: string;
+    message: string;
+}
+
+export interface ChannelConfig {
+    name: string;
+    type: ChannelType;
+    position: number;
+    restrictStudents?: boolean;
 }

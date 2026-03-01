@@ -1,4 +1,4 @@
-export const DISCORD_GUILDS = Object.freeze({
+export const DISCORD_GUILDS: { [key: string]: string } = Object.freeze({
     "FSDT": "1179103166873223259",
     "NETT": "1067198204938047539",
     "ADJT": "1067197018637877248",
@@ -20,8 +20,9 @@ export const DISCORD_GUILDS = Object.freeze({
     "CTJTBB": "1086287162158358628",
     "DPMTBB": "1229573565783867563",
     "IAST": "1458202381333303338",
-    "TEST": "1387199697697116241"
+    "TESTE": "1387199697697116241"
 })
 
 export const WELCOME_CHANNEL_NAME = "✨│boas-vindas"
-export const WARNING_CHANNEL_NAME = ""
+export const WARNING_CHANNEL_NAME = "🚨│avisos"
+export const STUDY_GROUP_CHANNEL_NAME = "📒│Sala de estudo"

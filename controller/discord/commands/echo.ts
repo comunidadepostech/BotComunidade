@@ -61,9 +61,9 @@ export const echoCommand: Command = {
 
         try{
             await echo(dto)
-            await interaction.reply({content: `✅ Mensagem enviada para #${dto.targetChannel.name} com sucesso!`, flags: MessageFlags.Ephemeral});
+            await interaction.editReply({content: `✅ Mensagem enviada para todos ${dto.targetChannel} com sucesso!`, flags: MessageFlags.Ephemeral});
         } catch (error: any) {
-            await interaction.reply({ content: `❌ Nenhum canal encontrado com o nome "${dto.targetChannel.name}".`, flags: MessageFlags.Ephemeral});
+            await interaction.editReply({ content: `❌ Nenhum canal encontrado com o nome "${dto.targetChannel.name}".`, flags: MessageFlags.Ephemeral});
         }
     }
 }

@@ -6,7 +6,7 @@ import {
 import FeatureFlagsService from "../../services/FeatureFlagsService.ts";
 import crypto from "node:crypto";
 import {InteractionPayload, Poll} from "../../entities/dto/n8nDTOs.ts";
-import N8nServices from "../../services/n8nServices.ts";
+import N8nService from "../../services/n8nService.ts";
 import {WELCOME_CHANNEL_NAME} from "../../constants/discordContants.ts";
 import MessagingService from "../../services/messagingService.ts";
 
@@ -29,7 +29,7 @@ export default class discordController {
     }
 
     public async handleErrorEvent(error: Error) {
-        console.error(error);
+        console.error(`${error.stack}`);
     }
 
     public async handleMessageCreateEvent(message: Message) {
@@ -51,7 +51,6 @@ export default class discordController {
         const channel: any = await this.client.channels.fetch(message.channelId);
 
         // Descobre o servidor
-        const guildName: string = (await this.client.guilds.fetch(message.guildId))?.name;
 
         // Descobre o maior cargo do membro pela posição hierárquica
         const member = await message.guild.members.fetch(message.author.id);
@@ -80,7 +79,7 @@ export default class discordController {
             class: null
         };
 
-        if ([ChannelType.GuildText, ChannelType.GuildVoice, ChannelType.GuildStageVoice].includes(interaction.channel.type)) {
+        if ([ChannelType.GuildText, ChannelType.GuildVoice, ChannelType.GuildStageVoice].includes(message.channel.type)) {
             body.channel = channel.name
             body.class = channel.parent?.name
         } else {
@@ -94,7 +93,7 @@ export default class discordController {
                 ) as CategoryChannel).name
         }
 
-        await N8nServices.saveInteraction(body).catch((error: any) => console.error(`${error.message}\n${error.stack}`))
+        await N8nService.saveInteraction(body).catch((error: any) => console.error(`${error.message}\n${error.stack}`))
     }
 
     public async handleGuildMemberAddEvent(member: GuildMember) {
@@ -126,7 +125,7 @@ export default class discordController {
         console.error(`Comando não encontrado na lista de comandos nativos!\nComando: ${interaction.commandName}\nLista de comandos registrada: ${this.commands.map(command => command.name).join(', ')}`)
     }
 
-    public async handleMessageUpdateEvent(oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage) {
+    public async handleMessageUpdateEvent(_oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage) {
         if (!this.featureFlagsService.flags[newMessage.guildId!]!["salvar_enquetes"]) return
 
         if (newMessage.partial) await newMessage.fetch();
@@ -155,10 +154,10 @@ export default class discordController {
             duration: `${((now - expirity) / (1000 * 60 * 60)).toFixed(0)}` // horas
         };
 
-        await N8nServices.savePoll(payload).catch((error: any) => console.error(`${error.message}\n${error.stack}`))
+        await N8nService.savePoll(payload).catch((error: any) => console.error(`${error.message}\n${error.stack}`))
     }
 
-    public async handleGuildDeleteEvent(_guild: Guild) {
-        console.log("nada aqui")
+    public async handleGuildDeleteEvent(guild: Guild) {
+        await DatabaseFlagsRepository.deleteGuildFeatureFlags(guild.id)
     }
 }
