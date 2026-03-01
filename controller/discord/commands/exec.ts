@@ -1,9 +1,9 @@
 import {
-    ChatInputCommandInteraction,
+    ChatInputCommandInteraction, MessageFlags,
     PermissionFlagsBits,
     SlashCommandBuilder
 } from "discord.js";
-import {Command} from "../../../entities/discordEntities.ts";
+import {Command, CommandContext} from "../../../entities/discordEntities.ts";
 
 export const execCommand: Command = {
     name: 'exec',
@@ -21,7 +21,10 @@ export const execCommand: Command = {
                     {name: 'Contagem de membros', value: "2"}
                 )
         ),
-    execute: async (_interaction: ChatInputCommandInteraction) => {
-
+    execute: async (interaction: ChatInputCommandInteraction, context: CommandContext) => {
+        if (!context.featureFlagsService.flags[interaction.guildId!]!["comando_exec"]) {
+            await interaction.reply({content: "❌ Comando desabilitado", flags: MessageFlags.Ephemeral})
+            return;
+        }
     }
 }

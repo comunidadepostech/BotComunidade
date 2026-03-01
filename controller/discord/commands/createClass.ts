@@ -6,6 +6,7 @@ import {
     MessageFlags
 } from "discord.js";
 import {Command, CommandContext} from "../../../entities/discordEntities.ts";
+import ClassService from "../../../services/classService.ts";
 
 export const createClassCommand: Command = {
     name: 'createclass',
@@ -25,13 +26,23 @@ export const createClassCommand: Command = {
                 .addChannelTypes([ChannelType.GuildText])
         ),
     execute: async (interaction: ChatInputCommandInteraction, context: CommandContext) => {
-        if (!Object.keys(context.featureFlagsService.flags[interaction.guildId!]!).includes("comando_createclass")) {
-            await interaction.reply({content: "Comando desabilitado", flags: MessageFlags.Ephemeral})
+        if (!context.featureFlagsService.flags[interaction.guildId!]!["comando_createclass"]) {
+            await interaction.reply({content: "❌ Comando desabilitado", flags: MessageFlags.Ephemeral})
+            return;
         }
 
-        // const className = interaction.options.getString('name', true)!;
-        // const faqChannel = interaction.options.getChannel("faq-channel", true)!;
-        // const channels = interaction.guild?.channels.cache
-        // const roles = interaction.guild?.roles.cache
+        const className = interaction.options.getString('name', true)!;
+        const faqChannel = interaction.options.getChannel("faq-channel", true)!;
+
+        await interaction.deferReply({flags: MessageFlags.Ephemeral})
+
+        const classServeice = new ClassService()
+        const creationResult = await classServeice.create(interaction, className, faqChannel.id)
+
+        if (!creationResult.success) {
+            await interaction.editReply({content: creationResult.message})
+        }
+
+        await interaction.editReply({content: `✅ Turma ${className} criada com sucesso!\n👥 Cargo vinculado: ${creationResult.role}\n🔗Link do convite: ${creationResult.inviteUrl} <- Delete esse invite e crie um manualmente enquanto esse aviso existir.`})
     }
 }

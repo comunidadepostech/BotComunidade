@@ -1,6 +1,6 @@
 import { createCanvas, loadImage, Image } from "@napi-rs/canvas";
 import { request } from "undici";
-import { AttachmentBuilder, TextChannel, GuildMember } from "discord.js";
+import {AttachmentBuilder, TextChannel, GuildMember, Role} from "discord.js";
 import path from 'node:path';
 
 export default class MessagingService {
@@ -39,5 +39,20 @@ export default class MessagingService {
         const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
 
         await targetChannel.send({ content: `Olá, ${profile}! Estamos muito felizes que você entrou na nossa **Comunidade Pos Tech!**`, files: [attachment] });
+    }
+
+    static async sendLivePoll(targetChannel: TextChannel, role: Role) {
+        await targetChannel.send("Fala, turma! E aí, o que acharam da live?\n" +
+            "\n" +
+            "Enquanto o conteúdo ainda está fresco na memória, queremos muito saber a sua opinião!\n" +
+            "Preencha o formulário abaixo e nos ajude a criar encontros cada vez mais incríveis. Contamos com você!\n" +
+            "\n" +
+            "Link do formulário: https://forms.gle/dFJAUdijQ6jUeZbr6\n" +
+            `${role}`
+        ).then(message => setTimeout(async () => message.delete(), 10 * 60 * 1000))
+    }
+
+    static async sendWarning(canal: TextChannel, mensagem: string, cargo: Role) {
+        await canal.send(mensagem.replaceAll("{cargo}", `${cargo}`))
     }
 }

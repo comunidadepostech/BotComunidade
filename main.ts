@@ -25,8 +25,8 @@ import MessagingService from "./services/messagingService.ts";
 LoggerService.init()
 GlobalFonts.registerFromPath("./assets/Coolvetica Hv Comp.otf", "normalFont")
 
-console.time("Login do bot no Discord")
 // Login do bot ao Discord
+console.time("Login do bot no Discord")
 const client =  discordClient
 await client.login(process.env.DISCORD_BOT_TOKEN)
     .catch(() => {throw new Error("Falha ao conectar ao bot no Discord")})
@@ -92,6 +92,12 @@ await commandManagementService.registerCommands(
 // Inicialização do webhook
 const app = express();
 app.use(express.json());
+app.use((req, res, next) => {
+    req.discordClient = client;
+    req.featureFlagsService = flagService;
+    next();
+});
+
 app.use("/api", router);
 app.listen(process.env.PRIMARY_WEBHOOK_PORT, () => console.log("Webhook iniciado"));
 
