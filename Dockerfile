@@ -1,6 +1,6 @@
 # Build
 FROM oven/bun
 WORKDIR /bot
-COPY package.json package-lock.json ./
-RUN bun install
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 COPY . .

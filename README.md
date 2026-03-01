@@ -1,4 +1,4 @@
-<img src="/assets/postech.png"/>
+<img src="/assets/postech.png" alt=""/>
 
 # Bot Comunidade Pos Tech
 
@@ -28,9 +28,8 @@ Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades �
   - [Envio de enquetes para o n8n automaticamente](#envio-de-enquetes-para-o-webhook-do-n8n-automaticamente)
   - [Contagem de membros mensalmente](#contagem-de-membros-mensalmente)
   - [Análise de Grupos de estudos](#análise-de-grupos-de-estudos)
-  
+  - []
 - [Progresso de desenvolvimento e atualizações](#progresso-de-desenvolvimento-e-atualizações)
-- [Requisição de pull request na branch Stable](#requisição-de-pull-request-na-branch-stable)
 
 ---
 
