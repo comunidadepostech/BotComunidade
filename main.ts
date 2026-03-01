@@ -1,70 +1,100 @@
-import {GlobalFonts} from '@napi-rs/canvas'
-import Bot from "./bot.ts";
-import logger from "./utils/logger.ts";
+// Fontes externas
+import {GlobalFonts} from "@napi-rs/canvas";
+import fs from 'node:fs';
+import path from 'node:path';
+import express from 'express';
+
+// Fontes internas
+import DatabaseConnection from "./repositories/database/databaseConnection.ts";
+import LoggerService from "./infrastructure/loggerService.ts";
+import DatabaseFlagsRepository from "./repositories/database/databaseFlagsRepository.ts";
+import FeatureFlagsService from "./services/FeatureFlagsService.ts";
+import DiscordController from "./controller/discord/discordController.ts";
+import ShutdownService from "./infrastructure/shutdownService.ts";
+import commandManagementService from "./services/commandManagementService.ts";
+import registerDiscordEvents from "./gateway/discordRouter.ts";
+import {discordClient} from './infrastructure/discordClient.ts'
+import router from './gateway/webhookRouter.ts';
+
+// Entidades
+import {Command} from "./entities/discordEntities.ts";
+import {Guild} from "discord.js";
+import DatabaseCheckRepository from "./repositories/database/databaseCheck.ts";
+import MessagingService from "./services/messagingService.ts";
+
+LoggerService.init()
+GlobalFonts.registerFromPath("./assets/Coolvetica Hv Comp.otf", "normalFont")
+
+console.time("Login do bot no Discord")
+// Login do bot ao Discord
+const client =  discordClient
+await client.login(process.env.DISCORD_BOT_TOKEN)
+    .catch(() => {throw new Error("Falha ao conectar ao bot no Discord")})
+    .then(() => console.log("Bot conectado ao Discord"))
+console.timeEnd("Login do bot no Discord")
 
 
-// Carrega as variáveis de ambiente
-GlobalFonts.registerFromPath("./assets/Coolvetica Hv Comp.otf", "normalFont");
-logger.log("Fonte carregada com sucesso. Iniciando o bot...")
+// Verificação dinâmica de comandos existentes
+console.time("Carregamento de comandos")
+const commands: Command[] = [];
+const commandsPath = path.join(__dirname, './controller/discord/commands/');
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.ts'));
 
-async function main() {
-    const bot = new Bot();
+for (const file of commandFiles) {
+    const filePath = path.join(commandsPath, file);
+    const module = await import(filePath);
 
-    // Conexão com Banco de Dados e verificação/criação de tabelas
-    await bot.db.connect(process.env.MYSQL_URL as string)
-        .then(() => logger.log('Conexão com o banco de dados estabelecida'))
-        .catch(error => {throw new Error(`Falha ao conectar ao banco de dados: ${JSON.stringify(error, null, 2)}`)})
+    // Procura o primeiro export que tenha 'execute'
+    const command = Object.values(module).find(
+        (exp): exp is Command => typeof exp === 'object' && exp !== null && 'execute' in exp
+    );
 
-    await bot.db.verifyTables()
-        .then(() => logger.log("Tabelas verificadas"));
-
-    // Carrega as flags do banco de dados
-    bot.flags = await bot.db.getFlags();
-
-    // Login
-    await bot.login(process.env.TOKEN as string)
-        .then(() => logger.log('Bot conectado ao Discord'))
-        .catch(error => {throw new Error(`ERRO - Falha ao conectar ao Discord: ${error}`)});
-
-    bot.webhook.start(bot);
-
-    // Verificação de flags
-    let checkState = true
-    while (checkState) {
-        checkState = await bot.db.checkFlags(bot.flags, bot.defaultFlags, bot.client)
-        bot.flags = await bot.db.getFlags()
+    if (command) {
+        commands.push(command);
+    } else {
+        console.warn(`Pulando ${file}: o arquivo não tem um método 'execute' ou não há named export`);
     }
-    logger.log("Todas as flags foram verificadas")
-
-    // Prepara o bot
-    await bot.build().then(() => logger.log('Bot totalmente carregado'))
-
-    // Inicia o scheduler de eventos
-    await bot.scheduler.start()
-    logger.log("Scheduler iniciado")
-
-    // Carrega todos os invites atuais dos servidores
-    bot.invites = await bot.getAllInvites()
-
-    // Configuração do Desligamento Seguro (Graceful Shutdown)
-    const shutdown = async (signal: string) => {
-        logger.log(`Recebido ${signal} - desligando graciosamente...`);
-
-        bot.client.removeAllListeners();
-        bot.clearCommands()
-        await bot.db.endConnection();
-        await bot.client.destroy();
-
-        logger.log('Desligamento completo');
-        process.exit(0);
-    };
-
-    process.on('SIGINT', () => shutdown('SIGINT'));
-    process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
-try {
-    await main()
-} catch (error) {
-    logger.error(`Falha fatal na inicialização do bot: ${error}`);
-    process.exit(1);
-}
+console.timeEnd("Carregamento de comandos")
+
+
+
+// Inicialização do banco de dados e checagem de tabelas
+await DatabaseConnection.connect()
+    .catch((error: Error) => {throw new Error(`Falha ao conectar ao banco de dados\n${error}`)})
+    .then(() => console.log("Conectado ao banco de dados"))
+
+await DatabaseCheckRepository.checkSchemas()
+
+await DatabaseFlagsRepository.checkEmptyFeatureFlags(client.guilds.cache.map((guild: Guild) => guild.id))
+   .then(() => console.log("Feature Flags verificadas"))
+
+
+// Inicialização das featureFlags globais
+console.time("Carregamento de feature flags no cache")
+const flagService = new FeatureFlagsService(await DatabaseFlagsRepository.getAllFeatureFlags())
+console.timeEnd("Carregamento de feature flags no cache")
+
+const messagindService = new MessagingService()
+const discordController = new DiscordController(flagService, messagindService, commands, client)
+registerDiscordEvents(client, discordController)
+
+console.time("Registro de comandos no Discord")
+await commandManagementService.registerCommands(
+    client.guilds.cache.values().toArray(),
+    commands
+).then(() => {
+    console.log("Comandos registrados com sucesso")
+    console.timeEnd("Registro de comandos no Discord")
+})
+
+
+// Inicialização do webhook
+const app = express();
+app.use(express.json());
+app.use("/api", router);
+app.listen(process.env.PRIMARY_WEBHOOK_PORT, () => console.log("Webhook iniciado"));
+
+
+process.on('SIGINT', async () => await ShutdownService.shutdown(client));
+process.on('SIGTERM', async () => await ShutdownService.shutdown(client));
