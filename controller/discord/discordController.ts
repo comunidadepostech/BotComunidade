@@ -9,9 +9,11 @@ import {InteractionPayload, Poll} from "../../entities/dto/n8nDTOs.ts";
 import N8nService from "../../services/n8nService.ts";
 import {WELCOME_CHANNEL_NAME} from "../../constants/discordContants.ts";
 import MessagingService from "../../services/messagingService.ts";
+import {SchedulerService} from "../../services/schedulerService.ts";
 
 export default class discordController {
     constructor(
+        private scredulerService: SchedulerService,
         private featureFlagsService: FeatureFlagsService,
         private messagingService: MessagingService,
         private commands: Command[],
@@ -69,7 +71,7 @@ export default class discordController {
 
         const body: InteractionPayload = {
             createdBy: message.author.globalName || 'Usuário desconhecido',
-            guild: guildName,
+            guild: message.guild.name,
             message: message.content,
             timestamp: localTime,
             id: message.id,
@@ -112,7 +114,8 @@ export default class discordController {
         const context: CommandContext = {
             featureFlagsService: this.featureFlagsService,
             client: this.client,
-            commands: this.commands
+            commands: this.commands,
+            schedulerService: this.scredulerService
         };
 
         for (const nativeCommand of this.commands) {

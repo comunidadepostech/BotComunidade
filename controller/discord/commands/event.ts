@@ -29,15 +29,6 @@ export const eventCommand: Command = {
             option.setName('start-time')
                 .setDescription('Hora (HH:mm)')
                 .setRequired(true)
-                .addChoices(
-                    {name: '18:00', value: '18:00'}, {name: '18:15', value: '18:15'}, {name: '18:30', value: '18:30'}, {name: '18:45', value: '18:45'},
-                    {name: '19:00', value: '19:00'}, {name: '19:15', value: '19:15'}, {name: '19:30', value: '19:30'}, {name: '19:45', value: '19:45'},
-                    {name: '20:00', value: '20:00'}, {name: '20:15', value: '20:15'}, {name: '20:30', value: '20:30'}, {name: '20:45', value: '20:45'},
-                    {name: '21:00', value: '21:00'}, {name: '21:15', value: '21:15'}, {name: '21:30', value: '21:30'}, {name: '21:45', value: '21:45'},
-                    {name: '22:00', value: '22:00'}, {name: '22:15', value: '22:15'}, {name: '22:30', value: '22:30'}, {name: '22:45', value: '22:45'},
-                    {name: '23:00', value: '23:00'}, {name: '23:15', value: '23:15'}, {name: '23:30', value: '23:30'}, {name: '23:45', value: '23:45'},
-                    {name: '24:00', value: '24:00'}
-                )
         )
         .addStringOption(option =>
             option.setName('end-date')
@@ -48,15 +39,6 @@ export const eventCommand: Command = {
             option.setName('end-time')
                 .setDescription('Hora (HH:mm)')
                 .setRequired(true)
-                .addChoices(
-                    {name: '18:00', value: '18:00'}, {name: '18:15', value: '18:15'}, {name: '18:30', value: '18:30'}, {name: '18:45', value: '18:45'},
-                    {name: '19:00', value: '19:00'}, {name: '19:15', value: '19:15'}, {name: '19:30', value: '19:30'}, {name: '19:45', value: '19:45'},
-                    {name: '20:00', value: '20:00'}, {name: '20:15', value: '20:15'}, {name: '20:30', value: '20:30'}, {name: '20:45', value: '20:45'},
-                    {name: '21:00', value: '21:00'}, {name: '21:15', value: '21:15'}, {name: '21:30', value: '21:30'}, {name: '21:45', value: '21:45'},
-                    {name: '22:00', value: '22:00'}, {name: '22:15', value: '22:15'}, {name: '22:30', value: '22:30'}, {name: '22:45', value: '22:45'},
-                    {name: '23:00', value: '23:00'}, {name: '23:15', value: '23:15'}, {name: '23:30', value: '23:30'}, {name: '23:45', value: '23:45'},
-                    {name: '24:00', value: '24:00'}
-                )
         )
         .addStringOption(option =>
             option.setName('description')

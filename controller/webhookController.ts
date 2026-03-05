@@ -8,6 +8,11 @@ import MessagingService from "../services/messagingService.ts";
 export class WebhookController {
     static async EventManagement(req: Request, res: Response) {
         try {
+            if (req.headers.token !== process.env.WEBHOOK_TOKEN) {
+                res.status(401).json(JSON.stringify({"message": "Invalid token"}))
+                return
+            }
+
             const client = req.discordClient;
             let guildId = DISCORD_GUILDS[req.body.turma.replaceAll(/\d+/g, '')]
 
@@ -45,7 +50,7 @@ export class WebhookController {
                 channel: channel // Sim, o ts reclama, mas o channel já filtra o tipo de canal
             });
 
-            return res.status(200).json({ success: true });
+            return res.status(200);
         } catch (error: any) {
             console.error(error);
             return res.status(400).json({ error: error.message });
@@ -54,6 +59,11 @@ export class WebhookController {
 
     static async SendLivePoll(req: Request, res: Response) {
         try {
+            if (req.headers.token !== process.env.WEBHOOK_TOKEN) {
+                res.status(401).json(JSON.stringify({"message": "Invalid token"}))
+                return
+            }
+
             const client = req.discordClient;
             const featureFlagsService = req.featureFlagsService
 
@@ -96,18 +106,23 @@ export class WebhookController {
                 if (parentName !== classNameWithNumber) continue
 
                 await MessagingService.sendLivePoll(channel as TextChannel, role)
-                return res.status(200).json({success: true});
+                return res.status(200);
             }
 
             throw new Error("Nenhum canal de avisos encontrado na turma")
         } catch (error: any) {
             console.error(error);
-            return res.status(400).json({success: false, error: error.message});
+            return res.status(400).json({error: error.message});
         }
     }
 
     static async sendWarning(req: Request, res: Response) {
         try {
+            if (req.headers.token !== process.env.WEBHOOK_TOKEN) {
+                res.status(401).json(JSON.stringify({"message": "Invalid token"}))
+                return
+            }
+
             const mensagem: string | undefined = req.body?.mensagem;
             const turma: string | undefined = req.body?.turma;
             const client = req.discordClient;
@@ -129,7 +144,7 @@ export class WebhookController {
             await MessagingService.sendWarning(canal, mensagem, cargo)
         } catch (error: any) {
             console.error(error);
-            return res.status(400).json({success: false, error: error.message});
+            return res.status(400).json({error: error.message});
         }
     }
 }

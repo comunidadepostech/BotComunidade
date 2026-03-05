@@ -6,7 +6,7 @@ export default class N8nService {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'token': process.env.N8N_TOKEN ?? ""
+                'token': process.env.N8N_WEBHOOKS_TOKEN!
             },
             body: JSON.stringify(poll)
         })
@@ -19,7 +19,7 @@ export default class N8nService {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'token': process.env.N8N_TOKEN ?? ""
+                'token': process.env.N8N_WEBHOOKS_TOKEN!
             },
             body: JSON.stringify(interaction)
         });
