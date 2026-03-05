@@ -50,7 +50,7 @@ export class WebhookController {
                 channel: channel // Sim, o ts reclama, mas o channel já filtra o tipo de canal
             });
 
-            return res.status(200).send();
+            return res.status(200).json({ status: "sucesso" });
         } catch (error: any) {
             console.error(error);
             return res.status(400).json({ error: error.message });
