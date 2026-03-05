@@ -15,7 +15,7 @@ export default class DatabaseFlagsRepository {
         return null
     }
 
-    public static async getAllFeatureFlags(): Promise<globalFlags> {
+    public static async getAllFeatureFlags(): Promise<globalFlags | {}> {
         const pool = DatabaseConnection.getPool();
         let [rows] = await pool.query<RowDataPacket[]>(`SELECT * FROM featureFlags`);
 
@@ -61,9 +61,11 @@ export default class DatabaseFlagsRepository {
         for (const guildId of guildsIds) {
             if (!databaseFeatureFlags[guildId]) {
                 await this.saveDefaultFeatureFlags(guildId)
+                databaseFeatureFlags[guildId] = { ...DEFAULT_FEATURE_FLAGS };
             }
 
             const guildFlags = databaseFeatureFlags[guildId]
+
             const defaultFlagsSpit: string[] = Object.keys(DEFAULT_FEATURE_FLAGS).filter((item: string) => !Object.keys(guildFlags).includes(item))
             const databaseSpit: string[] = Object.keys(guildFlags).filter((item: string) => !Object.keys(DEFAULT_FEATURE_FLAGS).includes(item))
 
@@ -73,7 +75,7 @@ export default class DatabaseFlagsRepository {
                 }
             }
 
-            if (databaseSpit.length > 0) {  // ✅ Adicionei .length > 0
+            if (databaseSpit.length > 0) {
                 for (const flag of databaseSpit) {
                     await this.deleteFeatureFlag(flag)
                 }
@@ -85,11 +87,11 @@ export default class DatabaseFlagsRepository {
         const pool = DatabaseConnection.getPool();
         const databaseFeatureFlags = await this.getAllFeatureFlags()
 
-        for (const guildId in databaseFeatureFlags) {  // ✅ Trocado de .keys()
+        for (const guildId in databaseFeatureFlags) {
             delete databaseFeatureFlags[guildId][flag]
             await pool.query(
                 `UPDATE featureFlags SET flags = ? WHERE guild_id = ?;`,
-                [JSON.stringify(databaseFeatureFlags[guildId]), guildId]  // ✅ Adicionei guildId
+                [JSON.stringify(databaseFeatureFlags[guildId]), guildId]
             )
         }
     }
