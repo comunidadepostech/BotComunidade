@@ -30,7 +30,7 @@ export class SchedulerService {
         private studyGroupPossibleNames = ["Sala de estudo", "Sala de estudos", "Grupo de estudo", "Grupo de estudos"],
         private maxEventsCacheSize = 300,
         private TWO_HOURS_MS = 5 * 60 * 1000,
-        private WARNING_TIME_MS = 3 * 60 * 60 * 1000 // 3 horas antes
+        private WARNING_TIME_MS = 30 * 60 * 1000
     ) {}
 
     private async handleEventCompletion(event: GuildScheduledEvent, peakParticipants: number, className: string): Promise<void> {
