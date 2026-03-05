@@ -29,8 +29,7 @@ export class SchedulerService {
         private featureFlagsService: FeatureFlagsService,
         private studyGroupPossibleNames = ["Sala de estudo", "Sala de estudos", "Grupo de estudo", "Grupo de estudos"],
         private maxEventsCacheSize = 300,
-        private TWO_HOURS_MS = 5 * 60 * 1000,
-        private WARNING_TIME_MS = 30 * 60 * 1000
+        private TWO_HOURS_MS = 2 * 60 * 60 * 1000,
     ) {}
 
     private async handleEventCompletion(event: GuildScheduledEvent, peakParticipants: number, className: string): Promise<void> {
@@ -123,7 +122,7 @@ export class SchedulerService {
         if (flags["enviar_aviso_de_eventos"] && !state.notified) {
             const timeUntilStart = startTs - now;
             // Se falta menos de 3h e ainda não começou
-            if (timeUntilStart <= this.WARNING_TIME_MS && timeUntilStart > 0) {
+            if (timeUntilStart <= Number(process.env.REMAINING_EVENT_TIME_FOR_WARNING_IN_MINUTES) && timeUntilStart > 0) {
                 await this.handleNotification(event, className);
                 state.notified = true; // Garante que só avisa uma vez
             }

@@ -9,7 +9,7 @@ export class WebhookController {
     static async EventManagement(req: Request, res: Response) {
         try {
             if (req.headers.token !== process.env.WEBHOOK_TOKEN) {
-                res.status(401).json(JSON.stringify({"message": "Invalid token"}))
+                res.status(401).json({"message": "Invalid token"})
                 return
             }
 
@@ -17,7 +17,7 @@ export class WebhookController {
             let guildId = DISCORD_GUILDS[req.body.turma.replaceAll(/\d+/g, '')]
 
             if (!guildId) {
-                console.error("Guilda não encontrada para a turma: " + req.body.turma)
+                console.error("Guilda não encontrada para a turma: " + req.body.turma + "\n" + JSON.stringify(req.body, null, 2))
                 return
             }
 
@@ -50,7 +50,7 @@ export class WebhookController {
                 channel: channel // Sim, o ts reclama, mas o channel já filtra o tipo de canal
             });
 
-            return res.status(200);
+            return res.status(200).send();
         } catch (error: any) {
             console.error(error);
             return res.status(400).json({ error: error.message });
