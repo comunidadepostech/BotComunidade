@@ -5,7 +5,7 @@ import {
     SlashCommandBuilder
 } from "discord.js";
 import ClassService from "../../../services/classService.ts";
-import {Command} from "../../../entities/discordEntities.ts";
+import {Command, CommandContext} from "../../../entities/discordEntities.ts";
 
 export const disableCommand: Command = {
     name: "disable",
@@ -25,19 +25,31 @@ export const disableCommand: Command = {
             return;
         }
 
-        const role = await interaction.guild!.roles.fetch(interaction.options.getRole('role')!.id)
-        const members = interaction.guild!.members.cache.values().toArray();
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+        const roleId = interaction.options.getRole('role')!.id;
+        const role = await interaction.guild!.roles.fetch(roleId);
 
         if (!role) {
-            await interaction.reply({content: `❌ Erro ao desabilitar turma: O cargo da turma não foi encontrado.`, flags: MessageFlags.Ephemeral});
-            return
+            await interaction.editReply({content: `❌ Erro ao desabilitar turma: O cargo da turma não foi encontrado.`});
+            return;
         }
 
         try {
-            await ClassService.disable(members, role)
-            await interaction.reply({ content: `✅ Cargo removido dos membros da turma ${role.name}.` });
+            const fetchedMembers = await interaction.guild!.members.fetch();
+
+            const membersWithRole = fetchedMembers.filter(member => member.roles.cache.has(role.id)).values().toArray();
+
+            if (membersWithRole.length === 0) {
+                await interaction.editReply({ content: `⚠️ Nenhum membro possui o cargo ${role.name}.` });
+                return;
+            }
+
+            const count = await ClassService.disable(membersWithRole, role);
+
+            await interaction.editReply({ content: `✅ Cargo removido de ${count} membros da turma ${role.name}.` });
         } catch (error: any) {
-            await interaction.reply({content: `❌ Erro ao desabilitar turma: ${error.message}`, flags: MessageFlags.Ephemeral});
+            await interaction.editReply({content: `❌ Erro ao desabilitar turma: ${error.message}`});
             console.error(error);
         }
     }
