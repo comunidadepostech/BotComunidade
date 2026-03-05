@@ -121,10 +121,9 @@ export class SchedulerService {
 
         if (flags["enviar_aviso_de_eventos"] && !state.notified) {
             const timeUntilStart = startTs - now;
-            // Se falta menos de 3h e ainda não começou
-            if (timeUntilStart <= Number(process.env.REMAINING_EVENT_TIME_FOR_WARNING_IN_MINUTES) && timeUntilStart > 0) {
+            if (timeUntilStart <= Number(process.env.REMAINING_EVENT_TIME_FOR_WARNING_IN_MINUTES) * 60 * 1000 && timeUntilStart > 0) {
                 await this.handleNotification(event, className);
-                state.notified = true; // Garante que só avisa uma vez
+                state.notified = true;
             }
         }
 
