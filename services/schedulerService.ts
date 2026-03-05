@@ -28,7 +28,7 @@ export class SchedulerService {
         private client: Client,
         private featureFlagsService: FeatureFlagsService,
         private studyGroupPossibleNames = ["Sala de estudo", "Sala de estudos", "Grupo de estudo", "Grupo de estudos"],
-        private maxEventsCacheSize = 300,
+        private maxEventsCacheSize = 3000,
         private TWO_HOURS_MS = 2 * 60 * 60 * 1000,
     ) {}
 
