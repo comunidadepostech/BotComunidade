@@ -28,9 +28,11 @@ export const updateFlagCommand: Command = {
         try {
             await updateFlag(dto, context.featureFlagsService)
 
+            const formattedFlagName = Array.isArray(flagname) ? flagname.join(", ") : flagname;
+
             await interaction.reply({
                 flags: MessageFlags.Ephemeral,
-                content: `Flag atualizada!\n\`\`\`json\n${JSON.stringify(context.featureFlagsService.flags, null, 2)}\n\`\`\``
+                content: `✅ A flag **${formattedFlagName}** foi atualizada com sucesso para \`${interaction.options.getBoolean("value", true)}\`!`
             });
         } catch (error: any) {
             await interaction.reply({
