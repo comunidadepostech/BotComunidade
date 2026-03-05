@@ -4,6 +4,7 @@ import {
     SlashCommandOptionsOnlyBuilder
 } from "discord.js";
 import FeatureFlagsService from "../services/FeatureFlagsService.ts";
+import {SchedulerService} from "../services/schedulerService.ts";
 
 export type Flag = string;
 
@@ -23,7 +24,8 @@ export interface Command {
 export interface CommandContext {
     featureFlagsService: FeatureFlagsService;
     client: Client,
-    commands: Command[]
+    commands: Command[],
+    schedulerService: SchedulerService
 }
 
 export interface ClassCreateResult {

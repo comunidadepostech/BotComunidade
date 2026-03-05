@@ -21,6 +21,8 @@ import {Command} from "./entities/discordEntities.ts";
 import {Guild} from "discord.js";
 import DatabaseCheckRepository from "./repositories/database/databaseCheck.ts";
 import MessagingService from "./services/messagingService.ts";
+import Scheduler from "./infrastructure/scheduler.ts";
+import {SchedulerService} from "./services/schedulerService.ts";
 
 LoggerService.init()
 GlobalFonts.registerFromPath("./assets/Coolvetica Hv Comp.otf", "normalFont")
@@ -75,8 +77,9 @@ console.time("Carregamento de feature flags no cache")
 const flagService = new FeatureFlagsService(await DatabaseFlagsRepository.getAllFeatureFlags())
 console.timeEnd("Carregamento de feature flags no cache")
 
+const schedulerService = new SchedulerService(client, flagService)
 const messagindService = new MessagingService()
-const discordController = new DiscordController(flagService, messagindService, commands, client)
+const discordController = new DiscordController(schedulerService, flagService, messagindService, commands, client)
 registerDiscordEvents(client, discordController)
 
 console.time("Registro de comandos no Discord")
@@ -100,6 +103,10 @@ app.use((req, res, next) => {
 
 app.use("/api", router);
 app.listen(process.env.PRIMARY_WEBHOOK_PORT, () => console.log("Webhook iniciado"));
+
+
+Scheduler.start(schedulerService)
+console.log("Scheduler iniciado")
 
 
 process.on('SIGINT', async () => await ShutdownService.shutdown(client));

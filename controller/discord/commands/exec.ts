@@ -4,6 +4,7 @@ import {
     SlashCommandBuilder
 } from "discord.js";
 import {Command, CommandContext} from "../../../entities/discordEntities.ts";
+import {SchedulerService} from "../../../services/schedulerService.ts";
 
 export const execCommand: Command = {
     name: 'exec',
@@ -17,8 +18,8 @@ export const execCommand: Command = {
                 .setDescription('Qual comando deve ser executado')
                 .setRequired(true)
                 .addChoices(
-                    {name: 'Checagem de eventos do servidor', value: "1"},
-                    {name: 'Contagem de membros', value: "2"}
+                    {name: 'Checagem de eventos do servidor', value: "Checagem de eventos do servidor"},
+                    {name: 'Contagem de membros', value: "Contagem de membros"}
                 )
         ),
     execute: async (interaction: ChatInputCommandInteraction, context: CommandContext) => {
@@ -26,5 +27,20 @@ export const execCommand: Command = {
             await interaction.reply({content: "❌ Comando desabilitado", flags: MessageFlags.Ephemeral})
             return;
         }
+
+        const command = interaction.options.getString('comando', true)!;
+
+        await interaction.deferReply({flags: MessageFlags.Ephemeral})
+
+        switch (command) {
+            case "Checagem de eventos do servidor":
+                await context.schedulerService.handleEventVerification()
+                break
+            case "Contagem de membros":
+                await context.schedulerService.handleMembersCount()
+                break
+        }
+
+        await interaction.editReply({content: `${command} executado com sucesso`, flags: MessageFlags.Ephemeral})
     }
 }
