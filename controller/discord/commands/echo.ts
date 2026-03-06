@@ -33,12 +33,12 @@ export const echoCommand: Command = {
                 .setRequired(false)
         )
         .addAttachmentOption(option =>
-            option.setName('anexo')
+            option.setName('attachment')
                 .setDescription("attachment")
                 .setRequired(false)
         )
         .addAttachmentOption(option =>
-            option.setName('anexo-2')
+            option.setName('attachment-2')
                 .setDescription("attachment-2")
                 .setRequired(false)
         ),
@@ -53,7 +53,7 @@ export const echoCommand: Command = {
             content: interaction.options.getString("message", true),
             files: [attachment, attachment2]
                 .filter((att): att is Attachment => att !== null)
-                .map(att => att.url),
+                .map(att => ({ attachment: att.url, name: att.name })),
             targetChannel: echoChannel,
             onlyTargetChannel: interaction.options.getBoolean("only-for-this-channel") === true,
             client: context.client
@@ -61,9 +61,9 @@ export const echoCommand: Command = {
 
         try{
             await echo(dto)
-            await interaction.editReply({content: `✅ Mensagem enviada para todos ${dto.targetChannel} com sucesso!`, flags: MessageFlags.Ephemeral});
+            await interaction.editReply({content: `✅ Mensagem enviada para ${dto.targetChannel} com sucesso!`});
         } catch (error: any) {
-            await interaction.editReply({ content: `❌ Nenhum canal encontrado com o nome "${dto.targetChannel.name}".`, flags: MessageFlags.Ephemeral});
+            await interaction.editReply({ content: `❌ Nenhum canal encontrado com o nome "${dto.targetChannel.name}".`});
         }
     }
 }
