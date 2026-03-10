@@ -8,7 +8,6 @@ export default function registerDiscordEvents(client: Client, controller: Discor
     client.on(Events.GuildMemberAdd, (member) => controller.handleGuildMemberAddEvent(member));
     client.on(Events.InteractionCreate, (interaction) => controller.handleInteractionCreateEvent(interaction));
     client.on(Events.MessageCreate, (message) => controller.handleMessageCreateEvent(message));
-    //client.on(Events.MessageUpdate, (oldMsg, newMsg) => controller.handleMessageUpdateEvent(oldMsg, newMsg));
     client.on(Events.GuildDelete, (guild) => controller.handleGuildDeleteEvent(guild));
     client.on(Events.Raw, (packet) => controller.handleRawEvent(packet))
 }

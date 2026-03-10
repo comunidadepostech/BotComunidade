@@ -24,10 +24,11 @@ export const endPollCommand: Command = {
         if (!message.poll) {
             await interaction.reply({content: "Enquete não encotrada", flags: MessageFlags.Ephemeral});
             console.error("❌ Enquete não encontrada ou já terminou")
+            return
         }
 
         await message.poll!.end();
 
-        await interaction.reply({content: `✅ Enquete encerrada.`,});
+        await interaction.reply({content: `✅ Enquete encerrada.`, flags: MessageFlags.Ephemeral});
     }
 }

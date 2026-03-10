@@ -128,49 +128,48 @@ export default class discordController {
         console.error(`Comando não encontrado na lista de comandos nativos!\nComando: ${interaction.commandName}\nLista de comandos registrada: ${this.commands.map(command => command.name).join(', ')}`)
     }
 
-    public async handleMessageUpdateEvent(_oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage) {
-        if (!this.featureFlagsService.flags[newMessage.guildId!]!["salvar_enquetes"]) return
-
-        if (newMessage.partial) await newMessage.fetch();
-
-        if (!newMessage.guild) return
-
-        if (!newMessage.poll) return
-
-        if (!newMessage.poll.resultsFinalized) return
-
-        const now: number = Date.now(); // 3 horas antes (GMT-3), momento em que a enquete terminou
-        const expirity: number = new Date(newMessage.poll.expiresTimestamp as number).getTime();
-        const className = (this.client.channels.cache.get(newMessage.channel.id) as TextChannel).parent?.name;
-        const guildName = (await this.client.guilds.fetch(newMessage.guild.id)).name
-
-        // Prepara o body para ser enviado para o n8n
-        let payload: Poll  = {
-            created_by: newMessage.author?.globalName ?? newMessage.author?.username!,
-            guild: guildName,
-            poll_category: className!,
-            poll_hash: crypto.createHash('sha1').update(newMessage.poll.question.text as string).digest('hex'),
-            question: newMessage.poll.question.text!,
-            answers: newMessage.poll.answers.map((answer: PollAnswer | PartialPollAnswer) => { // lista de respostas
-                return {response: answer.text!, answers: answer.voteCount}
-            }),
-            duration: `${((now - expirity) / (1000 * 60 * 60)).toFixed(0)}` // horas
-        };
-
-        await N8nService.savePoll(payload).catch((error: any) => console.error(`${error.message}\n${error.stack}`))
-    }
-
     public async handleGuildDeleteEvent(guild: Guild) {
         await DatabaseFlagsRepository.deleteGuildFeatureFlags(guild.id)
     }
 
-    public handleRawEvent(packet: any) {
+    public async handleRawEvent(packet: any) {
         if (packet.t !== 'MESSAGE_UPDATE') return;
 
         const data = packet.d;
 
-        if (data.poll && data.poll.results && data.poll.results.is_finalized) {
-            console.log(`[RAW EVENT] Enquete finalizada detectada direto do socket! ID: ${data.id}`);
+        if (!data.guild_id) return;
+        if (!this.featureFlagsService.flags[data.guild_id]!["salvar_enquetes"]) return;
+
+        if (!data.poll || !data.poll.results || !data.poll.results.is_finalized) return;
+
+        try {
+            const channel = await this.client.channels.fetch(data.channel_id) as TextChannel;
+            if (!channel) return;
+
+            const message = await channel.messages.fetch(data.id);
+            if (!message || !message.guild || !message.poll) return;
+
+            const now: number = Date.now();
+            const expirity: number = new Date(message.poll.expiresTimestamp as number).getTime();
+            const className = channel.parent?.name;
+            const guildName = message.guild.name;
+
+            let payload: Poll = {
+                created_by: message.author?.globalName ?? message.author?.username!,
+                guild: guildName,
+                poll_category: className!,
+                poll_hash: crypto.createHash('sha1').update(message.poll.question.text as string).digest('hex'),
+                question: message.poll.question.text!,
+                answers: message.poll.answers.map((answer: PollAnswer | PartialPollAnswer) => {
+                    return { response: answer.text!, answers: answer.voteCount };
+                }),
+                duration: `${((now - expirity) / (1000 * 60 * 60)).toFixed(0)}`
+            };
+
+            await N8nService.savePoll(payload).catch((error: any) => console.error(`${error.message}\n${error.stack}`));
+
+        } catch (error) {
+            console.error(`Erro ao processar evento raw da enquete ${data.id}:`, error);
         }
     }
 }
