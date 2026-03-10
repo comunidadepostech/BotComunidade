@@ -163,4 +163,14 @@ export default class discordController {
     public async handleGuildDeleteEvent(guild: Guild) {
         await DatabaseFlagsRepository.deleteGuildFeatureFlags(guild.id)
     }
+
+    public handleRawEvent(packet: any) {
+        if (packet.t !== 'MESSAGE_UPDATE') return;
+
+        const data = packet.d;
+
+        if (data.poll && data.poll.results && data.poll.results.is_finalized) {
+            console.log(`[RAW EVENT] Enquete finalizada detectada direto do socket! ID: ${data.id}`);
+        }
+    }
 }
