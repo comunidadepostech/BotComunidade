@@ -173,7 +173,7 @@ export default class ClassSubService implements IDiscordClassService {
         category: CategoryChannel,
         classRole: Role,
     ): Promise<void> {
-        const promises = this.CHANNELS_CONFIG.map((config) => {
+        const promises = this.CHANNELS_CONFIG.map(async (config) => {
             const isVoiceChannel =
                 config.type === ChannelType.GuildVoice || config.type === ChannelType.GuildStageVoice;
             const channelName = isVoiceChannel ? `${config.name.replace(/^[📒🎙️]│/, '')} ${className}` : config.name;
@@ -181,7 +181,7 @@ export default class ClassSubService implements IDiscordClassService {
             const channelData: any = {
                 name: channelName,
                 type: config.type,
-                parent: category,
+                parent: category.id,
                 position: config.position,
             };
 
@@ -189,17 +189,15 @@ export default class ClassSubService implements IDiscordClassService {
                 channelData.defaultAutoArchiveDuration = ThreadAutoArchiveDuration.OneWeek;
             }
 
+            const channel = await guild.channels.create(channelData);
+
             if (config.restrictStudents) {
-                channelData.permissionOverwrites = [
-                    {
-                        id: classRole.id,
-                        allow: [PermissionFlagsBits.ViewChannel],
-                        deny: [PermissionFlagsBits.SendMessages],
-                    },
-                ];
+                await channel.permissionOverwrites.edit(classRole.id, {
+                    SendMessages: false
+                });
             }
 
-            return guild.channels.create(channelData).then((channel: any) => channel.lockPermissions());
+            return channel;
         });
 
         await Promise.all(promises);
