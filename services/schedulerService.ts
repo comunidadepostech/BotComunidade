@@ -29,7 +29,7 @@ export class SchedulerService {
         private featureFlagsService: FeatureFlagsService,
         private studyGroupPossibleNames = ["Sala de estudo", "Sala de estudos", "Grupo de estudo", "Grupo de estudos", "Grupo de Estudos", "Grupo de Estudo"],
         private maxEventsCacheSize = 3000,
-        private TWO_HOURS_MS = 2 * 60 * 60 * 1000,
+        private ONE_HOUR_AND_HALF_IN_MILLISECONDS = 120 * 60 * 1000,
     ) {}
 
     private async handleEventCompletion(event: GuildScheduledEvent, peakParticipants: number, className: string): Promise<void> {
@@ -147,7 +147,7 @@ export class SchedulerService {
         }
 
         if (event.status === GuildScheduledEventStatus.Active) {
-            if (now - startTs >= this.TWO_HOURS_MS) {
+            if (now - startTs >= this.ONE_HOUR_AND_HALF_IN_MILLISECONDS) {
                 await event.setStatus(GuildScheduledEventStatus.Completed);
             }
         }

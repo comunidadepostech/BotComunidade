@@ -5,7 +5,7 @@ import path from "node:path";
 import {request} from "undici";
 import {BroadcastMessageDto} from "../../dtos/broadcastMessage.dto.ts";
 import sendWarningDTO from "../../dtos/sendWarning.dto.ts";
-import sendWelcomeMEssageDTO from "../../dtos/sendWelcomeMessage.dto.ts";
+import sendWelcomeMessageDTO from "../../dtos/sendWelcomeMessageDTO.ts";
 import {PollMessageDto} from "../../dtos/pollMessage.dto.ts";
 
 export default class MessagesSubService implements IDiscordMessageService {
@@ -72,7 +72,7 @@ export default class MessagesSubService implements IDiscordMessageService {
         }, this.FIVE_MINUTES_IN_MILLISECONDS)
     }
 
-    async sendWelcomeMessage(dto: sendWelcomeMEssageDTO): Promise<void | Error> {
+    async sendWelcomeMessage(dto: sendWelcomeMessageDTO): Promise<void | Error> {
         if (!this.background) {
             this.background = await loadImage(path.join(process.cwd(), "assets/wallpaper.png"));
         }
@@ -105,7 +105,7 @@ export default class MessagesSubService implements IDiscordMessageService {
         const pngBuffer = Buffer.from(await canvas.encode('png'));
         const attachment = new AttachmentBuilder(pngBuffer, { name: 'profile-image.png' });
 
-        const message = [
+        const initialComponents = [
             {
                 "type": 17,
                 "accent_color": null,
@@ -126,28 +126,45 @@ export default class MessagesSubService implements IDiscordMessageService {
                                 "spoiler": false
                             }
                         ]
-                    },
-                    // {
-                    //     "type": 1,
-                    //     "components": [
-                    //         {
-                    //             "type": 2,
-                    //             "style": 5,
-                    //             "label": "Compartilhar no Linkedin",
-                    //             "emoji": null,
-                    //             "disabled": false,
-                    //             "url": "https://google.com"
-                    //         }
-                    //     ]
-                    // }
+                    }
                 ]
             }
-        ]
+        ];
 
-        await dto.targetChannel.send({
-            components: message,
+        const sentMessage = await dto.targetChannel.send({
+            components: initialComponents,
             flags: MessageFlags.IsComponentsV2,
             files: [attachment]
+        });
+
+
+        const discordImageUrl = sentMessage.attachments.first()?.url;
+
+        if (!discordImageUrl) {
+            console.error("Falha ao obter a URL da CDN do Discord");
+            return;
+        }
+
+        const shareLink = await dto.linkedinService.sharePostOnLinkedin(discordImageUrl);
+
+        const updatedComponents = [...initialComponents];
+
+        updatedComponents[0]!.components.push({
+            "type": 1,
+            "components": [
+                {
+                    "type": 2,
+                    "style": 5,
+                    "label": "Compartilhar no Linkedin",
+                    "emoji": null,
+                    "disabled": false,
+                    "url": shareLink
+                }
+            ]
+        });
+
+        await sentMessage.edit({
+            components: updatedComponents
         });
     }
 }

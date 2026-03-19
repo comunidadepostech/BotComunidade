@@ -1,7 +1,5 @@
 import nodeCron from "node-cron";
 import {SchedulerService} from "../services/schedulerService.ts";
-import {Client} from "discord.js";
-import FeatureFlagsService from "../services/featureFlagsService.ts";
 
 export default class Scheduler {
     static start(schedulerService: SchedulerService) {

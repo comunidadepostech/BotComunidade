@@ -11,7 +11,7 @@ import FeatureFlagsService from "../services/featureFlagsService.ts";
 import {CommandEventDto, ExternalSourceEventDto} from "../dtos/event.dtos.ts";
 import {BroadcastMessageDto} from "../dtos/broadcastMessage.dto.ts";
 import sendWarningDTO from "../dtos/sendWarning.dto.ts";
-import sendWelcomeMEssageDTO from "../dtos/sendWelcomeMessage.dto.ts";
+import sendWelcomeMessageDTO from "../dtos/sendWelcomeMessageDTO.ts";
 import classCreationDTO from "../dtos/classCreation.dto.ts";
 import {PollMessageDto} from "../dtos/pollMessage.dto.ts";
 
@@ -67,6 +67,6 @@ export interface IDiscordMessageService {
     broadcast(dto: BroadcastMessageDto): Promise<void>;
     sendWarning(dto: sendWarningDTO): Promise<void>
     sendLivestreamPoll(targetChannel: TextChannel, role: Role): Promise<void>
-    sendWelcomeMessage(dto: sendWelcomeMEssageDTO): Promise<void | Error>;
+    sendWelcomeMessage(dto: sendWelcomeMessageDTO): Promise<void | Error>;
     createPoll(dto: PollMessageDto): Promise<void | Error>
 }

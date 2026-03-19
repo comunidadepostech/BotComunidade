@@ -1,8 +1,8 @@
 import {Command, IDiscordCommandsService} from "../../types/discord.interfaces.ts";
-import {Client, Guild} from "discord.js";
+import {Guild} from "discord.js";
 
 export default class CommandsSubService implements IDiscordCommandsService {
-    constructor(private client: Client) {}
+    constructor() {}
 
     async clearCommands(guilds: Guild[]) {
         await Promise.all(

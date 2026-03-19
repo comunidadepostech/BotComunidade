@@ -25,6 +25,6 @@ export default class DiscordService implements IDiscordService {
         this.messages = new MessagesSubService(this.client)
         this.roles = new RolesSubService()
         this.class = new ClassSubService(this.client)
-        this.commands = new CommandsSubService(this.client)
+        this.commands = new CommandsSubService()
     }
 }
