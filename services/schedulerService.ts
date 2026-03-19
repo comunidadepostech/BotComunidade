@@ -10,7 +10,7 @@ import {
     ChannelType,
     VoiceChannel
 } from "discord.js";
-import FeatureFlagsService from "./FeatureFlagsService.ts";
+import FeatureFlagsService from "./featureFlagsService.ts";
 import { WARNING_CHANNEL_NAME } from "../constants/discordContants.ts";
 
 // Criamos uma interface para gerenciar tudo sobre o evento em um único lugar
@@ -27,7 +27,7 @@ export class SchedulerService {
     constructor(
         private client: Client,
         private featureFlagsService: FeatureFlagsService,
-        private studyGroupPossibleNames = ["Sala de estudo", "Sala de estudos", "Grupo de estudo", "Grupo de estudos"],
+        private studyGroupPossibleNames = ["Sala de estudo", "Sala de estudos", "Grupo de estudo", "Grupo de estudos", "Grupo de Estudos", "Grupo de Estudo"],
         private maxEventsCacheSize = 3000,
         private TWO_HOURS_MS = 2 * 60 * 60 * 1000,
     ) {}

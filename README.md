@@ -6,22 +6,6 @@ Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades �
 
 ---
 
-# Sumário
-
-- [Como instalar e executar](#como-instalar-e-executar-serviço-interno)
-- [Comandos Disponíveis](#comandos-disponíveis)
-- [Funcionalidades Automáticas](#funcionalidades-automáticas)
-  - [Mensagens de Boas-Vindas](#mensagens-de-boas-vindas)
-  - [Armazenamento de enquetes](#armazenamento-de-enquetes)
-  - [Criação de invites diretamente no comando /createclass](#criação-de-invites-diretamente-no-comando-createclass)
-  - [Cadastro de eventos com Webhook](#cadastro-de-eventos-com-webhook)
-  - [Envio de enquetes para o n8n automaticamente](#envio-de-enquetes-para-o-webhook-do-n8n-automaticamente)
-  - [Contagem de membros mensalmente](#contagem-de-membros-mensalmente)
-  - [Análise de Grupos de estudos](#análise-de-grupos-de-estudos)
-- [Progresso de desenvolvimento e atualizações](#progresso-de-desenvolvimento-e-atualizações)
-
----
-
 ## Como instalar e executar (serviço interno)
 
 1. Certifique-se de que o Bot tenha as permissões necessárias no servidor (o cargo deve estar apenas em baixo do cargo admin ou Community Managers)
@@ -151,20 +135,6 @@ Força a execução de uma tarefa/evento agendado no scheduler do bot.
 </details>
 
 <details>
-<summary><strong><code>/endpoll</code></strong> — Encerra uma enquete ativa</summary>
-
-**Escopo:** Qualquer servidor *(Deve ser usado no mesmo canal em que a enquete foi enviada)*
-
-Finaliza prematuramente uma enquete criada pelo bot.
-
-**Parâmetros:**
-- `id` *(obrigatório)*: ID da mensagem da enquete no Discord.
-
-**Exemplo de uso:**
-/endpoll id: 1445759167028789278
-</details>
-
-<details>
 <summary><strong><code>/updateflag</code></strong> — Atualiza uma feature flag</summary>
 
 **Escopo:** Qualquer servidor
@@ -188,38 +158,3 @@ Cria uam visualização em JSON das flags que o bot tem.
 **Exemplo de uso:**
 /viewflags
 </details>
-
----
-
-## Funcionalidades Automáticas
-
-### Mensagens de Boas-Vindas
-
-- Envia uma mensagem de boas-vindas no canal `#✨│boas-vindas` quando um novo membro entra
-
-### Armazenamento de enquetes
-
-- Gerencia votos de enquetes criadas, permitindo que os usuários votem e visualizem resultados em tempo real.
-- Gerencia multiplos votos ao mesmo tempo, usando um sistema de fila para garantir que os votos sejam contabilizados corretamente.
-
-<!-- ### Atualização constante de invites- Confere se invites antigos ainda existem dentro do servidor e atualiza o banco de dados para economizar espaço-->
-
-### Criação de invites diretamente no comando `/createclass`
-
-- Cria um convite para cada turma nova que já é vinculado ao novo cargo da turma e ao canal de FAQ correspondente do comando.
-
-### Cadastro de eventos com Webhook
-
-- O Bot pode cadastrar eventos automaticamente com uma integração de um Webhook que se mantem numa aplicação [n8n](https://n8n.io) mas também é possível cadastrar evento usando apenas HTTP POST com os parametros certos.
-
-### Envio de enquetes para o webhook do n8n automaticamente
-
-- Quando as enquetes terminam o bot envia um POST para o webhook do n8n com os dados da enquete.
-
-### Contagem de membros mensalmente
-
-- Uma vez por mês o bot conta os membros de cada servidor no formato especificado e envia um POST para o webhook do n8n com os dados.
-
-### Análise de Grupos de estudos
-
-- O bot é capaz de coletar informações sobre os grupos de estudos quando eles estão a acontecer.

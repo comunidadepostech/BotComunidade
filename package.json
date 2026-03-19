@@ -1,6 +1,6 @@
 {
   "name": "bot-comunidade",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "author": "Comunidade Pos Tech Fiap",
   "description": "",
   "main": "main.ts",
@@ -30,6 +30,7 @@
     "@types/node": "^25.1.0"
   },
   "scripts": {
-    "start": "TZ=America/Sao_Paulo bun main.ts"
+    "start": "bun main.ts",
+    "debug": "bun test && bun main.ts"
   }
 }

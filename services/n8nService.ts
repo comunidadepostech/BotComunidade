@@ -1,4 +1,4 @@
-import {InteractionPayload, Poll} from "../entities/dto/n8nDTOs.ts";
+import {InteractionPayload, Poll} from "../dtos/n8n.dtos.ts";
 
 export default class N8nService {
     static async savePoll(poll: Poll){

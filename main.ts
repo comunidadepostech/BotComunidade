@@ -8,21 +8,20 @@ import express from 'express';
 import DatabaseConnection from "./repositories/database/databaseConnection.ts";
 import LoggerService from "./infrastructure/loggerService.ts";
 import DatabaseFlagsRepository from "./repositories/database/databaseFlagsRepository.ts";
-import FeatureFlagsService from "./services/FeatureFlagsService.ts";
-import DiscordController from "./controller/discord/discordController.ts";
+import FeatureFlagsService from "./services/featureFlagsService.ts";
+import DiscordController from "./controller/discordController.ts";
 import ShutdownService from "./infrastructure/shutdownService.ts";
-import commandManagementService from "./services/commandManagementService.ts";
-import registerDiscordEvents from "./gateway/discordRouter.ts";
+import registerDiscordEvents from "./routes/discordRouter.ts";
 import {discordClient} from './infrastructure/discordClient.ts'
-import router from './gateway/webhookRouter.ts';
+import router from './routes/webhookRouter.ts';
 
 // Entidades
-import {Command} from "./entities/discordEntities.ts";
+import {Command} from "./types/discord.interfaces.ts";
 import {Guild} from "discord.js";
 import DatabaseCheckRepository from "./repositories/database/databaseCheck.ts";
-import MessagingService from "./services/messagingService.ts";
 import Scheduler from "./infrastructure/scheduler.ts";
 import {SchedulerService} from "./services/schedulerService.ts";
+import DiscordService from "./services/discordService.ts";
 
 LoggerService.init()
 GlobalFonts.registerFromPath("./assets/Coolvetica Hv Comp.otf", "normalFont")
@@ -39,7 +38,7 @@ console.timeEnd("Login do bot no Discord")
 // Verificação dinâmica de comandos existentes
 console.time("Carregamento de comandos")
 const commands: Command[] = [];
-const commandsPath = path.join(__dirname, './controller/discord/commands/');
+const commandsPath = path.join(__dirname, './controller/commands/');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.ts'));
 
 for (const file of commandFiles) {
@@ -48,7 +47,7 @@ for (const file of commandFiles) {
 
     // Procura o primeiro export que tenha 'execute'
     const command = Object.values(module).find(
-        (exp): exp is Command => typeof exp === 'object' && exp !== null && 'execute' in exp
+        (exp): exp is Command => typeof exp === 'function' && true && 'execute' in exp
     );
 
     if (command) {
@@ -78,12 +77,13 @@ const flagService = new FeatureFlagsService(await DatabaseFlagsRepository.getAll
 console.timeEnd("Carregamento de feature flags no cache")
 
 const schedulerService = new SchedulerService(client, flagService)
-const messagindService = new MessagingService()
-const discordController = new DiscordController(schedulerService, flagService, messagindService, commands, client)
+const discordService = new DiscordService(client)
+
+const discordController = new DiscordController(discordService, schedulerService, flagService, commands, client)
 registerDiscordEvents(client, discordController)
 
 console.time("Registro de comandos no Discord")
-await commandManagementService.registerCommands(
+await discordService.commands.registerCommand(
     client.guilds.cache.values().toArray(),
     commands
 ).then(() => {
@@ -98,6 +98,7 @@ app.use(express.json());
 app.use((req, res, next) => {
     req.discordClient = client;
     req.featureFlagsService = flagService;
+    req.discordService = discordService
     next();
 });
 
@@ -109,5 +110,5 @@ Scheduler.start(schedulerService)
 console.log("Scheduler iniciado")
 
 
-process.on('SIGINT', async () => await ShutdownService.shutdown(client));
-process.on('SIGTERM', async () => await ShutdownService.shutdown(client));
+process.on('SIGINT', async () => await ShutdownService.shutdown(client, discordService.commands));
+process.on('SIGTERM', async () => await ShutdownService.shutdown(client, discordService.commands));

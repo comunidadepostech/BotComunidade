@@ -1,8 +1,11 @@
 import DatabaseConnection from "./databaseConnection.ts"
-import {Flag, globalFlags, GuildFlags} from "../../entities/discordEntities.ts"
+import {Flag, globalFlags, GuildFlags} from "../../types/featureFlags.types.ts"
 import {DEFAULT_FEATURE_FLAGS} from "../../constants/flagsConstants.ts";
 import {RowDataPacket} from "mysql2/promise";
+import {FeatureFlagsRepository} from "../../types/featureFlags.types.ts";
+import staticImplements from "../../decorators/staticImplements.ts";
 
+@staticImplements<FeatureFlagsRepository>()
 export default class DatabaseFlagsRepository {
     public static async getGuildFeatureFlags(guildId: string): Promise<GuildFlags | null> {
         const pool = DatabaseConnection.getPool();
