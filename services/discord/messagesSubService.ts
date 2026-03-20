@@ -1,20 +1,23 @@
-import {IDiscordMessageService} from "../../types/discord.interfaces.ts";
+import type {IDiscordMessageService} from "../../types/discord.interfaces.ts";
 import {AttachmentBuilder, Client, MessageFlags, PollLayoutType, Role, TextChannel} from "discord.js";
 import {createCanvas, Image, loadImage} from "@napi-rs/canvas";
 import path from "node:path";
 import {request} from "undici";
-import {BroadcastMessageDto} from "../../dtos/broadcastMessage.dto.ts";
-import sendWarningDTO from "../../dtos/sendWarning.dto.ts";
-import sendWelcomeMessageDTO from "../../dtos/sendWelcomeMessageDTO.ts";
-import {PollMessageDto} from "../../dtos/pollMessage.dto.ts";
+import type {BroadcastMessageDto} from "../../dtos/broadcastMessage.dto.ts";
+import type SendWarningDto from "../../dtos/sendWarningDto.ts";
+import type SendWelcomeMessageDTO from "../../dtos/sendWelcomeMessageDTO.ts";
+import type {PollMessageDto} from "../../dtos/pollMessage.dto.ts";
+import LinkedinService from "../linkedinService.ts";
+import {ROLE_NAME_REPLACEMENT} from "../../constants/discordConstants.ts";
 
 export default class MessagesSubService implements IDiscordMessageService {
     private background: Image | null = null
     private FIVE_MINUTES_IN_MILLISECONDS = 5 * 60 * 1000
     private sentWarnings: Map<string, number> = new Map()
-    constructor(private client: Client){}
 
-    async createPoll(dto: PollMessageDto): Promise<void | Error> {
+    constructor(private client: Client, private linkedinService: LinkedinService){}
+
+    async createPoll(dto: PollMessageDto): Promise<void> {
         await dto.channel.send({
             poll: {
                 question: dto.question,
@@ -47,8 +50,8 @@ export default class MessagesSubService implements IDiscordMessageService {
         );
     }
 
-    async sendWarning(dto: sendWarningDTO) {
-        await dto.channel.send(dto.message.replaceAll("{cargo}", `${dto.role}`))
+    async sendWarning(dto: SendWarningDto) {
+        await dto.channel.send(dto.message.replaceAll(ROLE_NAME_REPLACEMENT, `${dto.role}`))
     }
 
     async sendLivestreamPoll(targetChannel: TextChannel, role: Role) {
@@ -72,7 +75,7 @@ export default class MessagesSubService implements IDiscordMessageService {
         }, this.FIVE_MINUTES_IN_MILLISECONDS)
     }
 
-    async sendWelcomeMessage(dto: sendWelcomeMessageDTO): Promise<void | Error> {
+    async sendWelcomeMessage(dto: SendWelcomeMessageDTO): Promise<void> {
         if (!this.background) {
             this.background = await loadImage(path.join(process.cwd(), "assets/wallpaper.png"));
         }
@@ -137,7 +140,6 @@ export default class MessagesSubService implements IDiscordMessageService {
             files: [attachment]
         });
 
-
         const discordImageUrl = sentMessage.attachments.first()?.url;
 
         if (!discordImageUrl) {
@@ -145,7 +147,7 @@ export default class MessagesSubService implements IDiscordMessageService {
             return;
         }
 
-        const shareLink = await dto.linkedinService.sharePostOnLinkedin(discordImageUrl);
+        const shareLink = await this.linkedinService.sharePostOnLinkedin(discordImageUrl);
 
         const updatedComponents = [...initialComponents];
 
@@ -163,8 +165,6 @@ export default class MessagesSubService implements IDiscordMessageService {
             ]
         });
 
-        await sentMessage.edit({
-            components: updatedComponents
-        });
+        await sentMessage.edit({components: updatedComponents});
     }
 }

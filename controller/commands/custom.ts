@@ -5,12 +5,10 @@ import {
     MessageFlags,
     Attachment
 } from 'discord.js';
-import {Command} from "../../types/discord.interfaces.ts";
-import staticImplements from "../../decorators/staticImplements.ts";
+import type {ICommand} from "../../types/discord.interfaces.ts";
 
-@staticImplements<Command>()
-export class customCommand {
-    static build() {
+export class customCommand implements ICommand {
+    build() {
         return new SlashCommandBuilder()
             .setName("custom")
             .setDescription('Publica uma mensagem baseada em um arquivo JSON do Discord Builders.')
@@ -25,10 +23,20 @@ export class customCommand {
             .addAttachmentOption(option => option.setName('attachment4').setDescription('Quarto anexo').setRequired(false))
     }
 
-    static async execute(interaction: ChatInputCommandInteraction): Promise<void | Error> {
+    async execute(interaction: ChatInputCommandInteraction): Promise<void | Error> {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-        const json = JSON.parse(interaction.options.getString('json', true));
+        const attachment = interaction.options.getAttachment('json', true);
+
+        if (!attachment.contentType?.includes('application/json') && !attachment.name.endsWith('.json')) {
+            await interaction.editReply('❌ O arquivo enviado não é um JSON válido.');
+            return;
+        }
+
+        const response = await fetch(attachment.url);
+        if (!response.ok) throw new Error('Falha ao baixar o arquivo JSON.');
+
+        const json: unknown = await response.json();
 
         // Coleta todos os anexos de imagem fornecidos em um array
         const attachments: Attachment[] = [];

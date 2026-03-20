@@ -1,10 +1,13 @@
-import mysql, { Pool } from "mysql2/promise";
+import mysql from "mysql2/promise";
+import type { Pool } from "mysql2/promise";
 import {MySQLdatabaseConfig} from "../../infrastructure/dataBaseConfig.ts";
 
 export default class DatabaseConnection {
-    private static pool: Pool;
+    private pool: Pool | null = null;
 
-    public static async connect() {
+    constructor() {}
+
+    async connect() {
         if (!this.pool) {
             this.pool = mysql.createPool(MySQLdatabaseConfig)
             const connection = await this.pool.getConnection()
@@ -12,12 +15,13 @@ export default class DatabaseConnection {
         }
     }
 
-    public static getPool(): Pool {
+    getPool(): Pool {
         if (!this.pool) throw new Error("Banco não iniciado, tente chamar connect() primeiro.");
         return this.pool;
     }
 
-    public static async endConnection() {
+    async endConnection() {
+        if (!this.pool) throw new Error("Banco não iniciado, tente chamar connect() primeiro.");
         await this.pool.end();
     }
 }

@@ -5,12 +5,10 @@ import {
     SlashCommandBuilder,
     MessageFlags
 } from "discord.js";
-import {Command, CommandContext} from "../../types/discord.interfaces.ts";
-import staticImplements from "../../decorators/staticImplements.ts";
+import type {ICommand, ICommandContext} from "../../types/discord.interfaces.ts";
 
-@staticImplements<Command>()
-export class createclassCommand {
-    static build() {
+export class createclassCommand implements ICommand {
+    build() {
         return new SlashCommandBuilder()
             .setName("createclass")
             .setDescription('Cria uma nova turma')
@@ -28,8 +26,8 @@ export class createclassCommand {
             )
     }
 
-    static async execute(interaction: ChatInputCommandInteraction, context: CommandContext): Promise<void | Error> {
-        if (!context.featureFlagsService.flags[interaction.guildId!]!["comando_createclass"]) {
+    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void | Error> {
+        if (!context.featureFlagsService.getFlag(interaction.guildId!, "comando_createclass")) {
             await interaction.reply({content: "❌ Comando desabilitado", flags: MessageFlags.Ephemeral})
             return;
         }
@@ -39,15 +37,16 @@ export class createclassCommand {
 
         await interaction.deferReply({flags: MessageFlags.Ephemeral})
 
-        let result = null
-
         try {
-            result = await context.discordService.class.create({className: className, guildId: interaction.guildId!, faqChannelId: faqChannel.id})
-        } catch (error: any) {
-            await interaction.editReply({content: error.message})
-            return
+            const result = await context.discordService.class.create({
+                className: className,
+                guildId: interaction.guildId!,
+                faqChannelId: faqChannel.id
+            })
+            await interaction.editReply({content: `✅ Turma ${className} criada com sucesso!\n👥 Cargo vinculado: ${result.role}`})
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Erro desconhecido"
+            await interaction.editReply({content: `❌ Erro: ${message}`})
         }
-
-        await interaction.editReply({content: `✅ Turma ${className} criada com sucesso!\n👥 Cargo vinculado: ${result.role}`})
     }
 }

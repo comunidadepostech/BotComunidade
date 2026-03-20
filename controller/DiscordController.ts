@@ -1,28 +1,31 @@
 import DatabaseFlagsRepository from "../repositories/database/databaseFlagsRepository.ts";
-import {Command, CommandContext} from "../types/discord.interfaces.ts"
+import type {ICommand, ICommandContext, IRawPacket} from "../types/discord.interfaces.ts"
 import {
-    BaseInteraction, Client, Guild, GuildMember, PollAnswer, PartialPollAnswer, Message, TextChannel, ChannelType, Role, CategoryChannel, ForumChannel, GuildBasedChannel
+    BaseInteraction, Client, Guild, GuildMember, PollAnswer, Message, TextChannel, ChannelType, Role, CategoryChannel, ForumChannel
 } from "discord.js";
+import type {PartialPollAnswer, GuildBasedChannel} from "discord.js";
 import FeatureFlagsService from "../services/featureFlagsService.ts";
 import crypto from "node:crypto";
-import {InteractionPayload, Poll} from "../dtos/n8n.dtos.ts";
+import type {InteractionPayload, Poll} from "../dtos/n8n.dtos.ts";
 import N8nService from "../services/n8nService.ts";
-import {WELCOME_CHANNEL_NAME} from "../constants/discordContants.ts";
+import {WELCOME_CHANNEL_NAME} from "../constants/discordConstants.ts";
 import {SchedulerService} from "../services/schedulerService.ts";
 import DiscordService from "../services/discordService.ts";
 
 export default class discordController {
     constructor(
         private discordService: DiscordService,
-        private scredulerService: SchedulerService,
+        private schedulerService: SchedulerService,
         private featureFlagsService: FeatureFlagsService,
-        private commands: Command[],
+        private databaseFalgsRepository: DatabaseFlagsRepository,
+        private n8nService: N8nService,
+        private commands: ICommand[],
         private client: Client,
     ) {}
 
     public async handleGuildCreateEvent(guild: Guild) {
         console.log(`Bot adicionado ao servidor ${guild.name} com ID ${guild.id}`)
-        await DatabaseFlagsRepository.saveDefaultFeatureFlags(guild.id)
+        await this.databaseFalgsRepository.saveDefaultFeatureFlags(guild.id)
         console.log((`Feature Flags do servidor ${guild.name} carregadas`));
     }
 
@@ -36,7 +39,7 @@ export default class discordController {
 
     public async handleMessageCreateEvent(message: Message) {
         if (
-            !this.featureFlagsService.flags[message.guildId!]!["salvar_interacoes"] ||
+            this.featureFlagsService.getFlag(message.guildId!, "salvar_interacoes") ||
             ![ChannelType.GuildText, ChannelType.PublicThread, ChannelType.GuildStageVoice, ChannelType.GuildVoice].includes(message.channel.type) // Filtra a origem das mensagens
         ) return;
 
@@ -95,15 +98,18 @@ export default class discordController {
                 ) as CategoryChannel).name
         }
 
-        await N8nService.saveInteraction(body).catch((error: any) => console.error(`${error.message}\n${error.stack}`))
+        await this.n8nService.saveInteraction(body).catch((error: any) => console.error(`${error.message}\n${error.stack}`))
     }
 
     public async handleGuildMemberAddEvent(member: GuildMember) {
-        if (!this.featureFlagsService.flags[member.guild.id!]!["enviar_mensagem_de_boas_vindas"]) return;
+        if (!this.featureFlagsService.getFlag(member.guild.id!, "enviar_mensagem_de_boas_vindas")) return;
 
         const welcomeChannel: TextChannel = member.guild.channels.cache.find((channel: GuildBasedChannel): boolean => channel.name === WELCOME_CHANNEL_NAME) as TextChannel;
 
-        if (!welcomeChannel) console.warn(`Canal de boas vindas de ${member.guild.name} não encontrado, a mensagem de boas vindas de ${member.nickname} foi omitida.`)
+        if (!welcomeChannel) {
+            console.warn(`Canal de boas vindas de ${member.guild.name} não encontrado, a mensagem de boas vindas de ${member.nickname} foi omitida.`)
+            return
+        }
 
         await this.discordService.messages.sendWelcomeMessage({targetChannel: welcomeChannel, profile: member});
     }
@@ -111,11 +117,11 @@ export default class discordController {
     public async handleInteractionCreateEvent(interaction: BaseInteraction) {
         if (!interaction.isChatInputCommand() && !interaction.isContextMenuCommand()) return
 
-        const context: CommandContext = {
+        const context: ICommandContext = {
             featureFlagsService: this.featureFlagsService,
             client: this.client,
             commands: this.commands,
-            schedulerService: this.scredulerService,
+            schedulerService: this.schedulerService,
             discordService: this.discordService
         };
 
@@ -134,25 +140,27 @@ export default class discordController {
     }
 
     public async handleGuildDeleteEvent(guild: Guild) {
-        await DatabaseFlagsRepository.deleteGuildFeatureFlags(guild.id)
+        await this.databaseFalgsRepository.deleteGuildFeatureFlags(guild.id)
     }
 
-    public async handleRawEvent(packet: any) {
+    public async handleRawEvent(packet: IRawPacket): Promise<void> {
         if (packet.t !== 'MESSAGE_UPDATE') return;
 
         const data = packet.d;
 
-        if (!data.guild_id) return;
-        if (!this.featureFlagsService.flags[data.guild_id]!["salvar_enquetes"]) return;
+        if (!data.guild_id) return
+        if (!data.channel_id) return
+        if (!data.id) return
+        if (!this.featureFlagsService.getFlag(data.guild_id, "salvar_enquetes")) return
 
-        if (!data.poll || !data.poll.results || !data.poll.results.is_finalized) return;
+        if (!data.poll || !data.poll.results || !data.poll.results.is_finalized) return
 
         try {
             const channel = await this.client.channels.fetch(data.channel_id) as TextChannel;
-            if (!channel) return;
+            if (!channel) return
 
             const message = await channel.messages.fetch(data.id);
-            if (!message || !message.guild || !message.poll) return;
+            if (!message || !message.guild || !message.poll) return
 
             const now: number = Date.now();
             const expirity: number = new Date(message.poll.expiresTimestamp as number).getTime();
@@ -166,15 +174,15 @@ export default class discordController {
                 poll_hash: crypto.createHash('sha1').update(message.poll.question.text as string).digest('hex'),
                 question: message.poll.question.text!,
                 answers: message.poll.answers.map((answer: PollAnswer | PartialPollAnswer) => {
-                    return { response: answer.text!, answers: answer.voteCount };
+                    return { response: answer.text!, answers: answer.voteCount }
                 }),
                 duration: `${((now - expirity) / (1000 * 60 * 60)).toFixed(0)}`
             };
 
-            await N8nService.savePoll(payload).catch((error: any) => console.error(`${error.message}\n${error.stack}`));
+            await this.n8nService.savePoll(payload).catch((error: any) => console.error(`${error.message}\n${error.stack}`))
 
         } catch (error) {
-            console.error(`Erro ao processar evento raw da enquete ${data.id}:`, error);
+            console.error(`Erro ao processar evento raw da enquete ${data.id}:`, error)
         }
     }
 }

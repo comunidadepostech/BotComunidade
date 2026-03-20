@@ -1,17 +1,18 @@
-import {ChannelConfig, IDiscordClassService} from "../../types/discord.interfaces.ts";
+import type {IChannelConfig, IDiscordClassService} from "../../types/discord.interfaces.ts";
 import {
     CategoryChannel,
-    Channel,
     ChannelType,
     Client,
     Collection,
-    GuildBasedChannel,
+    Guild,
     PermissionFlagsBits,
     Role,
     TextChannel,
     ThreadAutoArchiveDuration
 } from "discord.js";
-import classCreationDTO from "../../dtos/classCreation.dto.ts";
+
+import type {GuildBasedChannel, Channel} from "discord.js";
+import type ClassCreationDTO from "../../dtos/classCreationDTO.ts";
 
 export default class ClassSubService implements IDiscordClassService {
     constructor(private client: Client) {}
@@ -55,7 +56,7 @@ export default class ClassSubService implements IDiscordClassService {
         PermissionFlagsBits.UseExternalStickers,
     ];
 
-    private readonly CHANNELS_CONFIG: ChannelConfig[] = [
+    private readonly CHANNELS_CONFIG: IChannelConfig[] = [
         { name: '🙋│apresente-se', type: ChannelType.GuildText, position: 0 },
         { name: '🚨│avisos', type: ChannelType.GuildText, position: 1, restrictStudents: true },
         { name: '💬│bate-papo', type: ChannelType.GuildText, position: 2 },
@@ -121,7 +122,7 @@ export default class ClassSubService implements IDiscordClassService {
         },
     ];
 
-    private async ensureAdminRoles(guild: any): Promise<void> {
+    private async ensureAdminRoles(guild: Guild): Promise<void> {
         const existingRoles = new Set(guild.roles.cache.map((r: Role) => r.name));
 
         const rolesToCreate = this.ADMIN_ROLES.filter((name) => !existingRoles.has(name));
@@ -129,7 +130,7 @@ export default class ClassSubService implements IDiscordClassService {
         await Promise.all(rolesToCreate.map((name) => guild.roles.create({ name })));
     }
 
-    private async createClassRole(guild: any, className: string): Promise<Role> {
+    private async createClassRole(guild: Guild, className: string): Promise<Role> {
         return await guild.roles.create({
             name: `Estudantes ${className}`,
             color: 3447003,
@@ -140,19 +141,17 @@ export default class ClassSubService implements IDiscordClassService {
     }
 
     private async createCategory(
-        guild: any,
+        guild: Guild,
         className: string,
         adminRoles: Collection<string, Role>,
         classRole: Role,
     ): Promise<CategoryChannel> {
         const permissionOverwrites = [
-            // Permissões para roles admin
             ...this.ADMIN_ROLES.map((roleName) => ({
                 id: adminRoles.find((r) => r.name === roleName)!.id,
                 allow: this.ADMIN_PERMISSIONS,
                 deny: [],
             })),
-            // Permissões para role de estudante
             {
                 id: classRole.id,
                 allow: [PermissionFlagsBits.ViewChannel],
@@ -168,7 +167,7 @@ export default class ClassSubService implements IDiscordClassService {
     }
 
     private async createChannels(
-        guild: any,
+        guild: Guild,
         className: string,
         category: CategoryChannel,
         classRole: Role,
@@ -217,10 +216,8 @@ export default class ClassSubService implements IDiscordClassService {
 
         if (!forumChannel) return;
 
-        // Configurar tags
         await forumChannel.setAvailableTags(this.FORUM_TAGS.map((name) => ({ name, moderated: false })));
 
-        // Criar posts iniciais
         await Promise.all(
             this.INITIAL_POSTS.map((post) =>
                 forumChannel.threads.create({
@@ -238,7 +235,7 @@ export default class ClassSubService implements IDiscordClassService {
     ): Promise<void> {
         const permissionMap = {
             Alun: { ReadMessageHistory: true, SendMessages: true, ViewChannel: true, CreatePublicThreads: true },
-            'Pós Tech': {
+            'Pos Tech': {
                 ReadMessageHistory: true,
                 SendMessages: false,
                 ViewChannel: true,
@@ -271,7 +268,7 @@ export default class ClassSubService implements IDiscordClassService {
     //     });
     // }
 
-    async create(dto: classCreationDTO): Promise<{role: Role, message: string} | Error> {
+    async create(dto: ClassCreationDTO): Promise<{role: Role, message: string}> {
         const guild = await this.client.guilds.fetch(dto.guildId)
 
         if (!guild) throw new Error(`Guilda não encontrada ao tentar criar a turma ${dto.className}`)
@@ -309,11 +306,12 @@ export default class ClassSubService implements IDiscordClassService {
         };
     }
 
-    async disable(role: Role): Promise<void | Error> {
+    async disable(role: Role): Promise<void> {
         try {
             await role.delete()
-        } catch (error: any) {
-            throw new Error(`Eu não tenho permissão para desabilitar essa turma, verifique se meu cargo está acima do cargo que você está tentando desabilitar\nErro detalhado: ${error.message}`)
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Erro desconhecido"
+            throw new Error(`Eu não tenho permissão para desabilitar essa turma, verifique se meu cargo está acima do cargo que você está tentando desabilitar\nErro detalhado: ${message}`)
         }
 
     }

@@ -1,9 +1,9 @@
 import DatabaseFlagsRepository from "../repositories/database/databaseFlagsRepository.ts";
-import {UpdateFeatureFlagDTO} from "../dtos/updateFlag.dto.ts";
-import {globalFlags} from "../types/featureFlags.types.ts";
+import type {UpdateFeatureFlagDTO} from "../dtos/updateFlag.dto.ts";
+import type {GlobalFlags, IGuildFlags} from "../types/featureFlags.types.ts";
 
 export default class FeatureFlagsService {
-    constructor(private globalFlags: globalFlags) {}
+    constructor(private globalFlags: GlobalFlags, private databaseFlagsRepository: DatabaseFlagsRepository) {}
 
     async updateFlag(dto: UpdateFeatureFlagDTO) {
         if (!this.globalFlags[dto.guildId]) throw new Error("Servidor não encontrado")
@@ -16,7 +16,7 @@ export default class FeatureFlagsService {
 
             for (const flag of dto.flagName) {
                 this.globalFlags[dto.guildId]![flag] = dto.flagValue
-                await DatabaseFlagsRepository.updateFeatureFlag(dto.guildId, flag, dto.flagValue)
+                await this.databaseFlagsRepository.updateFeatureFlag(dto.guildId, flag, dto.flagValue)
             }
             return
         }
@@ -24,14 +24,18 @@ export default class FeatureFlagsService {
         if (!Object.keys(this.globalFlags[dto.guildId]!).includes(dto.flagName)) throw new Error("Flag não encontrada")
 
         this.globalFlags[dto.guildId]![dto.flagName] = dto.flagValue
-        await DatabaseFlagsRepository.updateFeatureFlag(dto.guildId, dto.flagName, dto.flagValue)
+        await this.databaseFlagsRepository.updateFeatureFlag(dto.guildId, dto.flagName, dto.flagValue)
     }
 
-    get flags(): globalFlags {
+    getFlag(guildId: string, flag: keyof IGuildFlags): boolean {
+        return this.globalFlags[guildId]?.[flag] ?? false;
+    }
+
+    get flags(): GlobalFlags {
         return this.globalFlags
     }
 
-    set flags(flags: globalFlags) {
+    set flags(flags: GlobalFlags) {
         this.globalFlags = flags
     }
 }

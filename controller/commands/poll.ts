@@ -1,4 +1,4 @@
-import {Command, CommandContext} from "../../types/discord.interfaces.ts";
+import type {ICommand, ICommandContext} from "../../types/discord.interfaces.ts";
 import {
     ChannelType,
     ChatInputCommandInteraction,
@@ -6,11 +6,9 @@ import {
     PermissionFlagsBits,
     SlashCommandBuilder
 } from "discord.js";
-import staticImplements from "../../decorators/staticImplements.ts";
 
-@staticImplements<Command>()
-export class pollCommand {
-    static build() {
+export class pollCommand implements ICommand {
+    build() {
         return new SlashCommandBuilder()
             .setName("poll")
             .setDescription('Cria uma enquete interativa')
@@ -94,7 +92,7 @@ export class pollCommand {
             )
     }
 
-    static async execute(interaction: ChatInputCommandInteraction, context: CommandContext): Promise<void | Error> {
+    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void | Error> {
         if (interaction.channel!.type !== ChannelType.GuildText) {
             throw new Error("Canal inválido");
         }
@@ -119,8 +117,9 @@ export class pollCommand {
                 duration: interaction.options.getInteger("duration", true)
             })
             await interaction.reply({content: "✅ Enquete criada com sucesso!", flags: MessageFlags.Ephemeral});
-        } catch (error: any) {
-            await interaction.reply({content: `❌ Erro ao criar enquete: ${error.message}`, flags: MessageFlags.Ephemeral});
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Erro desconhecido"
+            await interaction.reply({content: `❌ Erro ao criar enquete: ${message}`, flags: MessageFlags.Ephemeral});
         }
     }
 }

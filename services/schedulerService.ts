@@ -10,48 +10,29 @@ import {
     ChannelType
 } from "discord.js";
 import FeatureFlagsService from "./featureFlagsService.ts";
-import { WARNING_CHANNEL_NAME } from "../constants/discordContants.ts";
-
-// Criamos uma interface para gerenciar tudo sobre o evento em um único lugar
-interface EventState {
-    notified: boolean;
-    maxParticipants: number;
-    reported: boolean;
-}
+import {STUDY_GROUP_POSSIBLE_NAMES, WARNING_CHANNEL_NAME} from "../constants/discordConstants.ts";
+import N8nService from "./n8nService.ts";
+import {env} from "../config/env.ts";
+import type {EventState} from "../types/discord.interfaces.ts";
+import type {SaveMembersDto} from "../dtos/saveMembersDto.ts";
 
 export class SchedulerService {
-    // Agora o cache guarda um objeto completo para cada evento
     private eventsCache = new Map<string, EventState>();
+    private maxEventsCacheSize = 3000 // Número apropriado, deve ser maior caso a média de eventos cresça
+    private ONE_HOUR_AND_HALF_IN_MILLISECONDS = 120 * 60 * 1000
 
     constructor(
         private client: Client,
         private featureFlagsService: FeatureFlagsService,
-        private studyGroupPossibleNames = ["Sala de estudo", "Sala de estudos", "Grupo de estudo", "Grupo de estudos", "Grupo de Estudos", "Grupo de Estudo"],
-        private maxEventsCacheSize = 3000,
-        private ONE_HOUR_AND_HALF_IN_MILLISECONDS = 120 * 60 * 1000,
+        private n8nService: N8nService,
     ) {}
 
     private async handleEventCompletion(event: GuildScheduledEvent, peakParticipants: number, className: string): Promise<void> {
-        const payload = {
+        await this.n8nService.saveStudyGroupAnalysis({
             curso: event.guild!.name,
             turma: className,
             maximoDeParticipantes: peakParticipants
-        };
-
-        console.debug(`Enviando dados para o n8n:`, payload);
-
-        try {
-            await fetch(process.env.N8N_ENDPOINT + '/salvarDadosGrupoEstudo', {
-                method: 'POST',
-                headers: {
-                    "Content-Type": "application/json",
-                    "token": process.env.N8N_WEBHOOKS_TOKEN as string
-                },
-                body: JSON.stringify(payload)
-            });
-        } catch (error) {
-            console.error(`Erro ao enviar dados do evento ${event.id} para o n8n:`, error);
-        }
+        })
     }
 
     private async sendWarning(classRole: Role | undefined, eventUrl: string, scheduledStartTimestamp: number, channel: TextChannel) {
@@ -115,12 +96,12 @@ export class SchedulerService {
         const now = Date.now();
         const startTs = event.scheduledStartTimestamp!;
 
-        const isStudyGroup = this.studyGroupPossibleNames.some(name => eventName.includes(name));
+        const isStudyGroup = STUDY_GROUP_POSSIBLE_NAMES.some(name => eventName.includes(name));
         const hasVoiceChannel = event.channelId !== null;
 
         if (flags["enviar_aviso_de_eventos"] && !state.notified) {
             const timeUntilStart = startTs - now;
-            if (timeUntilStart <= Number(process.env.REMAINING_EVENT_TIME_FOR_WARNING_IN_MINUTES) * 60 * 1000 && timeUntilStart > 0) {
+            if (timeUntilStart <= Number(env.REMAINING_EVENT_TIME_FOR_WARNING_IN_MINUTES) * 60 * 1000 && timeUntilStart > 0) {
                 await this.handleNotification(event, className);
                 state.notified = true;
             }
@@ -199,33 +180,15 @@ export class SchedulerService {
 
     async handleMembersCount() {
         console.time("Contagem de membros");
-        interface RoleCount {
-            roleName: string;
-            count: number;
-        }
 
-        interface Payload {
-            guildName: string;
-            data: RoleCount[]
-        }
-
-        let payload: Payload[] = [];
+        let payload: SaveMembersDto = [];
 
         for (const guild of this.client.guilds.cache.values()) {
-            if (this.featureFlagsService.flags[guild.id!]?.['coletar_dados_de_membros_mensalmente'] === false) continue;
+            if (!this.featureFlagsService.getFlag(guild.id!, 'coletar_dados_de_membros_mensalmente')) continue;
             payload.push({guildName: guild.name, data: await this.getMembersByRole(guild)});
         }
 
-        const res = await fetch(`${process.env.N8N_ENDPOINT}/salvarMembros`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': "Bearer " + process.env.N8N_WEBHOOKS_TOKEN as string
-            },
-            body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) console.error(`Erro ao enviar dados para o n8n: ${JSON.stringify(res, null, 2)}`);
+        await this.n8nService.saveMembersData(payload)
         console.timeEnd("Contagem de membros");
     }
 }

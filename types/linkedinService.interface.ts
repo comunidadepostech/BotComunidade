@@ -1,3 +1,3 @@
-export default interface ILinkedinService {
+export default interface ILinkedInService {
     sharePostOnLinkedin(imageUrl: string): Promise<string>
 }

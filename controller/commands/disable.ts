@@ -4,12 +4,10 @@ import {
     PermissionFlagsBits,
     SlashCommandBuilder
 } from "discord.js";
-import {Command, CommandContext} from "../../types/discord.interfaces.ts";
-import staticImplements from "../../decorators/staticImplements.ts";
+import type {ICommand, ICommandContext} from "../../types/discord.interfaces.ts";
 
-@staticImplements<Command>()
-export class disableCommand {
-    static build() {
+export class disableCommand implements ICommand {
+    build() {
         return new SlashCommandBuilder()
             .setName("disable")
             .setDescription('Desabilita uma turma removendo o cargo da turma dos alunos')
@@ -21,8 +19,8 @@ export class disableCommand {
             )
     }
 
-    static async execute(interaction: ChatInputCommandInteraction, context: CommandContext): Promise<void | Error> {
-        if (!context.featureFlagsService.flags[interaction.guildId!]!["comando_disable"]) {
+    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void | Error> {
+        if (!context.featureFlagsService.getFlag(interaction.guildId!, "comando_disable")) {
             await interaction.reply({content: "❌ Comando desabilitado", flags: MessageFlags.Ephemeral})
             return;
         }
@@ -47,11 +45,12 @@ export class disableCommand {
                 return;
             }
 
-            const count = await context.discordService.class.disable(role);
+            await context.discordService.class.disable(role);
 
-            await interaction.editReply({ content: `✅ Cargo removido de ${count} membros da turma ${role.name}.` });
-        } catch (error: any) {
-            await interaction.editReply({content: `❌ Erro ao desabilitar turma: ${error.message}`});
+            await interaction.editReply({ content: `✅ Cargo da turma ${role.name} desabilitado.` });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Erro desconhecido"
+            await interaction.editReply({content: `❌ Erro ao desabilitar turma: ${message}`});
             console.error(error);
         }
     }

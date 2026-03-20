@@ -1,4 +1,4 @@
-import {Command} from "../../types/discord.interfaces.ts";
+import type {ICommand} from "../../types/discord.interfaces.ts";
 import {
     ContextMenuCommandBuilder,
     ApplicationCommandType,
@@ -7,21 +7,19 @@ import {
     ModalBuilder,
     TextInputBuilder,
     TextInputStyle,
-    ActionRowBuilder,
-    ModalActionRowComponentBuilder
+    ActionRowBuilder
 } from "discord.js";
-import staticImplements from "../../decorators/staticImplements.ts";
-import {CommandContext} from "../../types/discord.interfaces.ts";
+import type {ModalActionRowComponentBuilder} from "discord.js";
+import type {ICommandContext} from "../../types/discord.interfaces.ts";
 
-@staticImplements<Command>()
-export class editCommand {
-    static build() {
+export class editCommand implements ICommand{
+    build() {
         return new ContextMenuCommandBuilder()
             .setName('Editar mensagem')
             .setType(ApplicationCommandType.Message)
     }
 
-    static async execute(interaction: MessageContextMenuCommandInteraction, context: CommandContext): Promise<void | Error> {
+    async execute(interaction: MessageContextMenuCommandInteraction, context: ICommandContext): Promise<void | Error> {
         const targetMessage = interaction.targetMessage;
 
         if (targetMessage.author.id !== context.client.user!.id) {

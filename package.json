@@ -31,6 +31,6 @@
   },
   "scripts": {
     "start": "bun main.ts",
-    "debug": "bun test && bun main.ts"
+    "debug": "bun test && bun --watch main.ts"
   }
 }

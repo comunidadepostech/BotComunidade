@@ -4,12 +4,10 @@ import {
     PermissionFlagsBits,
     SlashCommandBuilder
 } from "discord.js";
-import {Command, CommandContext} from "../../types/discord.interfaces.ts";
-import staticImplements from "../../decorators/staticImplements.ts";
+import type {ICommand, ICommandContext} from "../../types/discord.interfaces.ts";
 
-@staticImplements<Command>()
-export class eventCommand {
-    static build() {
+export class eventCommand implements ICommand {
+    build() {
         return new SlashCommandBuilder()
             .setName("event")
             .setDescription('Cria um evento')
@@ -57,7 +55,7 @@ export class eventCommand {
             )
     }
 
-    static async execute(interaction: ChatInputCommandInteraction, context: CommandContext) {
+    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext) {
         const topic = interaction.options.getString('topic')!;
         const startDate = interaction.options.getString('start-date')!;
         const startTime = interaction.options.getString('start-time')!;
@@ -91,8 +89,9 @@ export class eventCommand {
                 guildId: interaction.guildId!
             });
             await interaction.reply({ content: "✅ Evento criado com sucesso!", flags: MessageFlags.Ephemeral })
-        } catch (error: any) {
-            await interaction.reply({ content: `❌ Erro ao criar o evento: ${error.message}}`, flags: MessageFlags.Ephemeral });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Erro desconhecido"
+            await interaction.reply({ content: `❌ Erro ao criar o evento: ${message}}`, flags: MessageFlags.Ephemeral });
         }
     }
 }

@@ -1,4 +1,4 @@
-import {Command, IDiscordCommandsService} from "../../types/discord.interfaces.ts";
+import type {ICommand, IDiscordCommandsService} from "../../types/discord.interfaces.ts";
 import {Guild} from "discord.js";
 
 export default class CommandsSubService implements IDiscordCommandsService {
@@ -9,7 +9,7 @@ export default class CommandsSubService implements IDiscordCommandsService {
             guilds.map(guild => guild.commands.set([]))
         )
     }
-    async registerCommand(guilds: Guild[], commands: Command[]) {
+    async registerCommand(guilds: Guild[], commands: ICommand[]) {
         const commandBuilds = commands.map(cmd => cmd.build())
 
         await Promise.all(

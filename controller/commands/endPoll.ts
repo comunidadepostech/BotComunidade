@@ -1,22 +1,20 @@
-import {Command} from "../../types/discord.interfaces.ts";
+import type {ICommand} from "../../types/discord.interfaces.ts";
 import {
     ContextMenuCommandBuilder,
     ApplicationCommandType,
     MessageFlags,
     MessageContextMenuCommandInteraction
 } from "discord.js";
-import staticImplements from "../../decorators/staticImplements.ts";
-import {CommandContext} from "../../types/discord.interfaces.ts";
+import type {ICommandContext} from "../../types/discord.interfaces.ts";
 
-@staticImplements<Command>()
-export class endPollCommand {
-    static build() {
+export class endPollCommand implements ICommand{
+    build() {
         return new ContextMenuCommandBuilder()
             .setName('Encerrar enquete')
             .setType(ApplicationCommandType.Message)
     }
 
-    static async execute(interaction: MessageContextMenuCommandInteraction, context: CommandContext): Promise<void | Error> {
+    async execute(interaction: MessageContextMenuCommandInteraction, context: ICommandContext): Promise<void | Error> {
         if (!interaction.targetMessage.poll) {
             await interaction.reply({content: "❌ A mensagem selecionada não contém uma enquete.", flags: MessageFlags.Ephemeral});
             return

@@ -1,12 +1,13 @@
-import ILinkedinService from "../types/linkedinService.interface.ts";
+import type ILinkedInService from "../types/linkedinService.interface.ts";
+import {env} from "../config/env.ts";
 
-export default class LinkedinService implements ILinkedinService{
-    sharePostOnLinkedin(imageUrl: string): string {
+export default class LinkedinService implements ILinkedInService{
+    async sharePostOnLinkedin(imageUrl: string): Promise<string> {
         const urlParams = new URLSearchParams({
             img: imageUrl,
         });
 
-        const pageWithOgTags = `${process.env.LINKEDIN_SHARE_ROUTE}?${urlParams.toString()}`;
+        const pageWithOgTags = `${env.LINKEDIN_SHARE_ROUTE}?${urlParams.toString()}`;
 
         const linkedInShareUrl = new URL('https://www.linkedin.com/sharing/share-offsite/');
         linkedInShareUrl.searchParams.set('url', pageWithOgTags);

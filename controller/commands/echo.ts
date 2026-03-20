@@ -5,14 +5,11 @@ import {
     PermissionFlagsBits,
     SlashCommandBuilder, TextChannel
 } from "discord.js";
-import {Command, CommandContext} from "../../types/discord.interfaces.ts";
-import {BroadcastMessageDto} from "../../dtos/broadcastMessage.dto.ts";
-import staticImplements from "../../decorators/staticImplements.ts";
+import type {ICommand, ICommandContext} from "../../types/discord.interfaces.ts";
+import type {BroadcastMessageDto} from "../../dtos/broadcastMessage.dto.ts";
 
-
-@staticImplements<Command>()
-export class echoCommand {
-    static build() {
+export class echoCommand implements ICommand {
+    build() {
         return new SlashCommandBuilder()
             .setName("echo")
             .setDescription("Replica uma mensagem para todos os canais com mesmo nome ou para apenas um canal em específico.")
@@ -46,7 +43,7 @@ export class echoCommand {
             )
     }
 
-    static async execute(interaction: ChatInputCommandInteraction, context: CommandContext): Promise<void | Error> {
+    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void | Error> {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const echoChannel: TextChannel = interaction.options.getChannel("channel", true);
@@ -63,8 +60,9 @@ export class echoCommand {
         try{
             await context.discordService.messages.broadcast(dto)
             await interaction.editReply({content: `✅ Mensagem enviada para ${dto.targetChannel} com sucesso!`});
-        } catch (error: any) {
-            await interaction.editReply({ content: `❌ Nenhum canal encontrado com o nome "${dto.targetChannel.name}".`});
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Erro desconhecido"
+            await interaction.editReply({ content: `❌ Erro ao enviar a mensagem: ${message}".`});
         }
     }
 }

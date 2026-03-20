@@ -1,12 +1,15 @@
-import { Request, Response } from "express";
-import {DISCORD_GUILDS, STUDY_GROUP_CHANNEL_NAME, WARNING_CHANNEL_NAME} from "../constants/discordContants.ts";
+import type { Request, Response } from "express";
+import {DISCORD_GUILDS, STUDY_GROUP_CHANNEL_NAME, WARNING_CHANNEL_NAME} from "../constants/discordConstants.ts";
 import {defaultEventDescription} from "../constants/eventDescription.ts";
 import {ChannelType, Role, TextChannel, VoiceChannel} from "discord.js";
+import {env} from "../config/env.ts";
 
 export class WebhookController {
-    static async EventManagement(req: Request, res: Response) {
+    constructor() {}
+
+    async EventManagement(req: Request, res: Response) {
         try {
-            if (req.headers.token !== process.env.WEBHOOK_TOKEN) {
+            if (req.headers["token"] !== env.WEBHOOK_TOKEN) {
                 res.status(401).json({"message": "Invalid token"})
                 return
             }
@@ -77,8 +80,8 @@ export class WebhookController {
         }
     }
 
-    static async SendLivePoll(req: Request, res: Response) {
-        if (req.headers.token !== process.env.WEBHOOK_TOKEN) {
+    async SendLivePoll(req: Request, res: Response) {
+        if (req.headers["token"] !== env.WEBHOOK_TOKEN) {
             res.status(401).json(JSON.stringify({"message": "Invalid token"}))
             return
         }
@@ -108,7 +111,7 @@ export class WebhookController {
         const guild = await client.guilds.fetch(DISCORD_GUILDS[classNameWithoutNumber]);
 
         // Verifica se o servidor tem a feature habilitada
-        if (!featureFlagsService.flags[guild.id]!["enviar_forms_no_final_da_live"]) {
+        if (!featureFlagsService.getFlag(guild.id, "enviar_forms_no_final_da_live")) {
             console.warn(`Envio de link de feedback das lives desabilitado no servidor ${guild.name} - Envio cancelado`)
             return
         }
@@ -131,16 +134,16 @@ export class WebhookController {
             if (parentName !== classNameWithNumber) continue
 
             await messagingService.sendLivestreamPoll(channel as TextChannel, role)
-            return res.status(200);
+            return res.status(200).json({status: "sucess"});
         }
 
         console.error("Nenhum canal de avisos encontrado na turma");
         return res.status(500).json({error: "Nenhum canal de avisos encontrado na turma"});
     }
 
-    static async sendWarning(req: Request, res: Response) {
+    async sendWarning(req: Request, res: Response) {
         try {
-            if (req.headers.token !== process.env.WEBHOOK_TOKEN) {
+            if (req.headers["token"] !== env.WEBHOOK_TOKEN) {
                 res.status(401).json(JSON.stringify({"message": "Invalid token"}))
                 return
             }
@@ -166,9 +169,10 @@ export class WebhookController {
 
             if (!canal.isTextBased()) return // Verificação para o TS não reclamar
             await messagingService.sendWarning({channel: canal as TextChannel, message: mensagem, role: cargo})
+            res.status(200).json({ channel: canal as TextChannel, message: mensagem, role: cargo })
         } catch (error: any) {
             console.error(error);
-            return res.status(500).json({error: error.message});
+            res.status(500).json({error: error.message});
         }
     }
 }

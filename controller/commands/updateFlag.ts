@@ -1,15 +1,13 @@
-import {Command, CommandContext} from "../../types/discord.interfaces.ts";
+import type {ICommand, ICommandContext} from "../../types/discord.interfaces.ts";
 import {
     ChatInputCommandInteraction,
     MessageFlags,
     PermissionFlagsBits,
     SlashCommandBuilder
 } from "discord.js";
-import staticImplements from "../../decorators/staticImplements.ts";
 
-@staticImplements<Command>()
-export class updateFlagCommand {
-    static build() {
+export class updateFlagCommand implements ICommand {
+    build() {
         return new SlashCommandBuilder()
             .setName("updateflag")
             .setDescription('Permite alterar o estádo de uma feature flag do Bot.')
@@ -18,7 +16,7 @@ export class updateFlagCommand {
             .addBooleanOption(option => option.setName("value").setDescription("Novo estado da feature flag").setRequired(true))
     }
 
-    static async execute(interaction: ChatInputCommandInteraction, context: CommandContext): Promise<void | Error> {
+    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void | Error> {
         let flagname: string | string[] = interaction.options.getString("flag", true)
 
         if (flagname.includes(";")) {
@@ -39,11 +37,9 @@ export class updateFlagCommand {
                 flags: MessageFlags.Ephemeral,
                 content: `✅ A flag **${formattedFlagName}** foi atualizada com sucesso para \`${interaction.options.getBoolean("value", true)}\`!`
             });
-        } catch (error: any) {
-            await interaction.reply({
-                flags: MessageFlags.Ephemeral,
-                content: `❌ Erro ao atualizar flag: ${error.message}`
-            });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Erro desconhecido"
+            await interaction.reply({flags: MessageFlags.Ephemeral, content: `❌ Erro ao atualizar flag: ${message}`});
         }
     }
 }

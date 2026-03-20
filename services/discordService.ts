@@ -1,4 +1,4 @@
-import {
+import type {
     IDiscordClassService,
     IDiscordCommandsService,
     IDiscordEventService,
@@ -12,6 +12,7 @@ import MessagesSubService from "./discord/messagesSubService.ts";
 import RolesSubService from "./discord/rolesSubService.ts";
 import ClassSubService from "./discord/classSubService.ts";
 import CommandsSubService from "./discord/commandsSubService.ts";
+import LinkedinService from "./linkedinService.ts";
 
 export default class DiscordService implements IDiscordService {
     events: IDiscordEventService;
@@ -20,9 +21,9 @@ export default class DiscordService implements IDiscordService {
     class: IDiscordClassService;
     commands: IDiscordCommandsService;
 
-    constructor(private client: Client) {
+    constructor(private client: Client, private linkedinService: LinkedinService) {
         this.events = new EventsSubService(this.client)
-        this.messages = new MessagesSubService(this.client)
+        this.messages = new MessagesSubService(this.client, this.linkedinService)
         this.roles = new RolesSubService()
         this.class = new ClassSubService(this.client)
         this.commands = new CommandsSubService()

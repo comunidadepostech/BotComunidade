@@ -26,3 +26,5 @@ export const DISCORD_GUILDS: { [key: string]: string } = Object.freeze({
 export const WELCOME_CHANNEL_NAME = "✨│boas-vindas"
 export const WARNING_CHANNEL_NAME = "🚨│avisos"
 export const STUDY_GROUP_CHANNEL_NAME = "📒│Sala de estudo"
+export const STUDY_GROUP_POSSIBLE_NAMES = ["Sala de estudo", "Sala de estudos", "Grupo de estudo", "Grupo de estudos", "Grupo de Estudos", "Grupo de Estudo"]
+export const ROLE_NAME_REPLACEMENT = "{cargo}"

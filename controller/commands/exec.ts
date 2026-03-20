@@ -3,12 +3,10 @@ import {
     PermissionFlagsBits,
     SlashCommandBuilder
 } from "discord.js";
-import {Command, CommandContext} from "../../types/discord.interfaces.ts";
-import staticImplements from "../../decorators/staticImplements.ts";
+import type {ICommand, ICommandContext} from "../../types/discord.interfaces.ts";
 
-@staticImplements<Command>()
-export class execCommand {
-    static build() {
+export class execCommand implements ICommand {
+    build() {
         return new SlashCommandBuilder()
             .setName("exec")
             .setDescription('Executa um comando do scheduler')
@@ -24,8 +22,8 @@ export class execCommand {
             )
     }
 
-    static async execute(interaction: ChatInputCommandInteraction, context: CommandContext): Promise<void | Error> {
-        if (!context.featureFlagsService.flags[interaction.guildId!]!["comando_exec"]) {
+    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void | Error> {
+        if (!context.featureFlagsService.getFlag(interaction.guildId!, "comando_exec")) {
             await interaction.reply({content: "❌ Comando desabilitado", flags: MessageFlags.Ephemeral})
             return;
         }

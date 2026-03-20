@@ -4,19 +4,17 @@ import {
     PermissionFlagsBits,
     SlashCommandBuilder
 } from "discord.js";
-import {Command} from "../../types/discord.interfaces.ts";
-import staticImplements from "../../decorators/staticImplements.ts";
+import type {ICommand} from "../../types/discord.interfaces.ts";
 
-@staticImplements<Command>()
-export class pingCommand {
-    static build() {
+export class pingCommand implements ICommand {
+    build() {
         return new SlashCommandBuilder()
             .setName("ping")
             .setDescription('Responde com Pong!')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     }
 
-    static async execute(interaction: ChatInputCommandInteraction) {
+    async execute(interaction: ChatInputCommandInteraction) {
         await interaction.reply({content: "pong!", flags: MessageFlags.Ephemeral});
     }
 }
