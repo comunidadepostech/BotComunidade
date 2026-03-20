@@ -4,13 +4,13 @@ import {Client, GuildScheduledEventEntityType, GuildScheduledEventPrivacyLevel} 
 import fs from "fs";
 
 export default class EventsSubService implements IDiscordEventService {
-    private backgroud: Buffer<ArrayBuffer> | null = null
+    private background: Buffer<ArrayBuffer> | null = null
     constructor(private client: Client){}
 
     async create(dto: CommandEventDto | ExternalSourceEventDto) {
         if (dto.source === "external") {
-            if (!this.backgroud) {
-                this.backgroud = fs.readFileSync("assets/postech.png");
+            if (!this.background) {
+                this.background = fs.readFileSync("assets/postech.png");
             }
 
             const guild = await this.client.guilds.fetch(dto.guildId)
@@ -22,7 +22,7 @@ export default class EventsSubService implements IDiscordEventService {
                 privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,
                 entityType: GuildScheduledEventEntityType.Voice,
                 description: dto.description,
-                image: this.backgroud,
+                image: this.background,
                 channel: dto.channel
             })
             return

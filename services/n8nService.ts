@@ -1,7 +1,6 @@
 import type {InteractionPayload, Poll} from "../dtos/n8n.dtos.ts";
 import type StudyGroupAnalysisPayload from "../dtos/studyGroupAnalysis.dto.ts";
 import {env} from "../config/env.ts";
-import type IN8nService from "../types/n8nService.interface.ts";
 import type {SaveMembersDto} from "../dtos/saveMembersDto.ts";
 
 export default class N8nService implements N8nService {
