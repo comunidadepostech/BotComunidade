@@ -2,8 +2,9 @@ import type {InteractionPayload, Poll} from "../dtos/n8n.dtos.ts";
 import type StudyGroupAnalysisPayload from "../dtos/studyGroupAnalysis.dto.ts";
 import {env} from "../config/env.ts";
 import type {SaveMembersDto} from "../dtos/saveMembersDto.ts";
+import type IN8nService from "../types/n8nService.interface.ts";
 
-export default class N8nService implements N8nService {
+export default class N8nService implements IN8nService {
     async savePoll(poll: Poll){
         const res = await fetch(env.N8N_ENDPOINT + '/salvarEnquete', {
             method: 'POST',
@@ -39,7 +40,7 @@ export default class N8nService implements N8nService {
             },
             body: JSON.stringify(payload)
         });
-        console.error(`Erro ao enviar dados do evento ${payload} para o n8n: ${res.status} ${res.statusText}`);
+        if (!res.ok) throw new Error(`Falha ao enviar dados do grupo de estudo para o n8n: ${res.status} ${res.statusText}`);
     }
 
     async saveMembersData(payload: SaveMembersDto) {

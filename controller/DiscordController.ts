@@ -39,7 +39,7 @@ export default class discordController {
 
     public async handleMessageCreateEvent(message: Message) {
         if (
-            this.featureFlagsService.getFlag(message.guildId!, "salvar_interacoes") ||
+            !this.featureFlagsService.getFlag(message.guildId!, "salvar_interacoes") ||
             ![ChannelType.GuildText, ChannelType.PublicThread, ChannelType.GuildStageVoice, ChannelType.GuildVoice].includes(message.channel.type) // Filtra a origem das mensagens
         ) return;
 
@@ -129,8 +129,10 @@ export default class discordController {
             if (nativeCommand.build().name === interaction.commandName) {
                 try {
                     await nativeCommand.execute(interaction, context);
-                } catch (error: any) {
-                    console.error(error)
+                } catch (error) {
+                    const message = error instanceof Error ? error.message : 'Erro desconhecido';
+                    const stack = error instanceof Error ? error.stack : undefined;
+                    console.error(message, stack);
                 }
                 return
             }

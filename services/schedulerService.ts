@@ -28,11 +28,15 @@ export class SchedulerService {
     ) {}
 
     private async handleEventCompletion(event: GuildScheduledEvent, peakParticipants: number, className: string): Promise<void> {
-        await this.n8nService.saveStudyGroupAnalysis({
-            curso: event.guild!.name,
-            turma: className,
-            maximoDeParticipantes: peakParticipants
-        })
+        try {
+            await this.n8nService.saveStudyGroupAnalysis({
+                curso: event.guild!.name,
+                turma: className,
+                maximoDeParticipantes: peakParticipants
+            })
+        } catch (error) {
+            if (error instanceof Error) console.error(error.message)
+        }
     }
 
     private async sendWarning(classRole: Role | undefined, eventUrl: string, scheduledStartTimestamp: number, channel: TextChannel) {

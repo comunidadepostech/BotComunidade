@@ -25,6 +25,7 @@ import DiscordService from "./services/discordService.ts";
 import LinkedinService from "./services/linkedinService.ts";
 import {env} from "./config/env.ts";
 import N8nService from "./services/n8nService.ts";
+import {WebhookController} from "./controller/webhookController.ts";
 
 async function bootstrap() {
     LoggerService.init()
@@ -88,6 +89,7 @@ async function bootstrap() {
     const flagService = new FeatureFlagsService(await databaseFlagsRepository.getAllFeatureFlags(), databaseFlagsRepository)
     console.timeEnd("Carregamento de feature flags no cache")
 
+    const webhookController = new WebhookController()
     const n8nService = new N8nService()
     const schedulerService = new SchedulerService(client, flagService, n8nService)
     const linkedinService = new LinkedinService()
@@ -113,6 +115,7 @@ async function bootstrap() {
         req.discordClient = client;
         req.featureFlagsService = flagService;
         req.discordService = discordService
+        req.webhookController = webhookController;
         next();
     });
 

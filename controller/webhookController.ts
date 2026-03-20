@@ -170,9 +170,11 @@ export class WebhookController {
             if (!canal.isTextBased()) return // Verificação para o TS não reclamar
             await messagingService.sendWarning({channel: canal as TextChannel, message: mensagem, role: cargo})
             res.status(200).json({ channel: canal as TextChannel, message: mensagem, role: cargo })
-        } catch (error: any) {
-            console.error(error);
-            res.status(500).json({error: error.message});
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Erro desconhecido';
+            const stack = error instanceof Error ? error.stack : undefined;
+            console.error(message, stack);
+            res.status(500).json({ error: message });
         }
     }
 }
