@@ -7,8 +7,7 @@ import {
     Role,
     TextChannel,
     GuildScheduledEventStatus,
-    ChannelType,
-    VoiceChannel
+    ChannelType
 } from "discord.js";
 import FeatureFlagsService from "./featureFlagsService.ts";
 import { WARNING_CHANNEL_NAME } from "../constants/discordContants.ts";
@@ -39,7 +38,7 @@ export class SchedulerService {
             maximoDeParticipantes: peakParticipants
         };
 
-        console.log(`[${event.id}] Enviando dados para o n8n:`, payload);
+        console.debug(`Enviando dados para o n8n:`, payload);
 
         try {
             await fetch(process.env.N8N_ENDPOINT + '/salvarDadosGrupoEstudo', {
@@ -136,11 +135,14 @@ export class SchedulerService {
             }
 
             if (flags["coletar_dados_de_grupos_de_estudo"] && event.status === GuildScheduledEventStatus.Active) {
-                const voiceChannel = event.channel as VoiceChannel | null;
+                const voiceChannel = await event.guild?.channels.fetch(event.channelId!);
+
                 if (voiceChannel && voiceChannel.isVoiceBased()) {
-                    const currentParticipants = voiceChannel.members.size;
-                    if (currentParticipants > state.maxParticipants) {
-                        state.maxParticipants = currentParticipants;
+                    let count = 0
+                    voiceChannel.members.map(_ => count++) // Por algum motivo members.size não funciona, por isso usei count
+
+                    if (count > state.maxParticipants) {
+                        state.maxParticipants = count;
                     }
                 }
             }
