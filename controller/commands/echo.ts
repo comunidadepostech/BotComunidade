@@ -43,7 +43,7 @@ export class echoCommand implements ICommand {
             )
     }
 
-    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void | Error> {
+    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void> {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const echoChannel: TextChannel = interaction.options.getChannel("channel", true);

@@ -19,7 +19,7 @@ export class disableCommand implements ICommand {
             )
     }
 
-    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void | Error> {
+    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void> {
         if (!context.featureFlagsService.getFlag(interaction.guildId!, "comando_disable")) {
             await interaction.reply({content: "❌ Comando desabilitado", flags: MessageFlags.Ephemeral})
             return;

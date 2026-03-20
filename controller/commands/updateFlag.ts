@@ -16,7 +16,7 @@ export class updateFlagCommand implements ICommand {
             .addBooleanOption(option => option.setName("value").setDescription("Novo estado da feature flag").setRequired(true))
     }
 
-    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void | Error> {
+    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void> {
         let flagname: string | string[] = interaction.options.getString("flag", true)
 
         if (flagname.includes(";")) {
@@ -27,8 +27,7 @@ export class updateFlagCommand implements ICommand {
             await context.featureFlagsService.updateFlag({
                 guildId: interaction.guildId!,
                 flagName: flagname,
-                flagValue: interaction.options.getBoolean("value", true),
-                featureFlagsService: context.featureFlagsService,
+                flagValue: interaction.options.getBoolean("value", true)
             })
 
             const formattedFlagName = Array.isArray(flagname) ? flagname.join(", ") : flagname;

@@ -23,8 +23,8 @@ export class SchedulerService {
 
     constructor(
         private client: Client,
-        private featureFlagsService: FeatureFlagsService,
-        private n8nService: N8nService,
+        private readonly featureFlagsService: FeatureFlagsService,
+        private readonly n8nService: N8nService,
     ) {}
 
     private async handleEventCompletion(event: GuildScheduledEvent, peakParticipants: number, className: string): Promise<void> {
@@ -47,25 +47,29 @@ export class SchedulerService {
             minute: "2-digit"
         });
 
-        await channel.send(
+        const message = await channel.send(
             `Boa noite, turma!! ${classRole ? classRole.toString() : ""}\n\n` +
             `Passando para lembrar vocês do nosso evento de hoje às ${hours} 🚀\n` +
             `acesse o card do evento [aqui](${eventUrl})`
         );
+
+        setTimeout(async () => {
+            if (message.deletable) await message.delete()
+        }, env.DELETE_DISCORD_EVENT_WARNING_AFTER_HOURS)
     }
 
     private async handleNotification(event: GuildScheduledEvent, className: string) {
         const classRole = event.guild!.roles.cache.find(role => role.name === "Estudantes " + className);
 
         const warningChannels = event.guild!.channels.cache.filter(
-            c => c.type === ChannelType.GuildText && c.name === WARNING_CHANNEL_NAME
+            channel => channel.type === ChannelType.GuildText && channel.name === WARNING_CHANNEL_NAME
         );
 
         if (event.channelId) {
             const voiceChannel = event.guild!.channels.cache.get(event.channelId);
             const parentId = voiceChannel?.parentId;
 
-            const targetChannel = warningChannels.find(c => c.parentId === parentId) as TextChannel | undefined;
+            const targetChannel = warningChannels.find(channel => channel.parentId === parentId) as TextChannel | undefined;
             if (targetChannel) {
                 await this.sendWarning(classRole, event.url, event.scheduledStartTimestamp!, targetChannel);
             }
@@ -105,7 +109,7 @@ export class SchedulerService {
 
         if (flags["enviar_aviso_de_eventos"] && !state.notified) {
             const timeUntilStart = startTs - now;
-            if (timeUntilStart <= Number(env.REMAINING_EVENT_TIME_FOR_WARNING_IN_MINUTES) * 60 * 1000 && timeUntilStart > 0) {
+            if (timeUntilStart <= env.REMAINING_EVENT_TIME_FOR_WARNING_IN_MINUTES && timeUntilStart > 0) {
                 await this.handleNotification(event, className);
                 state.notified = true;
             }

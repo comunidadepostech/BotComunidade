@@ -23,7 +23,7 @@ export class customCommand implements ICommand {
             .addAttachmentOption(option => option.setName('attachment4').setDescription('Quarto anexo').setRequired(false))
     }
 
-    async execute(interaction: ChatInputCommandInteraction): Promise<void | Error> {
+    async execute(interaction: ChatInputCommandInteraction): Promise<void> {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const attachment = interaction.options.getAttachment('json', true);

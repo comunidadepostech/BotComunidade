@@ -7,7 +7,7 @@ eventRouter.post('/', async (req, res) => {
 });
 
 eventRouter.delete("/", (_req, res) => {
-    res.sendStatus(500)
+    res.sendStatus(405)
 })
 
 export default eventRouter;

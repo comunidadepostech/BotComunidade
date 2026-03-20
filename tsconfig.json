@@ -16,7 +16,6 @@
     "noPropertyAccessFromIndexSignature": true,
     "exactOptionalPropertyTypes": true,
     "allowImportingTsExtensions": true,
-    "noEmit": true,
 
     // Qualidade de código
     "allowUnreachableCode": false,

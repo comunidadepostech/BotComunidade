@@ -19,7 +19,7 @@ export class editCommand implements ICommand{
             .setType(ApplicationCommandType.Message)
     }
 
-    async execute(interaction: MessageContextMenuCommandInteraction, context: ICommandContext): Promise<void | Error> {
+    async execute(interaction: MessageContextMenuCommandInteraction, context: ICommandContext): Promise<void> {
         const targetMessage = interaction.targetMessage;
 
         if (targetMessage.author.id !== context.client.user!.id) {

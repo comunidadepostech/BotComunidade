@@ -14,7 +14,9 @@ export class viewFlagsCommand implements ICommand {
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     }
 
-    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void | Error> {
-        await interaction.reply({flags: MessageFlags.Ephemeral, content: "```json\n" + JSON.stringify(context.featureFlagsService.flags[interaction.guildId!], null, 2) + "```"})
+    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void> {
+        const guildFlags = context.featureFlagsService.getGuildFlags(interaction.guildId!);
+        const display = guildFlags ? JSON.stringify(guildFlags, null, 2) : 'Nenhuma flag encontrada para este servidor.';
+        await interaction.reply({ flags: MessageFlags.Ephemeral, content: `\`\`\`json\n${display}\`\`\`` });
     }
 }

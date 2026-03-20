@@ -26,7 +26,7 @@ export interface EventState {
 
 export interface ICommand {
     build(): SlashCommandOptionsOnlyBuilder | ContextMenuCommandBuilder,
-    execute(interaction: any, context: ICommandContext): Promise<void | Error>
+    execute(interaction: any, context: ICommandContext): Promise<void>
 }
 
 export interface ICommandContext {

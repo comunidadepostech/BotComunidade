@@ -12,7 +12,7 @@ import {WELCOME_CHANNEL_NAME} from "../constants/discordConstants.ts";
 import {SchedulerService} from "../services/schedulerService.ts";
 import DiscordService from "../services/discordService.ts";
 
-export default class discordController {
+export default class DiscordController {
     constructor(
         private discordService: DiscordService,
         private schedulerService: SchedulerService,
@@ -53,9 +53,12 @@ export default class discordController {
         ) return;
 
         // Descobre dados do canal
-        const channel: any = await this.client.channels.fetch(message.channelId);
+        const channel = await this.client.channels.fetch(message.channelId);
 
-        // Descobre o servidor
+        if (!channel || channel.isDMBased() || channel.isVoiceBased()) return
+
+        const channelParent = channel.parent
+        if (!channelParent) return
 
         // Descobre o maior cargo do membro pela posição hierárquica
         const member = await message.guild.members.fetch(message.author.id);
@@ -86,10 +89,10 @@ export default class discordController {
 
         if ([ChannelType.GuildText, ChannelType.GuildVoice, ChannelType.GuildStageVoice].includes(message.channel.type)) {
             body.channel = channel.name
-            body.class = channel.parent?.name
+            body.class = channelParent.name
         } else {
             body.thread = channel.name
-            body.channel = (this.client.channels.cache.get(channel.parentId) as ForumChannel).name
+            body.channel = (this.client.channels.cache.get(channelParent.id) as ForumChannel).name
             body.class = (
                 this.client.channels.cache.get(
                     (this.client.channels.cache.get(
@@ -169,7 +172,7 @@ export default class discordController {
             const className = channel.parent?.name;
             const guildName = message.guild.name;
 
-            let payload: Poll = {
+            const payload: Poll = {
                 created_by: message.author?.globalName ?? message.author?.username!,
                 guild: guildName,
                 poll_category: className!,
@@ -181,7 +184,7 @@ export default class discordController {
                 duration: `${((now - expirity) / (1000 * 60 * 60)).toFixed(0)}`
             };
 
-            await this.n8nService.savePoll(payload).catch((error: any) => console.error(`${error.message}\n${error.stack}`))
+            await this.n8nService.savePoll(payload).catch((error) => error instanceof Error ? console.error(`${error.message}\n${error.stack}`) : console.error(`Erro desconhecido: ${JSON.stringify(error, null, 2)}`))
 
         } catch (error) {
             console.error(`Erro ao processar evento raw da enquete ${data.id}:`, error)

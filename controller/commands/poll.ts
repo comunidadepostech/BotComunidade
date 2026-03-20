@@ -92,7 +92,7 @@ export class pollCommand implements ICommand {
             )
     }
 
-    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void | Error> {
+    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void> {
         if (interaction.channel!.type !== ChannelType.GuildText) {
             throw new Error("Canal inválido");
         }

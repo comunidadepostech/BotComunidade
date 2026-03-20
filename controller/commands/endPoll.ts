@@ -14,7 +14,7 @@ export class endPollCommand implements ICommand{
             .setType(ApplicationCommandType.Message)
     }
 
-    async execute(interaction: MessageContextMenuCommandInteraction, context: ICommandContext): Promise<void | Error> {
+    async execute(interaction: MessageContextMenuCommandInteraction, context: ICommandContext): Promise<void> {
         if (!interaction.targetMessage.poll) {
             await interaction.reply({content: "❌ A mensagem selecionada não contém uma enquete.", flags: MessageFlags.Ephemeral});
             return

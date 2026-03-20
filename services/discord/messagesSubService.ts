@@ -1,5 +1,5 @@
 import type {IDiscordMessageService} from "../../types/discord.interfaces.ts";
-import {AttachmentBuilder, Client, MessageFlags, PollLayoutType, Role, TextChannel} from "discord.js";
+import {AttachmentBuilder, Client, MessageFlags, PollLayoutType, Role, TextChannel, ComponentType, ButtonStyle} from "discord.js";
 import {createCanvas, Image, loadImage} from "@napi-rs/canvas";
 import path from "node:path";
 import {request} from "undici";
@@ -110,16 +110,16 @@ export default class MessagesSubService implements IDiscordMessageService {
 
         const initialComponents = [
             {
-                "type": 17,
+                "type": ComponentType.Container,
                 "accent_color": null,
                 "spoiler": false,
                 "components": [
                     {
-                        "type": 10,
+                        "type": ComponentType.TextDisplay,
                         "content": `### Olá, ${dto.profile}!\n### Bem vindo a nossa Comunidade Pos Tech!`
                     },
                     {
-                        "type": 12,
+                        "type": ComponentType.MediaGallery,
                         "items": [
                             {
                                 "media": {
@@ -152,11 +152,11 @@ export default class MessagesSubService implements IDiscordMessageService {
         const updatedComponents = [...initialComponents];
 
         updatedComponents[0]!.components.push({
-            "type": 1,
+            "type": ComponentType.ActionRow,
             "components": [
                 {
-                    "type": 2,
-                    "style": 5,
+                    "type": ComponentType.Button,
+                    "style": ButtonStyle.Link,
                     "label": "Compartilhar no Linkedin",
                     "emoji": null,
                     "disabled": false,

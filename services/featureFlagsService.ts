@@ -31,6 +31,10 @@ export default class FeatureFlagsService {
         return this.globalFlags[guildId]?.[flag] ?? false;
     }
 
+    getGuildFlags(guildId: string): IGuildFlags | undefined {
+        return this.globalFlags[guildId];
+    }
+
     get flags(): GlobalFlags {
         return this.globalFlags
     }

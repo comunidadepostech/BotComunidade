@@ -3,8 +3,8 @@ import {
     CategoryChannel,
     ChannelType,
     Client,
-    Collection,
-    Guild,
+    Collection, type ForumChannel,
+    Guild, type GuildChannelCreateOptions,
     PermissionFlagsBits,
     Role,
     TextChannel,
@@ -103,7 +103,7 @@ export default class ClassSubService implements IDiscordClassService {
         {
             title: 'Ferramentas Disponíveis para Acesso',
             content:
-                'Estamos começando com tudo, e vocês têm à disposição várias ferramentas tecnológicas incríveis que vão dar aquele boost nos estudos. 🚀\n\n🔧 Visual Studio Code\n\n🐙 GitHub\n\n🤖 GitHub Copilot\n\n🔨 Rider\n\n🐙 GitKraken\n\n☁️ Azure\n\n💻 JetBrains\n\n🎨 Figma\n\n🛠️ DataGrip\n\n🔧 MS Visual Studio for Students\n\n🎓 Benefícios Microsoft: Acesse várias ferramentas e recursos exclusivos para estudantes, como o [Microsoft 365 Web](https://www.microsoft.com/pt-br/education/products/office), o [Azure for Students](https://azure.microsoft.com/pt-br/pricing/purchase-options/azure-account/search) e o [Visual Studio](https://www.linkedin.com/pulse/visual-studio-dev-essentials-free-thiago-adriano/)\n\nPara acessar esses benefícios, você precisa adicionar o seu email da FIAP.\nQualquer dúvida, estamos por aqui para ajudar. 😉\n\n{mention}',
+                "Estamos começando com tudo, e vocês têm à disposição várias ferramentas tecnológicas incríveis que vão dar aquele boost nos estudos. 🚀\n\n🔧 [Visual Studio Code](https://visualstudio.microsoft.com/pt-br/vscode-edu/)\n\n🤖  [GitHub Pro e Copilot](https://education.github.com/pack)\n\n🐙 [GitKraken](https://www.gitkraken.com/github-student-developer-pack-bundle)\n\n☁️ [Azure](https://azure.microsoft.com/pt-br/free/students)\n\n💻 [JetBrains](https://www.jetbrains.com/academy/student-pack/)\n\n🎨 [Figma](https://www.figma.com/pt-br/education/)\n\n🎓 [Microsoft 365 Education Pack](https://www.microsoft.com/pt-br/microsoft-365/free-office-online-for-the-web)\n\nPara acessar esses benefícios, você precisa adicionar o seu email da FIAP (não sabe qual o seu? veja a thread sobre o email estudantil).\nQualquer dúvida, estamos por aqui para ajudar. 😉\n{mention}"
         },
         {
             title: 'Boas Práticas para a Comunidade',
@@ -177,16 +177,13 @@ export default class ClassSubService implements IDiscordClassService {
                 config.type === ChannelType.GuildVoice || config.type === ChannelType.GuildStageVoice;
             const channelName = isVoiceChannel ? `${config.name.replace(/^[📒🎙️]│/, '')} ${className}` : config.name;
 
-            const channelData: any = {
+            const channelData: GuildChannelCreateOptions  = {
                 name: channelName,
                 type: config.type,
                 parent: category.id,
                 position: config.position,
+                ...(isVoiceChannel ? {} : { defaultAutoArchiveDuration: ThreadAutoArchiveDuration.OneWeek }),
             };
-
-            if (!isVoiceChannel) {
-                channelData.defaultAutoArchiveDuration = ThreadAutoArchiveDuration.OneWeek;
-            }
 
             const channel = await guild.channels.create(channelData);
 
@@ -212,7 +209,7 @@ export default class ClassSubService implements IDiscordClassService {
                 ch.name === '❓│dúvidas' &&
                 ch.parent?.id === category.id &&
                 ch.type === ChannelType.GuildForum,
-        ) as any;
+        ) as ForumChannel;
 
         if (!forumChannel) return;
 
@@ -260,14 +257,6 @@ export default class ClassSubService implements IDiscordClassService {
         }
     }
 
-    // private async createInvite(channel: TextChannel): Promise<Invite> {
-    //     return await channel.createInvite({
-    //         maxAge: 0,
-    //         maxUses: 0,
-    //         unique: true,
-    //     });
-    // }
-
     async create(dto: ClassCreationDTO): Promise<{role: Role, message: string}> {
         const guild = await this.client.guilds.fetch(dto.guildId)
 
@@ -294,10 +283,6 @@ export default class ClassSubService implements IDiscordClassService {
 
         // 6. Adicionar posts e tags no forum
         await this.setupForumChannel(channels, classCategory, classRole);
-
-        // 7. Criar convite - desabilitado até a versão 15 do DiscordJS
-        //const inviteChannel = channels.find((ch) => ch.name === '✨│boas-vindas') as TextChannel;
-        //const invite = await this.createInvite(inviteChannel);
 
         return {
             role: classRole,

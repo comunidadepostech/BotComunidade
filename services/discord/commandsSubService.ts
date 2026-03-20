@@ -9,6 +9,7 @@ export default class CommandsSubService implements IDiscordCommandsService {
             guilds.map(guild => guild.commands.set([]))
         )
     }
+
     async registerCommand(guilds: Guild[], commands: ICommand[]) {
         const commandBuilds = commands.map(cmd => cmd.build())
 
