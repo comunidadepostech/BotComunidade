@@ -26,13 +26,8 @@ Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades �
 **Escopo:** Qualquer servidor
 
 Verifica se o bot está online e respondendo. O bot responderá com "pong!" para confirmar que está funcionando perfeitamente.
-
-**Parâmetros:**
-*Nenhum parâmetro necessário.*
-
-**Exemplo de uso:**
-/ping
 </details>
+
 
 <details>
 <summary><strong><code>/echo</code></strong> — Replica uma mensagem em canais</summary>
@@ -52,6 +47,7 @@ Replica uma mensagem para um ou todos os canais de todos os servidores.
 /echo channel: #anúncios message: Olá a todos! Bem-vindos ao servidor!
 </details>
 
+
 <details>
 <summary><strong><code>/poll</code></strong> — Cria uma enquete interativa</summary>
 
@@ -70,6 +66,7 @@ Cria uma enquete interativa com opções de votação personalizadas (até 10 op
 /poll question: Qual seu dia preferido para eventos? duration: 1 option1: Sábado option2: Domingo allow-multiselect: Sim
 </details>
 
+
 <details>
 <summary><strong><code>/createclass</code></strong> — Cria estrutura para nova turma</summary>
 
@@ -84,6 +81,7 @@ Cria cargo, categoria, canais e configura as permissões para uma nova turma com
 **Exemplo de uso:**
 /createclass name: 1TESTE faq-channel: #faq-2025
 </details>
+
 
 <details>
 <summary><strong><code>/event</code></strong> — Cria um evento agendado</summary>
@@ -106,6 +104,7 @@ Cria um evento oficial diretamente no servidor do Discord com banner e link asso
 /event topic: Aula Magna start-date: 2025-11-01 start-time: 20:00 end-date: 2025-11-01 end-time: 22:00 description: Aula introdutória link: [https://teste.com](https://teste.com) background: [anexo_da_imagem]
 </details>
 
+
 <details>
 <summary><strong><code>/disable</code></strong> — Desabilita uma turma</summary>
 
@@ -119,6 +118,7 @@ Desativa as configurações e acessos referentes a uma turma específica do serv
 **Exemplo de uso:**
 /disable role: @Estudantes 11SOAT
 </details>
+
 
 <details>
 <summary><strong><code>/exec</code></strong> — Executa evento do scheduler</summary>
@@ -134,6 +134,7 @@ Força a execução de uma tarefa/evento agendado no scheduler do bot.
 /exec command: Checagem de eventos do servidor
 </details>
 
+
 <details>
 <summary><strong><code>/updateflag</code></strong> — Atualiza uma feature flag</summary>
 
@@ -148,13 +149,20 @@ Atualiza uma feature flag do bot (Dica: use ; para ativar ou desativar mais de u
 /updateflag flag: comando_exec;comando_disable value: true
 </details>
 
+
 <details>
 <summary><strong><code>/viewflags</code></strong> — Mostra as feature flags</summary>
 
 **Escopo:** Qualquer servidor
 
-Cria uam visualização em JSON das flags que o bot tem.
+Cria uma visualização em JSON das flags que o bot tem.
+</details>
 
-**Exemplo de uso:**
-/viewflags
+
+<details>
+<summary><strong><code>/refresh</code></strong> — Recarrega os comandos dos servidores</summary>
+
+**Escopo:** Qualquer servidor
+
+Recarrega os comandos dos servidores para caso de erro.
 </details>
