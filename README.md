@@ -6,22 +6,6 @@ Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades �
 
 ---
 
-# Sumário
-
-- [Como instalar e executar](#como-instalar-e-executar-serviço-interno)
-- [Comandos Disponíveis](#comandos-disponíveis)
-- [Funcionalidades Automáticas](#funcionalidades-automáticas)
-  - [Mensagens de Boas-Vindas](#mensagens-de-boas-vindas)
-  - [Armazenamento de enquetes](#armazenamento-de-enquetes)
-  - [Criação de invites diretamente no comando /createclass](#criação-de-invites-diretamente-no-comando-createclass)
-  - [Cadastro de eventos com Webhook](#cadastro-de-eventos-com-webhook)
-  - [Envio de enquetes para o n8n automaticamente](#envio-de-enquetes-para-o-webhook-do-n8n-automaticamente)
-  - [Contagem de membros mensalmente](#contagem-de-membros-mensalmente)
-  - [Análise de Grupos de estudos](#análise-de-grupos-de-estudos)
-- [Progresso de desenvolvimento e atualizações](#progresso-de-desenvolvimento-e-atualizações)
-
----
-
 ## Como instalar e executar (serviço interno)
 
 1. Certifique-se de que o Bot tenha as permissões necessárias no servidor (o cargo deve estar apenas em baixo do cargo admin ou Community Managers)
@@ -42,13 +26,8 @@ Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades �
 **Escopo:** Qualquer servidor
 
 Verifica se o bot está online e respondendo. O bot responderá com "pong!" para confirmar que está funcionando perfeitamente.
-
-**Parâmetros:**
-*Nenhum parâmetro necessário.*
-
-**Exemplo de uso:**
-/ping
 </details>
+
 
 <details>
 <summary><strong><code>/echo</code></strong> — Replica uma mensagem em canais</summary>
@@ -68,6 +47,7 @@ Replica uma mensagem para um ou todos os canais de todos os servidores.
 /echo channel: #anúncios message: Olá a todos! Bem-vindos ao servidor!
 </details>
 
+
 <details>
 <summary><strong><code>/poll</code></strong> — Cria uma enquete interativa</summary>
 
@@ -86,6 +66,7 @@ Cria uma enquete interativa com opções de votação personalizadas (até 10 op
 /poll question: Qual seu dia preferido para eventos? duration: 1 option1: Sábado option2: Domingo allow-multiselect: Sim
 </details>
 
+
 <details>
 <summary><strong><code>/createclass</code></strong> — Cria estrutura para nova turma</summary>
 
@@ -100,6 +81,7 @@ Cria cargo, categoria, canais e configura as permissões para uma nova turma com
 **Exemplo de uso:**
 /createclass name: 1TESTE faq-channel: #faq-2025
 </details>
+
 
 <details>
 <summary><strong><code>/event</code></strong> — Cria um evento agendado</summary>
@@ -122,6 +104,7 @@ Cria um evento oficial diretamente no servidor do Discord com banner e link asso
 /event topic: Aula Magna start-date: 2025-11-01 start-time: 20:00 end-date: 2025-11-01 end-time: 22:00 description: Aula introdutória link: [https://teste.com](https://teste.com) background: [anexo_da_imagem]
 </details>
 
+
 <details>
 <summary><strong><code>/disable</code></strong> — Desabilita uma turma</summary>
 
@@ -135,6 +118,7 @@ Desativa as configurações e acessos referentes a uma turma específica do serv
 **Exemplo de uso:**
 /disable role: @Estudantes 11SOAT
 </details>
+
 
 <details>
 <summary><strong><code>/exec</code></strong> — Executa evento do scheduler</summary>
@@ -150,19 +134,6 @@ Força a execução de uma tarefa/evento agendado no scheduler do bot.
 /exec command: Checagem de eventos do servidor
 </details>
 
-<details>
-<summary><strong><code>/endpoll</code></strong> — Encerra uma enquete ativa</summary>
-
-**Escopo:** Qualquer servidor *(Deve ser usado no mesmo canal em que a enquete foi enviada)*
-
-Finaliza prematuramente uma enquete criada pelo bot.
-
-**Parâmetros:**
-- `id` *(obrigatório)*: ID da mensagem da enquete no Discord.
-
-**Exemplo de uso:**
-/endpoll id: 1445759167028789278
-</details>
 
 <details>
 <summary><strong><code>/updateflag</code></strong> — Atualiza uma feature flag</summary>
@@ -178,48 +149,20 @@ Atualiza uma feature flag do bot (Dica: use ; para ativar ou desativar mais de u
 /updateflag flag: comando_exec;comando_disable value: true
 </details>
 
+
 <details>
 <summary><strong><code>/viewflags</code></strong> — Mostra as feature flags</summary>
 
 **Escopo:** Qualquer servidor
 
-Cria uam visualização em JSON das flags que o bot tem.
-
-**Exemplo de uso:**
-/viewflags
+Cria uma visualização em JSON das flags que o bot tem.
 </details>
 
----
 
-## Funcionalidades Automáticas
+<details>
+<summary><strong><code>/refresh</code></strong> — Recarrega os comandos dos servidores</summary>
 
-### Mensagens de Boas-Vindas
+**Escopo:** Qualquer servidor
 
-- Envia uma mensagem de boas-vindas no canal `#✨│boas-vindas` quando um novo membro entra
-
-### Armazenamento de enquetes
-
-- Gerencia votos de enquetes criadas, permitindo que os usuários votem e visualizem resultados em tempo real.
-- Gerencia multiplos votos ao mesmo tempo, usando um sistema de fila para garantir que os votos sejam contabilizados corretamente.
-
-<!-- ### Atualização constante de invites- Confere se invites antigos ainda existem dentro do servidor e atualiza o banco de dados para economizar espaço-->
-
-### Criação de invites diretamente no comando `/createclass`
-
-- Cria um convite para cada turma nova que já é vinculado ao novo cargo da turma e ao canal de FAQ correspondente do comando.
-
-### Cadastro de eventos com Webhook
-
-- O Bot pode cadastrar eventos automaticamente com uma integração de um Webhook que se mantem numa aplicação [n8n](https://n8n.io) mas também é possível cadastrar evento usando apenas HTTP POST com os parametros certos.
-
-### Envio de enquetes para o webhook do n8n automaticamente
-
-- Quando as enquetes terminam o bot envia um POST para o webhook do n8n com os dados da enquete.
-
-### Contagem de membros mensalmente
-
-- Uma vez por mês o bot conta os membros de cada servidor no formato especificado e envia um POST para o webhook do n8n com os dados.
-
-### Análise de Grupos de estudos
-
-- O bot é capaz de coletar informações sobre os grupos de estudos quando eles estão a acontecer.
+Recarrega os comandos dos servidores para caso de erro.
+</details>

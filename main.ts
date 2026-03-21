@@ -8,106 +8,126 @@ import express from 'express';
 import DatabaseConnection from "./repositories/database/databaseConnection.ts";
 import LoggerService from "./infrastructure/loggerService.ts";
 import DatabaseFlagsRepository from "./repositories/database/databaseFlagsRepository.ts";
-import FeatureFlagsService from "./services/FeatureFlagsService.ts";
-import DiscordController from "./controller/discord/discordController.ts";
+import FeatureFlagsService from "./services/featureFlagsService.ts";
+import DiscordController from "./controller/DiscordController.ts";
 import ShutdownService from "./infrastructure/shutdownService.ts";
-import commandManagementService from "./services/commandManagementService.ts";
-import registerDiscordEvents from "./gateway/discordRouter.ts";
+import registerDiscordEvents from "./routes/discordRouter.ts";
 import {discordClient} from './infrastructure/discordClient.ts'
-import router from './gateway/webhookRouter.ts';
+import router from './routes/webhookRouter.ts';
 
-// Entidades
-import {Command} from "./entities/discordEntities.ts";
+// Types and Interfaces
+import type {ICommand} from "./types/discord.interfaces.ts";
 import {Guild} from "discord.js";
 import DatabaseCheckRepository from "./repositories/database/databaseCheck.ts";
-import MessagingService from "./services/messagingService.ts";
 import Scheduler from "./infrastructure/scheduler.ts";
 import {SchedulerService} from "./services/schedulerService.ts";
+import DiscordService from "./services/discordService.ts";
+import LinkedinService from "./services/linkedinService.ts";
+import {env} from "./config/env.ts";
+import N8nService from "./services/n8nService.ts";
+import {WebhookController} from "./controller/webhookController.ts";
 
-LoggerService.init()
-GlobalFonts.registerFromPath("./assets/Coolvetica Hv Comp.otf", "normalFont")
+async function bootstrap() {
+    LoggerService.init()
+    GlobalFonts.registerFromPath("./assets/Coolvetica Hv Comp.otf", "normalFont")
 
 // Login do bot ao Discord
-console.time("Login do bot no Discord")
-const client =  discordClient
-await client.login(process.env.DISCORD_BOT_TOKEN)
-    .catch(() => {throw new Error("Falha ao conectar ao bot no Discord")})
-    .then(() => console.log("Bot conectado ao Discord"))
-console.timeEnd("Login do bot no Discord")
+    console.time("Login do bot no Discord")
+    const client =  discordClient
+    await client.login(env.DISCORD_BOT_TOKEN)
+        .catch(() => {throw new Error("Falha ao conectar ao bot no Discord")})
+        .then(() => console.log("Bot conectado ao Discord"))
+    console.timeEnd("Login do bot no Discord")
 
 
 // Verificação dinâmica de comandos existentes
-console.time("Carregamento de comandos")
-const commands: Command[] = [];
-const commandsPath = path.join(__dirname, './controller/discord/commands/');
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.ts'));
+    console.time("Carregamento de comandos")
+    const commands: ICommand[] = [];
+    const commandsPath = path.join(__dirname, './controller/commands/');
+    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.ts'));
 
-for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
-    const module = await import(filePath);
+    for (const file of commandFiles) {
+        const filePath = path.join(commandsPath, file);
+        const module = await import(filePath);
 
-    // Procura o primeiro export que tenha 'execute'
-    const command = Object.values(module).find(
-        (exp): exp is Command => typeof exp === 'object' && exp !== null && 'execute' in exp
-    );
+        type CommandConstructor = new () => ICommand;
 
-    if (command) {
-        commands.push(command);
-    } else {
-        console.warn(`Pulando ${file}: o arquivo não tem um método 'execute' ou não há named export`);
+        const CommandClass = Object.values(module).find(
+            (exp): exp is CommandConstructor =>
+                typeof exp === 'function' &&
+                'prototype' in exp &&
+                exp.prototype !== undefined &&
+                'execute' in (exp as any).prototype
+        );
+
+        if (CommandClass) {
+            const commandInstance = new CommandClass();
+            commands.push(commandInstance);
+        } else {
+            console.warn(`Pulando ${file}: o arquivo não exporta uma classe válida com o método 'execute'`);
+        }
     }
-}
-console.timeEnd("Carregamento de comandos")
+    console.timeEnd("Carregamento de comandos")
 
-
+    const databaseConnection = new DatabaseConnection()
+    const databaseCheckRepository = new DatabaseCheckRepository(databaseConnection)
+    const databaseFlagsRepository = new DatabaseFlagsRepository(databaseConnection)
 
 // Inicialização do banco de dados e checagem de tabelas
-await DatabaseConnection.connect()
-    .catch((error: Error) => {throw new Error(`Falha ao conectar ao banco de dados\n${error}`)})
-    .then(() => console.log("Conectado ao banco de dados"))
+    await databaseConnection.connect()
+        .catch((error: Error) => {throw new Error(`Falha ao conectar ao banco de dados\n${error}`)})
+        .then(() => console.log("Conectado ao banco de dados"))
 
-await DatabaseCheckRepository.checkSchemas()
+    await databaseCheckRepository.checkSchemas()
 
-await DatabaseFlagsRepository.checkEmptyFeatureFlags(client.guilds.cache.map((guild: Guild) => guild.id))
-   .then(() => console.log("Feature Flags verificadas"))
+    await databaseFlagsRepository.checkEmptyFeatureFlags(client.guilds.cache.map((guild: Guild) => guild.id))
+        .then(() => console.log("Feature Flags verificadas"))
 
 
 // Inicialização das featureFlags globais
-console.time("Carregamento de feature flags no cache")
-const flagService = new FeatureFlagsService(await DatabaseFlagsRepository.getAllFeatureFlags())
-console.timeEnd("Carregamento de feature flags no cache")
+    console.time("Carregamento de feature flags no cache")
+    const flagService = new FeatureFlagsService(await databaseFlagsRepository.getAllFeatureFlags(), databaseFlagsRepository)
+    console.timeEnd("Carregamento de feature flags no cache")
 
-const schedulerService = new SchedulerService(client, flagService)
-const messagindService = new MessagingService()
-const discordController = new DiscordController(schedulerService, flagService, messagindService, commands, client)
-registerDiscordEvents(client, discordController)
+    const webhookController = new WebhookController()
+    const n8nService = new N8nService()
+    const schedulerService = new SchedulerService(client, flagService, n8nService)
+    const linkedinService = new LinkedinService()
+    const discordService = new DiscordService(client, linkedinService)
 
-console.time("Registro de comandos no Discord")
-await commandManagementService.registerCommands(
-    client.guilds.cache.values().toArray(),
-    commands
-).then(() => {
-    console.log("Comandos registrados com sucesso")
-    console.timeEnd("Registro de comandos no Discord")
-})
+    const discordController = new DiscordController(discordService, schedulerService, flagService, databaseFlagsRepository, n8nService, commands, client)
+    registerDiscordEvents(client, discordController)
+
+    console.time("Registro de comandos no Discord")
+    await discordService.commands.registerCommand(
+        client.guilds.cache.values().toArray(),
+        commands
+    ).then(() => {
+        console.log("Comandos registrados com sucesso")
+        console.timeEnd("Registro de comandos no Discord")
+    })
 
 
 // Inicialização do webhook
-const app = express();
-app.use(express.json());
-app.use((req, res, next) => {
-    req.discordClient = client;
-    req.featureFlagsService = flagService;
-    next();
-});
+    const app = express();
+    app.use(express.json());
+    app.use((req, _res, next) => {
+        req.discordClient = client;
+        req.featureFlagsService = flagService;
+        req.discordService = discordService
+        req.webhookController = webhookController;
+        next();
+    });
 
-app.use("/api", router);
-app.listen(process.env.PRIMARY_WEBHOOK_PORT, () => console.log("Webhook iniciado"));
-
-
-Scheduler.start(schedulerService)
-console.log("Scheduler iniciado")
+    app.use("/api", router);
+    app.listen(env.PRIMARY_WEBHOOK_PORT, () => console.log("Webhook iniciado"));
 
 
-process.on('SIGINT', async () => await ShutdownService.shutdown(client));
-process.on('SIGTERM', async () => await ShutdownService.shutdown(client));
+    Scheduler.start(schedulerService)
+    console.log("Scheduler iniciado")
+
+    process.on('SIGINT', async () => await ShutdownService.shutdown(client, discordService.commands, databaseConnection));
+    process.on('SIGTERM', async () => await ShutdownService.shutdown(client, discordService.commands, databaseConnection));
+}
+
+bootstrap().catch(error => console.error(`Erro fatal: ${error}`))

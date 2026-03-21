@@ -1,6 +1,6 @@
 {
   "name": "bot-comunidade",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "author": "Comunidade Pos Tech Fiap",
   "description": "",
   "main": "main.ts",
@@ -18,7 +18,7 @@
     "express": "^5.2.1",
     "mysql2": "^3.16.2",
     "node-cron": "^4.2.1",
-    "undici": "7.19.2"
+    "undici": "7.24.0"
   },
   "overrides": {
     "qs": "^6.14.1",
@@ -30,6 +30,7 @@
     "@types/node": "^25.1.0"
   },
   "scripts": {
-    "start": "TZ=America/Sao_Paulo bun main.ts"
+    "start": "bun main.ts",
+    "debug": "bun test && bun --watch main.ts"
   }
 }

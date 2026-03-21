@@ -1,5 +1,6 @@
 import path from 'path';
 import fs from 'fs';
+import {env} from "../config/env.ts";
 
 export default class LoggerService {
     private static readonly logDir: string = path.join(process.cwd(), 'logs');
@@ -27,11 +28,11 @@ export default class LoggerService {
     };
 
     private static isDebugMode(): boolean {
-        return process.env.DEBUG === 'true' || process.env.DEBUG === '1';
+        return env.DEBUG;
     }
 
     private static isSaveLogsLocally(): boolean {
-        return process.env.SAVE_LOGS_LOCALLY === 'true' || process.env.SAVE_LOGS_LOCALLY === '1';
+        return env.SAVE_LOGS_LOCALLY;
     }
 
     public static init(): void {

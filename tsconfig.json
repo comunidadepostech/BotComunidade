@@ -4,21 +4,29 @@
     "module": "Preserve",
     "moduleDetection": "force",
     "allowJs": false,
-
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
 
+    // Strictness
     "strict": true,
-    "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-    "noImplicitAny": true,
-    "noImplicitThis": true,
+    "noImplicitReturns": true,
+    "skipLibCheck": false,
+    "noPropertyAccessFromIndexSignature": true,
+    "exactOptionalPropertyTypes": true,
+    "allowImportingTsExtensions": true,
+
+    // Qualidade de código
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
+
+    // Configurações de módulos
+    "verbatimModuleSyntax": true,
     "useDefineForClassFields": true,
     "forceConsistentCasingInFileNames": true,
-    "noEmitOnError": true
+    "noEmitOnError": true,
   }
 }

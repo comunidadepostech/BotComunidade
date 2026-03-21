@@ -1,38 +1,40 @@
 import DatabaseConnection from "./databaseConnection.ts"
-import {Flag, globalFlags, GuildFlags} from "../../entities/discordEntities.ts"
+import type {IFeatureFlagsRepository, Flag, GlobalFlags, IGuildFlags} from "../../types/featureFlags.types.ts"
 import {DEFAULT_FEATURE_FLAGS} from "../../constants/flagsConstants.ts";
-import {RowDataPacket} from "mysql2/promise";
+import type {RowDataPacket} from "mysql2/promise";
 
-export default class DatabaseFlagsRepository {
-    public static async getGuildFeatureFlags(guildId: string): Promise<GuildFlags | null> {
-        const pool = DatabaseConnection.getPool();
+export default class DatabaseFlagsRepository implements IFeatureFlagsRepository {
+    constructor(private databaseConnection: DatabaseConnection){}
+
+    async getGuildFeatureFlags(guildId: string): Promise<IGuildFlags | null> {
+        const pool = this.databaseConnection.getPool();
         const [rows] = await pool.query<RowDataPacket[]>(`SELECT * FROM featureFlags WHERE guild_id = ?`, [guildId]);
 
         for (const row of rows) {
-            if (row.guild_id === guildId) return row.flags
+            if (row["guild_id"] === guildId) return row["flags"]
         }
 
         return null
     }
 
-    public static async getAllFeatureFlags(): Promise<globalFlags | {}> {
-        const pool = DatabaseConnection.getPool();
-        let [rows] = await pool.query<RowDataPacket[]>(`SELECT * FROM featureFlags`);
+    async getAllFeatureFlags(): Promise<GlobalFlags> {
+        const pool = this.databaseConnection.getPool();
+        const [rows] = await pool.query<RowDataPacket[]>(`SELECT * FROM featureFlags`);
 
-        let flags: { [key: string]: GuildFlags } = {}
+        const flags: { [key: string]: IGuildFlags } = {}
 
         for (const row of rows) {
-            flags[row.guild_id] = row.flags
+            flags[row["guild_id"]] = row["flags"]
         }
 
         return flags
     }
 
-    public static async updateFeatureFlag(guildId: string, flag: string, value: boolean) {
-        const pool = DatabaseConnection.getPool();
+    async updateFeatureFlag(guildId: string, flag: string, value: boolean): Promise<void> {
+        const pool = this.databaseConnection.getPool();
         const databaseFeatureFlags = await this.getGuildFeatureFlags(guildId)
 
-        if (!databaseFeatureFlags) return new Error(`Feature flag '${flag}' não encontrada no banco de dados`)
+        if (!databaseFeatureFlags) throw new Error(`Feature flag '${flag}' não encontrada no banco de dados`)
 
         databaseFeatureFlags[flag] = value
 
@@ -42,12 +44,12 @@ export default class DatabaseFlagsRepository {
         )
     }
 
-    public static async createFeatureFlag(name: string, defaultValue: boolean) {
-        const pool = DatabaseConnection.getPool();
+    async createFeatureFlag(name: string, defaultValue: boolean) {
+        const pool = this.databaseConnection.getPool();
         const databaseFeatureFlags = await this.getAllFeatureFlags()
 
         for (const guildId in databaseFeatureFlags) {
-            databaseFeatureFlags[guildId][name] = defaultValue
+            databaseFeatureFlags[guildId]![name] = defaultValue
             await pool.query(
                 `UPDATE featureFlags SET flags = ? WHERE guild_id = ?;`,
                 [JSON.stringify(databaseFeatureFlags[guildId]), guildId]
@@ -55,7 +57,7 @@ export default class DatabaseFlagsRepository {
         }
     }
 
-    public static async checkEmptyFeatureFlags(guildsIds: string[]) {
+    async checkEmptyFeatureFlags(guildsIds: string[]) {
         const databaseFeatureFlags = await this.getAllFeatureFlags()
 
         for (const guildId of guildsIds) {
@@ -83,12 +85,12 @@ export default class DatabaseFlagsRepository {
         }
     }
 
-    public static async deleteFeatureFlag(flag: Flag) {
-        const pool = DatabaseConnection.getPool();
+    async deleteFeatureFlag(flag: Flag) {
+        const pool = this.databaseConnection.getPool();
         const databaseFeatureFlags = await this.getAllFeatureFlags()
 
         for (const guildId in databaseFeatureFlags) {
-            delete databaseFeatureFlags[guildId][flag]
+            delete databaseFeatureFlags[guildId]![flag]
             await pool.query(
                 `UPDATE featureFlags SET flags = ? WHERE guild_id = ?;`,
                 [JSON.stringify(databaseFeatureFlags[guildId]), guildId]
@@ -96,13 +98,13 @@ export default class DatabaseFlagsRepository {
         }
     }
 
-    public static async deleteGuildFeatureFlags(guildId: string) {
-        const pool = DatabaseConnection.getPool();
+    async deleteGuildFeatureFlags(guildId: string) {
+        const pool = this.databaseConnection.getPool();
         await pool.query(`DELETE FROM featureFlags WHERE guild_id = ?;`, [guildId])
     }
 
-    public static async saveDefaultFeatureFlags(guildId: string) {
-        const pool = DatabaseConnection.getPool();
+    async saveDefaultFeatureFlags(guildId: string) {
+        const pool = this.databaseConnection.getPool();
         await pool.query(`INSERT INTO featureFlags (guild_id, flags) VALUES (?, ?);`, [guildId, JSON.stringify(DEFAULT_FEATURE_FLAGS)])
     }
 }

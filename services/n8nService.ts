@@ -1,12 +1,16 @@
-import {InteractionPayload, Poll} from "../entities/dto/n8nDTOs.ts";
+import type {InteractionPayload, Poll} from "../dtos/n8n.dtos.ts";
+import type StudyGroupAnalysisPayload from "../dtos/studyGroupAnalysis.dto.ts";
+import {env} from "../config/env.ts";
+import type {SaveMembersDto} from "../dtos/saveMembersDto.ts";
+import type IN8nService from "../types/n8nService.interface.ts";
 
-export default class N8nService {
-    static async savePoll(poll: Poll){
-        const res = await fetch(process.env.N8N_ENDPOINT + '/salvarEnquete', {
+export default class N8nService implements IN8nService {
+    async savePoll(poll: Poll){
+        const res = await fetch(env.N8N_ENDPOINT + '/salvarEnquete', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'token': process.env.N8N_WEBHOOKS_TOKEN!
+                'token': env.N8N_WEBHOOKS_TOKEN!
             },
             body: JSON.stringify(poll)
         })
@@ -14,16 +18,42 @@ export default class N8nService {
         if (!res.ok) throw new Error(`Falha ao enviar enquete para o n8n: ${res.status} ${res.statusText}`)
     }
 
-    static async saveInteraction(interaction: InteractionPayload) {
-        const res = await fetch(process.env.N8N_ENDPOINT + '/salvarInteracao', {
+    async saveInteraction(interaction: InteractionPayload) {
+        const res = await fetch(env.N8N_ENDPOINT + '/salvarInteracao', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'token': process.env.N8N_WEBHOOKS_TOKEN!
+                'token': env.N8N_WEBHOOKS_TOKEN
             },
             body: JSON.stringify(interaction)
         });
 
         if (!res.ok) throw new Error(`Falha ao enviar interação para o n8n: ${res.status} ${res.statusText}`);
     }
+
+    async saveStudyGroupAnalysis(payload: StudyGroupAnalysisPayload) {
+        const res = await fetch(env.N8N_ENDPOINT + '/salvarDadosGrupoEstudo', {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json",
+                "token": env.N8N_WEBHOOKS_TOKEN
+            },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error(`Falha ao enviar dados do grupo de estudo para o n8n: ${res.status} ${res.statusText}`);
+    }
+
+    async saveMembersData(payload: SaveMembersDto) {
+        const res = await fetch(`${env.N8N_ENDPOINT}/salvarMembros`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': "Bearer " + env.N8N_WEBHOOKS_TOKEN
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) console.error(`Erro ao enviar dados para o n8n: ${res.status} ${res.statusText}}`);
+    }
+
 }
