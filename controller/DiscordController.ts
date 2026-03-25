@@ -128,17 +128,14 @@ export default class DiscordController {
             discordService: this.discordService
         };
 
-        for (const nativeCommand of this.commands) {
-            if (nativeCommand.build().name === interaction.commandName) {
-                try {
-                    await nativeCommand.execute(interaction, context);
-                } catch (error) {
-                    const message = error instanceof Error ? error.message : 'Erro desconhecido';
-                    const stack = error instanceof Error ? error.stack : undefined;
-                    console.error(message, stack);
-                }
-                return
+        const command = this.commands.find(c => c.build().name === interaction.commandName);
+        if (command) {
+            try {
+                await command.execute(interaction, context);
+            } catch (error) {
+                console.error(error instanceof Error ? error.stack : error);
             }
+            return;
         }
 
         console.error(`Comando não encontrado na lista de comandos nativos!\nComando: ${interaction.commandName}\nLista de comandos registrada: ${this.commands.map(command => command.build().name).join(', ')}`)
@@ -167,8 +164,8 @@ export default class DiscordController {
             const message = await channel.messages.fetch(data.id);
             if (!message || !message.guild || !message.poll) return
 
-            const now: number = Date.now();
-            const expirity: number = new Date(message.poll.expiresTimestamp as number).getTime();
+            const now = new Date();
+            const expirity: number = new Date(message.poll.expiresTimestamp!).getTime();
             const className = channel.parent?.name;
             const guildName = message.guild.name;
 
@@ -176,12 +173,12 @@ export default class DiscordController {
                 created_by: message.author?.globalName ?? message.author?.username!,
                 guild: guildName,
                 poll_category: className!,
-                poll_hash: crypto.createHash('sha1').update(message.poll.question.text as string).digest('hex'),
+                poll_hash: crypto.createHash('sha1').update(message.poll.question.text! + now.getMonth().toString() + now.getFullYear().toString()).digest('hex'),
                 question: message.poll.question.text!,
                 answers: message.poll.answers.map((answer: PollAnswer | PartialPollAnswer) => {
                     return { response: answer.text!, answers: answer.voteCount }
                 }),
-                duration: `${((now - expirity) / (1000 * 60 * 60)).toFixed(0)}`
+                duration: `${((now.getTime() - expirity) / (1000 * 60 * 60)).toFixed(0)}`
             };
 
             await this.n8nService.savePoll(payload).catch((error) => error instanceof Error ? console.error(`${error.message}\n${error.stack}`) : console.error(`Erro desconhecido: ${JSON.stringify(error, null, 2)}`))

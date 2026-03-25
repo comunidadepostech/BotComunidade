@@ -1,6 +1,6 @@
 {
   "name": "bot-comunidade",
-  "version": "2.1.0",
+  "version": "2.x.x",
   "author": "Comunidade Pos Tech Fiap",
   "description": "",
   "main": "main.ts",
