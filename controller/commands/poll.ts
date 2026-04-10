@@ -4,11 +4,12 @@ import {
     ChatInputCommandInteraction,
     MessageFlags,
     PermissionFlagsBits,
-    SlashCommandBuilder
+    SlashCommandBuilder,
+    type SlashCommandOptionsOnlyBuilder
 } from "discord.js";
 
-export class pollCommand implements ICommand {
-    build() {
+export class PollCommand implements ICommand {
+    build(): SlashCommandOptionsOnlyBuilder {
         return new SlashCommandBuilder()
             .setName("poll")
             .setDescription('Cria uma enquete interativa')

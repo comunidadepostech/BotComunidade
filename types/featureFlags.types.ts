@@ -1,5 +1,3 @@
-export type Flag = string;
-
 export interface IGuildFlags {
     [key: string]: boolean
 }
@@ -12,7 +10,7 @@ export interface IFeatureFlagsRepository {
     updateFeatureFlag(guildId: string, flag: string, value: boolean): Promise<void>
     createFeatureFlag(name: string, defaultValue: boolean): Promise<void>
     checkEmptyFeatureFlags(guildsIds: string[]): Promise<void>
-    deleteFeatureFlag(flag: Flag): Promise<void>
+    deleteFeatureFlag(flag: string): Promise<void>
     deleteGuildFeatureFlags(guildId: string): Promise<void>
     saveDefaultFeatureFlags(guildId: string): Promise<void>
 }

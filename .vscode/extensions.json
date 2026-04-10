@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-typescript-next",
+    "usernamehw.errorlens",
+    "qufiwefefwoyn.inline-sql-syntax",
+    "YoavBls.pretty-ts-errors",
+    "oven.bun-vscode"
+  ]
+}

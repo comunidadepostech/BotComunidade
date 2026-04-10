@@ -7,8 +7,8 @@ import {
 } from "discord.js";
 import type {ICommandContext} from "../../types/discord.interfaces.ts";
 
-export class endPollCommand implements ICommand{
-    build() {
+export class EndPollCommand implements ICommand{
+    build(): ContextMenuCommandBuilder {
         return new ContextMenuCommandBuilder()
             .setName('Encerrar enquete')
             .setType(ApplicationCommandType.Message)

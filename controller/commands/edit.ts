@@ -12,8 +12,8 @@ import {
 import type {ModalActionRowComponentBuilder} from "discord.js";
 import type {ICommandContext} from "../../types/discord.interfaces.ts";
 
-export class editCommand implements ICommand{
-    build() {
+export class EditCommand implements ICommand{
+    build(): ContextMenuCommandBuilder {
         return new ContextMenuCommandBuilder()
             .setName('Editar mensagem')
             .setType(ApplicationCommandType.Message)
@@ -61,7 +61,7 @@ export class editCommand implements ICommand{
 
             await modalSubmit.reply({content: `✅ Mensagem editada com sucesso.`, flags: MessageFlags.Ephemeral});
 
-        } catch (error) {
+        } catch {
             console.warn("Edição de mensagem cancelada ou tempo esgotado.");
         }
     }

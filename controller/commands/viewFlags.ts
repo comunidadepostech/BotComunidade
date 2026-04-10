@@ -3,11 +3,12 @@ import {
     ChatInputCommandInteraction,
     MessageFlags,
     PermissionFlagsBits,
-    SlashCommandBuilder
+    SlashCommandBuilder,
+    type SlashCommandOptionsOnlyBuilder
 } from "discord.js";
 
-export class viewFlagsCommand implements ICommand {
-    build() {
+export class ViewFlagsCommand implements ICommand {
+    build(): SlashCommandOptionsOnlyBuilder {
         return new SlashCommandBuilder()
             .setName("viewflags")
             .setDescription('Retorna as feature flags do Bot e seus estados no servidor atual')

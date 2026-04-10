@@ -3,11 +3,12 @@ import {
     ChatInputCommandInteraction,
     MessageFlags,
     PermissionFlagsBits,
-    SlashCommandBuilder
+    SlashCommandBuilder,
+    type SlashCommandOptionsOnlyBuilder
 } from "discord.js";
 
-export class updateFlagCommand implements ICommand {
-    build() {
+export class UpdateFlagCommand implements ICommand {
+    build(): SlashCommandOptionsOnlyBuilder {
         return new SlashCommandBuilder()
             .setName("updateflag")
             .setDescription('Permite alterar o estádo de uma feature flag do Bot.')

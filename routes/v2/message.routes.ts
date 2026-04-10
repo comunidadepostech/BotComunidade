@@ -1,13 +1,7 @@
-import { Router } from 'express';
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+import { WebhookController } from "../../controller/webhookController.ts";
 
-const messageRouter = Router();
-
-messageRouter.post('/warning', async (req, res) => {
-    await req.webhookController.sendWarning(req, res)
+export default (webhookController: WebhookController) => ({
+    "/api/v2/message/warning":   (req: Request) => webhookController.sendWarning(req),
+    "/api/v2/message/liveForms": (req: Request) => webhookController.SendLivePoll(req),
 });
-
-messageRouter.post("/liveForms", async (req, res) => {
-    await req.webhookController.SendLivePoll(req, res);
-})
-
-export default messageRouter;

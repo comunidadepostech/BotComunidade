@@ -1,9 +1,8 @@
-import { Router } from 'express';
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+import { WebhookController } from "../../controller/webhookController.ts";
 
-const criarEventoRouter = Router();
-
-criarEventoRouter.post('/', async (req, res) => {
-    await req.webhookController.EventManagement(req, res);
+export default (webhookController: WebhookController) => ({
+    "/api/v1/criarEvento": {
+        POST:   (req: Request) => webhookController.EventManagement(req)
+    },
 });
-
-export default criarEventoRouter;

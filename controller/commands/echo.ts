@@ -3,13 +3,14 @@ import {
     ChannelType,
     ChatInputCommandInteraction, MessageFlags,
     PermissionFlagsBits,
-    SlashCommandBuilder, TextChannel
+    SlashCommandBuilder, TextChannel,
+    type SlashCommandOptionsOnlyBuilder
 } from "discord.js";
 import type {ICommand, ICommandContext} from "../../types/discord.interfaces.ts";
 import type {BroadcastMessageDto} from "../../dtos/broadcastMessage.dto.ts";
 
-export class echoCommand implements ICommand {
-    build() {
+export class EchoCommand implements ICommand {
+    build(): SlashCommandOptionsOnlyBuilder {
         return new SlashCommandBuilder()
             .setName("echo")
             .setDescription("Replica uma mensagem para todos os canais com mesmo nome ou para apenas um canal em específico.")

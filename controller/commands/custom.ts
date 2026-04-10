@@ -3,12 +3,13 @@ import {
     ChatInputCommandInteraction,
     TextChannel,
     MessageFlags,
-    Attachment
+    Attachment,
+    type SlashCommandOptionsOnlyBuilder
 } from 'discord.js';
 import type {ICommand} from "../../types/discord.interfaces.ts";
 
-export class customCommand implements ICommand {
-    build() {
+export class CustomCommand implements ICommand {
+    build(): SlashCommandOptionsOnlyBuilder {
         return new SlashCommandBuilder()
             .setName("custom")
             .setDescription('Publica uma mensagem baseada em um arquivo JSON do Discord Builders.')

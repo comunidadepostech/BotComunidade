@@ -1,13 +1,9 @@
-import { Router } from 'express';
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+import { WebhookController } from "../../controller/webhookController.ts";
 
-const eventRouter = Router();
-
-eventRouter.post('/', async (req, res) => {
-    await req.webhookController.EventManagement(req, res);
+export default (webhookController: WebhookController) => ({
+    "/api/v2/event": {
+        POST:   (req: Request) => webhookController.EventManagement(req),
+        DELETE: ()             => new Response(null, { status: 204 }),
+    },
 });
-
-eventRouter.delete("/", (_req, res) => {
-    res.sendStatus(405)
-})
-
-export default eventRouter;

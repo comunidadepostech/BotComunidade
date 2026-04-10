@@ -7,7 +7,7 @@ export default class EventsSubService implements IDiscordEventService {
     private background: Buffer<ArrayBuffer> | null = null
     constructor(private client: Client){}
 
-    async create(dto: CommandEventDto | ExternalSourceEventDto) {
+    async create(dto: CommandEventDto | ExternalSourceEventDto): Promise<void> {
         if (dto.source === "external") {
             if (!this.background) {
                 this.background = fs.readFileSync("assets/postech.png");
@@ -41,17 +41,17 @@ export default class EventsSubService implements IDiscordEventService {
                 image: dto.background,
                 entityMetadata: {location: dto.link}
             })
-            return
         }
     }
+    
     async delete(guildId: string, eventId: string): Promise<void> {
         const guild = await this.client.guilds.fetch(guildId)
         try {
             await guild.scheduledEvents.delete(eventId)
         } catch (error) {
             const message = error instanceof Error ? error.message : "Erro desconhecido"
-            console.error("Erro ao tentar remover evento. O evento existe?")
-            throw new Error(`Erro ao tentar remover evento (${message}). O evento existe?`)
+            console.error(`Erro ao tentar remover evento (${message}). O evento existe?`)
+            //throw new Error(`Erro ao tentar remover evento (${message}). O evento existe?`)
         }
     }
 
