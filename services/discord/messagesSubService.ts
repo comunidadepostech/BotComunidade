@@ -142,9 +142,11 @@ export default class MessagesSubService implements IDiscordMessageService {
             files: [attachment]
         });
 
-        console.log(JSON.stringify(sentMessage.components[0]!.components[1].items[0].media, null, 2))
+        Bun.sleep(3000)
 
-        const discordImageUrl = sentMessage.components[0]?.components[1].items[0].media.url
+        const discordImageUrl = sentMessage.components[0]!.components[1].items[0].media.url
+
+        console.debug("Imagem de boas vindas: " + discordImageUrl)
 
         if (!discordImageUrl) {
             console.error("Falha ao obter a URL da CDN do Discord");

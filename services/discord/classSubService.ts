@@ -133,7 +133,7 @@ export default class ClassSubService implements IDiscordClassService {
     ): Promise<void> {
         const permissionMap = {
             Alun: { ReadMessageHistory: true, SendMessages: true, ViewChannel: true, CreatePublicThreads: true },
-            'Pos Tech': {
+            'Pós Tech': {
                 ReadMessageHistory: true,
                 SendMessages: false,
                 ViewChannel: true,
