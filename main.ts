@@ -13,19 +13,20 @@ import ShutdownService from "./infrastructure/shutdownService.ts";
 import registerDiscordEvents from "./routes/discordRouter.ts";
 import {discordClient} from './infrastructure/discordClient.ts'
 import buildRoutes from "./routes/webhookRouter.ts";
-
-// Types and Interfaces
-import type {ICommand} from "./types/discord.interfaces.ts";
-import {Guild} from "discord.js";
-import DatabaseCheckRepository from "./repositories/database/databaseCheck.ts";
-import Scheduler from "./infrastructure/scheduler.ts";
-import {SchedulerService} from "./services/schedulerService.ts";
+import DatabaseGuildsRepository from "./repositories/database/databaseGuildsRepository.ts";
 import DiscordService from "./services/discordService.ts";
 import LinkedinService from "./services/linkedinService.ts";
+import DatabaseCheckRepository from "./repositories/database/databaseCheck.ts";
+import Scheduler from "./infrastructure/scheduler.ts";
+import DatabaseWarningRepository from "./repositories/database/databaseWarningRepository.ts";
+import {SchedulerService} from "./services/schedulerService.ts";
+import {Guild} from "discord.js";
 import {env} from "./config/env.ts";
 import N8nService from "./services/n8nService.ts";
 import {WebhookController} from "./controller/webhookController.ts";
-import DatabaseWarningRepository from "./repositories/database/databaseWarningRepository.ts";
+
+// Types and Interfaces
+import type {ICommand} from "./types/discord.interfaces.ts";
 
 async function bootstrap(): Promise<void> {
     LoggerService.init()
@@ -73,6 +74,7 @@ async function bootstrap(): Promise<void> {
     const databaseCheckRepository = new DatabaseCheckRepository(databaseConnection)
     const databaseFlagsRepository = new DatabaseFlagsRepository(databaseConnection)
     const databaseWarningRepository = new DatabaseWarningRepository(databaseConnection)
+    const databaseGuildsRepository = new DatabaseGuildsRepository(databaseConnection)
 
     // Inicialização do banco de dados e checagem de tabelas
     await databaseConnection.connect()
@@ -80,6 +82,7 @@ async function bootstrap(): Promise<void> {
         .then(() => console.log("Conectado ao banco de dados"))
 
     await databaseCheckRepository.checkSchemas()
+    await databaseGuildsRepository.syncGuilds()
 
     await databaseFlagsRepository.checkEmptyFeatureFlags(client.guilds.cache.map((guild: Guild) => guild.id))
         .then(() => console.log("Feature Flags verificadas"))
@@ -97,7 +100,7 @@ async function bootstrap(): Promise<void> {
     const schedulerService = new SchedulerService(client, featureFlagsService, n8nService, databaseWarningRepository)
     const linkedinService = new LinkedinService()
     const discordService = new DiscordService(client, linkedinService)
-    const webhookController = new WebhookController({client, featureFlagsService, discordService})
+    const webhookController = new WebhookController({client, featureFlagsService, discordService, databaseGuildsRepository})
 
     const discordController = new DiscordController(
         discordService, 
@@ -135,4 +138,12 @@ async function bootstrap(): Promise<void> {
     process.on('SIGTERM', async () => await ShutdownService.shutdown(client, discordService.commands, databaseConnection));
 }
 
-bootstrap().catch(error => console.error(`Erro fatal: ${error}`))
+bootstrap().catch(error => {
+    if (error instanceof Error) {
+        console.error(`Erro fatal: ${error.message}\n${error.stack}`)
+    } else {
+         console.error(`Erro fatal: ${error}`)
+    }
+    process.exit(1)
+})
+

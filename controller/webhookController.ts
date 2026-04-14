@@ -1,16 +1,18 @@
-import {DISCORD_GUILDS, STUDY_GROUP_CHANNEL_NAME, WARNING_CHANNEL_NAME} from "../constants/discordConstants.ts";
+import {STUDY_GROUP_CHANNEL_NAME, WARNING_CHANNEL_NAME} from "../constants/discordConstants.ts";
 import {defaultEventDescription} from "../constants/eventDescription.ts";
 import {ChannelType, Role, TextChannel, VoiceChannel, Client} from "discord.js";
 import {env} from "../config/env.ts";
 import type DiscordService from "../services/discordService.ts";
 import type FeatureFlagsService from "../services/featureFlagsService.ts";
+import type DatabaseGuildsRepository from "../repositories/database/databaseGuildsRepository.ts";
 
 export class WebhookController {
     constructor(
         private context: { 
             client: Client, 
             featureFlagsService: FeatureFlagsService, 
-            discordService: DiscordService
+            discordService: DiscordService,
+            databaseGuildsRepository: DatabaseGuildsRepository
         }
     ) {}
 
@@ -48,7 +50,7 @@ export class WebhookController {
 
             const client = this.context.client;
             const eventService = this.context.discordService.events
-            const guildId = DISCORD_GUILDS[body.turma.replaceAll(/\d+/g, '')]
+            const guildId = this.context.databaseGuildsRepository.getGuildIdByCourse(body.turma.replaceAll(/\d+/g, ''))
 
             if (!guildId) {
                 console.error("Guilda não encontrada para a turma: " + body.turma + "\n" + JSON.stringify(body, null, 2))
@@ -129,13 +131,20 @@ export class WebhookController {
         const classNameWithoutNumber: string = classNameWithNumber.replaceAll(/\d+/g, '')
 
         // Se o servidor não for encontrado ignora o evento e registra um warn
-        if (!DISCORD_GUILDS[classNameWithoutNumber]) {
+        if (!this.context.databaseGuildsRepository.getGuildIdByCourse(classNameWithoutNumber)) {
             console.warn(`Envio de link de feedback suprimido pois o evento não é válido: ${body.evento}`)
             return Response.json({})
         }
 
+        const guildId = this.context.databaseGuildsRepository.getGuildIdByCourse(classNameWithoutNumber)
+
+        if (!guildId) {
+            console.error("Guilda não encontrada para a turma: " + classNameWithoutNumber);
+            return Response.json({error: "Não foi possível encontrar a turma " + classNameWithoutNumber}, {status: 500})
+        }
+
         // Tenta dar fetch na guild usando a nomenclatura da turma
-        const guild = await client.guilds.fetch(DISCORD_GUILDS[classNameWithoutNumber]);
+        const guild = await client.guilds.fetch(guildId);
 
         // Verifica se o servidor tem a feature habilitada
         if (!featureFlagsService.getFlag(guild.id, "enviar_forms_no_final_da_live")) {
@@ -183,7 +192,7 @@ export class WebhookController {
 
             if (!mensagem || !turma) throw new Error("O aviso precisa de uma mensagem e turma para ser entregue!")
 
-            const id_do_servidor: string | undefined = DISCORD_GUILDS[turma.replaceAll(/\d+/g, '') as keyof typeof DISCORD_GUILDS];
+            const id_do_servidor: string | undefined = this.context.databaseGuildsRepository.getGuildIdByCourse(turma.replaceAll(/\d+/g, ''));
             
             if (!id_do_servidor) throw new Error(`O servidor da turma ${turma} não foi encontrado, o mesmo já foi adicionado as constantes?`)
 
