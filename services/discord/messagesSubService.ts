@@ -10,12 +10,13 @@ import type {PollMessageDto} from "../../dtos/pollMessage.dto.ts";
 import LinkedinService from "../linkedinService.ts";
 import {ROLE_NAME_REPLACEMENT} from "../../constants/discordConstants.ts";
 import {FIVE_MINUTES_IN_MILLISECONDS} from "../../constants/globalConstants.ts";
+import type FeatureFlagsService from "../featureFlagsService.ts";
 
 export default class MessagesSubService implements IDiscordMessageService {
     private background: Image | null = null
     private sentWarnings: Map<string, number> = new Map()
 
-    constructor(private client: Client, private linkedinService: LinkedinService){}
+    constructor(private client: Client, private linkedinService: LinkedinService, private FeatureFlagsService: FeatureFlagsService){}
 
     async createPoll(dto: PollMessageDto): Promise<void> {
         await dto.channel.send({
@@ -141,6 +142,8 @@ export default class MessagesSubService implements IDiscordMessageService {
             flags: MessageFlags.IsComponentsV2,
             files: [attachment]
         });
+
+        if (!this.FeatureFlagsService.isEnabled(dto.profile.guild.id, 'botao_compartilhar_no_linkedin')) return
 
         Bun.sleep(3000)
 

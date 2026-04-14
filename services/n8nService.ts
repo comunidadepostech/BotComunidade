@@ -40,7 +40,7 @@ export default class N8nService implements IN8nService {
             },
             body: JSON.stringify(payload)
         });
-        if (!res.ok) throw new Error(`Falha ao enviar dados do grupo de estudo para o n8n: ${res.status} ${res.statusText}`);
+        if (!res.ok) throw new Error(`Falha ao enviar dados do grupo de estudo para o n8n: ${res.status} ${res.statusText} ${JSON.stringify(payload)}`);
     }
 
     async saveRolesMembersCount(payload: SaveMembersDto): Promise<void> {

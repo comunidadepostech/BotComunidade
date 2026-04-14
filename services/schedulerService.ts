@@ -32,15 +32,11 @@ export class SchedulerService {
     ) {}
 
     private async handleEventCompletion(event: GuildScheduledEvent, peakParticipants: number, className: string): Promise<void> {
-        try {
-            await this.n8nService.saveStudyGroupAnalysis({
-                curso: event.guild!.name,
-                turma: className,
-                maximoDeParticipantes: peakParticipants
-            })
-        } catch (error) {
-            if (error instanceof Error) console.error(error.message)
-        }
+        await this.n8nService.saveStudyGroupAnalysis({
+            curso: event.guild!.name,
+            turma: className,
+            maximoDeParticipantes: peakParticipants
+        })
     }
 
     private async sendWarning(classRole: Role | undefined, eventUrl: string, scheduledStartTimestamp: number, channel: TextChannel): Promise<void> {
@@ -74,7 +70,7 @@ export class SchedulerService {
             const targetChannel = warningChannels.find(channel => channel.parentId === parentId) as TextChannel | undefined;
 
             if (targetChannel) {
-                const messageSent = await this.databaseWarningRepository.check(targetChannel.id)
+                const messageSent = await this.databaseWarningRepository.check(targetChannel.id);
                 if (!messageSent) await this.sendWarning(classRole, event.url, event.scheduledStartTimestamp!, targetChannel);
             }
         } else {
@@ -105,10 +101,6 @@ export class SchedulerService {
         const [className, eventName] = event.name.split(" - ");
         if (!className || !eventName) return;
 
-        // Verifica se o servidor tem flags
-        const flags = this.featureFlagsService.flags[event.guild!.id];
-        if (!flags) return;
-
         // Se o evento não tiver no cache então adiciona
         if (!this.eventsCache.has(event.id)) {
             this.eventsCache.set(event.id, { notified: false, maxParticipants: 0, reported: false, guildID: event.guildId });
@@ -121,9 +113,9 @@ export class SchedulerService {
         const hasVoiceChannel = event.channelId !== null;
 
         // Se o servidor permitir o envio do aviso no tempo correto então envia e salva o estado no cache como state.notified = true para evitar duplicidade
-        if (flags["enviar_aviso_de_eventos"] && !state.notified) {
+        if (this.featureFlagsService.isEnabled(event.guildId!, 'enviar_aviso_de_eventos') && !state.notified) {
             const timeUntilStart = startTs - now;
-            if (timeUntilStart <= env.REMAINING_EVENT_TIME_FOR_WARNING_IN_MINUTES  * 60 * 1000 && timeUntilStart > 0) {
+            if (timeUntilStart <= env.REMAINING_EVENT_TIME_FOR_WARNING_IN_MINUTES * 60 * 1000 && timeUntilStart > 0) {
                 await this.handleNotification(event, className);
                 state.notified = true;
             }
@@ -132,7 +124,7 @@ export class SchedulerService {
         // Verifica se é necessário começar o grupo de estudos automaticamente ou se coletar dados (para coletar dados é necessário que o evento seja inicializado)
         if (hasVoiceChannel && isStudyGroup) {
             if (
-                flags["comecar_grupo_de_estudos_automaticamente"] && 
+                this.featureFlagsService.isEnabled(event.guildId!, 'comecar_grupo_de_estudos_automaticamente') && 
                 event.status === GuildScheduledEventStatus.Scheduled && 
                 now >= startTs
             ) {
@@ -140,13 +132,13 @@ export class SchedulerService {
             }
 
             if (
-                flags["coletar_dados_de_grupos_de_estudo"] &&
-                event.status === GuildScheduledEventStatus.Active
+                this.featureFlagsService.isEnabled(event.guildId!, 'coletar_dados_de_grupos_de_estudo') &&
+                [GuildScheduledEventStatus.Active, GuildScheduledEventStatus.Completed].includes(event.status)
             ) {
                 const voiceChannel = await event.guild?.channels.fetch(event.channelId!);
 
-                if (voiceChannel && voiceChannel.isVoiceBased() && voiceChannel.members.size > state.maxParticipants) {
-                    state.maxParticipants = voiceChannel.members.size;
+                if (voiceChannel && voiceChannel.isVoiceBased() && voiceChannel.members.keys().toArray().length > state.maxParticipants) {
+                    state.maxParticipants = voiceChannel.members.keys().toArray().length;
                 }
             }
         }
@@ -159,7 +151,7 @@ export class SchedulerService {
         const isEnded = [GuildScheduledEventStatus.Completed, GuildScheduledEventStatus.Canceled].includes(event.status)
 
         // Se o evento tiver terminado e tiver que coletar dados então ele os salva e limpa do cache
-        if (isEnded && !state.reported && hasVoiceChannel && flags["coletar_dados_de_grupos_de_estudo"] && isStudyGroup) {
+        if (isEnded && !state.reported && hasVoiceChannel && this.featureFlagsService.isEnabled(event.guildId!, 'coletar_dados_de_grupos_de_estudo') && isStudyGroup) {
             await this.handleEventCompletion(event, state.maxParticipants, className);
             state.reported = true;
             this.eventsCache.delete(event.id);
@@ -208,7 +200,7 @@ export class SchedulerService {
         console.timeEnd("Contagem de membros");
     }
 
-    async handleOnlineMembersCount(): Promise<void> {
+    async handleOnlineMembersCount(): Promise<void> {                                                                                       
         let payload = 0
 
         for (const guild of this.client.guilds.cache.values()) {
@@ -233,27 +225,26 @@ export class SchedulerService {
 
         if (!messages || messages.length === 0) return
 
-        for (const {messageID, channlID} of messages) {
-            const channel = await this.client.channels.fetch(channlID)
+        for (const {message_id, channel_id} of messages) {
+            const channel = await this.client.channels.fetch(channel_id)
 
             if (!channel) continue
             if (!channel.isTextBased()) continue
 
-            const message = await channel.messages.fetch(messageID)
+            const message = await channel.messages.fetch(message_id)
                 .catch((error) => (error instanceof Error) ? console.error(error.message) : console.error(error))
 
             if (!message) continue
 
-            if (message.deletable) await channel.messages.delete(messageID)
+            if (message.deletable) await channel.messages.delete(message_id)
         }
 
         this.databaseWarningRepository.delete()
     }
 
     async handleEventCacheClear(): Promise<void> {
-        let guild: Guild
         for (const eventID of this.eventsCache.keys()) {
-            guild = await this.client.guilds.fetch(this.eventsCache.get(eventID)!.guildID)
+            const guild = await this.client.guilds.fetch(this.eventsCache.get(eventID)!.guildID)
             if (!guild.scheduledEvents.cache.has(eventID)) {
                 this.eventsCache.delete(eventID)
             }

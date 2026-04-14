@@ -19,7 +19,8 @@ export class ExecCommand implements ICommand {
                     .addChoices(
                         {name: 'Checagem de eventos do servidor', value: "Checagem de eventos do servidor"},
                         {name: 'Contagem de membros', value: "Contagem de membros"},
-                        {name: 'Contagem de membros online', value: "Contagem de membros online"}
+                        {name: 'Contagem de membros online', value: "Contagem de membros online"},
+                        {name: 'Limpeza de mensagens de aviso', value: "Limpeza de mensagens de aviso"},
                     )
             )
     }
@@ -44,6 +45,12 @@ export class ExecCommand implements ICommand {
             case "Contagem de membros online":
                 await context.schedulerService.handleOnlineMembersCount()
                 break
+            case "Limpeza de mensagens de aviso":
+                await context.schedulerService.handleEventWarningMessagesDelete()
+                break
+            default:
+                await interaction.editReply({content: "Comando desconhecido"})
+                return;
         }
 
         await interaction.editReply({content: `**${command}** executado com sucesso`})
