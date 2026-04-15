@@ -99,7 +99,7 @@ async function bootstrap(): Promise<void> {
     const n8nService = new N8nService()
     const schedulerService = new SchedulerService(client, featureFlagsService, n8nService, databaseWarningRepository)
     const linkedinService = new LinkedinService()
-    const discordService = new DiscordService(client, linkedinService)
+    const discordService = new DiscordService(client, linkedinService, featureFlagsService)
     const webhookController = new WebhookController({client, featureFlagsService, discordService, databaseGuildsRepository})
 
     const discordController = new DiscordController(
