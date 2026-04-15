@@ -18,7 +18,7 @@
     "@napi-rs/canvas": "^0.1.89",
     "crypto": "^1.0.1",
     "discord.js": "^14.25.1",
-    "mysql2": "^3.16.2",
+    "mysql2": "^3.22.0",
     "node-cron": "^4.2.1",
     "typescript": "^6.0.2",
     "undici": "7.24.0"
