@@ -1,0 +1,29 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "command": "bun run start",
+            "name": "Run",
+            "request": "launch",
+            "type": "node-terminal"
+        },
+        {
+            "command": "Bun run test",
+            "name": "Test",
+            "request": "launch",
+            "type": "node-terminal"
+        },
+        {
+            "command": "npx eslint . --cache --quiet && bun --inspect run start",
+            "name": "Debug linux",
+            "request": "launch",
+            "type": "node-terminal"
+        },
+        {
+            "command": "npx eslint . --cache --quiet; bun --inspect run start",
+            "name": "Debug windows",
+            "request": "launch",
+            "type": "node-terminal"
+        },
+    ]
+}

@@ -5,7 +5,7 @@ import type {GlobalFlags, IGuildFlags} from "../types/featureFlags.types.ts";
 export default class FeatureFlagsService {
     constructor(private globalFlags: GlobalFlags, private databaseFlagsRepository: DatabaseFlagsRepository) {}
 
-    async updateFlag(dto: UpdateFeatureFlagDTO) {
+    async updateFlag(dto: UpdateFeatureFlagDTO): Promise<void> {
         if (!this.globalFlags[dto.guildId]) throw new Error("Servidor não encontrado")
 
         // Verifica se todas as flags existem e depois atualiza (caso seja um array)
@@ -25,6 +25,10 @@ export default class FeatureFlagsService {
 
         this.globalFlags[dto.guildId]![dto.flagName] = dto.flagValue
         await this.databaseFlagsRepository.updateFeatureFlag(dto.guildId, dto.flagName, dto.flagValue)
+    }
+
+    isEnabled(guildId: string, flag: keyof IGuildFlags): boolean {
+        return this.globalFlags[guildId]?.[flag] ?? false;
     }
 
     getFlag(guildId: string, flag: keyof IGuildFlags): boolean {

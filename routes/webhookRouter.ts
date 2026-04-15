@@ -1,10 +1,9 @@
-import { Router } from 'express';
-import v2 from './v2/v2.ts';
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+import type { WebhookController } from "../controller/webhookController.ts";
 import v1 from "./v1/v1.ts";
+import v2 from "./v2/v2.ts";
 
-const router = Router();
-
-router.use('/v1', v1);
-router.use('/v2', v2);
-
-export default router;
+export default (webhookController: WebhookController) => ({
+    ...v1(webhookController),
+    ...v2(webhookController),
+});

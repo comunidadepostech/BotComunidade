@@ -1,12 +1,11 @@
-import { Router } from 'express';
-import criarEventoRouter from "./criarEvento.routes.ts";
-import sendLivePoll from "./sendLivePoll.ts";
-import sendWarning from "./sendWarning.ts";
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+import sendLivePoll from "./sendLivePoll";
+import sendWarning from "./sendWarning";
+import criarEvento from "./criarEvento.routes";
+import { WebhookController } from "../../controller/webhookController";
 
-const v1 = Router();
-
-v1.use('/criarEvento', criarEventoRouter);
-v1.use('/enviarForms', sendLivePoll);
-v1.use('/sendWarning', sendWarning);
-
-export default v1;
+export default (webhookController: WebhookController) => ({
+    ...sendLivePoll(webhookController),
+    ...sendWarning(webhookController),
+    ...criarEvento(webhookController),
+});

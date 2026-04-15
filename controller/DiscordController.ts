@@ -5,12 +5,12 @@ import {
 } from "discord.js";
 import type {PartialPollAnswer, GuildBasedChannel} from "discord.js";
 import FeatureFlagsService from "../services/featureFlagsService.ts";
-import crypto from "node:crypto";
 import type {InteractionPayload, Poll} from "../dtos/n8n.dtos.ts";
 import N8nService from "../services/n8nService.ts";
 import {WELCOME_CHANNEL_NAME} from "../constants/discordConstants.ts";
 import {SchedulerService} from "../services/schedulerService.ts";
 import DiscordService from "../services/discordService.ts";
+import generatePollHash from "../utils/generatePollHash.ts";
 
 export default class DiscordController {
     constructor(
@@ -23,21 +23,21 @@ export default class DiscordController {
         private client: Client,
     ) {}
 
-    public async handleGuildCreateEvent(guild: Guild) {
+    public async handleGuildCreateEvent(guild: Guild): Promise<void> {
         console.log(`Bot adicionado ao servidor ${guild.name} com ID ${guild.id}`)
         await this.databaseFalgsRepository.saveDefaultFeatureFlags(guild.id)
         console.log((`Feature Flags do servidor ${guild.name} carregadas`));
     }
 
-    public async handleClientReadyEvent(client: Client) {
+    public async handleClientReadyEvent(client: Client): Promise<void> {
         console.log(`Bot online - Id: ${client.user!.id} - Tag: ${client.user!.tag}`);
     }
 
-    public async handleErrorEvent(error: Error) {
+    public async handleErrorEvent(error: Error): Promise<void> {
         console.error(`${error.stack}`);
     }
 
-    public async handleMessageCreateEvent(message: Message) {
+    public async handleMessageCreateEvent(message: Message): Promise<void> {
         if (
             !this.featureFlagsService.getFlag(message.guildId!, "salvar_interacoes") ||
             ![ChannelType.GuildText, ChannelType.PublicThread, ChannelType.GuildStageVoice, ChannelType.GuildVoice].includes(message.channel.type) // Filtra a origem das mensagens
@@ -48,7 +48,6 @@ export default class DiscordController {
             message.author.system ||
             !message.content?.trim() ||
             message.content.match(/^<@!?\d+>$/) ||
-            message.content.startsWith('/') ||
             !message.guild
         ) return;
 
@@ -101,10 +100,10 @@ export default class DiscordController {
                 ) as CategoryChannel).name
         }
 
-        await this.n8nService.saveInteraction(body).catch((error: any) => console.error(`${error.message}\n${error.stack}`))
+        await this.n8nService.saveInteraction(body).catch((error) => console.error(`${error.message}\n${error.stack}`))
     }
 
-    public async handleGuildMemberAddEvent(member: GuildMember) {
+    public async handleGuildMemberAddEvent(member: GuildMember): Promise<void> {
         if (!this.featureFlagsService.getFlag(member.guild.id!, "enviar_mensagem_de_boas_vindas")) return;
 
         const welcomeChannel: TextChannel = member.guild.channels.cache.find((channel: GuildBasedChannel): boolean => channel.name === WELCOME_CHANNEL_NAME) as TextChannel;
@@ -117,7 +116,7 @@ export default class DiscordController {
         await this.discordService.messages.sendWelcomeMessage({targetChannel: welcomeChannel, profile: member});
     }
 
-    public async handleInteractionCreateEvent(interaction: BaseInteraction) {
+    public async handleInteractionCreateEvent(interaction: BaseInteraction): Promise<void> {
         if (!interaction.isChatInputCommand() && !interaction.isContextMenuCommand()) return
 
         const context: ICommandContext = {
@@ -128,23 +127,24 @@ export default class DiscordController {
             discordService: this.discordService
         };
 
-        for (const nativeCommand of this.commands) {
-            if (nativeCommand.build().name === interaction.commandName) {
-                try {
-                    await nativeCommand.execute(interaction, context);
-                } catch (error) {
-                    const message = error instanceof Error ? error.message : 'Erro desconhecido';
-                    const stack = error instanceof Error ? error.stack : undefined;
-                    console.error(message, stack);
-                }
-                return
+        const command = this.commands.find(c => c.build().name === interaction.commandName);
+        if (command) {
+            try {
+                await command.execute(interaction, context);
+            } catch (error) {
+                console.error(error instanceof Error ? error.stack : error);
             }
+            return;
         }
 
-        console.error(`Comando não encontrado na lista de comandos nativos!\nComando: ${interaction.commandName}\nLista de comandos registrada: ${this.commands.map(command => command.build().name).join(', ')}`)
+        console.error(
+            `Comando não encontrado na lista de comandos nativos!\n
+            Comando: ${interaction.commandName}\n
+            Lista de comandos registrada: ${this.commands.map(command => command.build().name).join(', ')}`
+        )
     }
 
-    public async handleGuildDeleteEvent(guild: Guild) {
+    public async handleGuildDeleteEvent(guild: Guild): Promise<void> {
         await this.databaseFalgsRepository.deleteGuildFeatureFlags(guild.id)
     }
 
@@ -153,10 +153,9 @@ export default class DiscordController {
 
         const data = packet.d;
 
-        if (!data.guild_id) return
         if (!data.channel_id) return
         if (!data.id) return
-        if (!this.featureFlagsService.getFlag(data.guild_id, "salvar_enquetes")) return
+        if (!this.featureFlagsService.getFlag(data.guild_id!, "salvar_enquetes")) return
 
         if (!data.poll || !data.poll.results || !data.poll.results.is_finalized) return
 
@@ -165,23 +164,23 @@ export default class DiscordController {
             if (!channel) return
 
             const message = await channel.messages.fetch(data.id);
-            if (!message || !message.guild || !message.poll) return
+            if (!message.guild || !message.poll) return
 
-            const now: number = Date.now();
-            const expirity: number = new Date(message.poll.expiresTimestamp as number).getTime();
+            const now = new Date();
+            const expirity: number = new Date(message.poll.expiresTimestamp!).getTime();
             const className = channel.parent?.name;
             const guildName = message.guild.name;
 
             const payload: Poll = {
-                created_by: message.author?.globalName ?? message.author?.username!,
+                created_by: message.author?.globalName ?? message.author!.username!,
                 guild: guildName,
                 poll_category: className!,
-                poll_hash: crypto.createHash('sha1').update(message.poll.question.text as string).digest('hex'),
+                poll_hash: generatePollHash(message.createdAt.getFullYear().toString(), message.createdAt.getMonth().toString(), message.poll.question.text!),
                 question: message.poll.question.text!,
                 answers: message.poll.answers.map((answer: PollAnswer | PartialPollAnswer) => {
                     return { response: answer.text!, answers: answer.voteCount }
                 }),
-                duration: `${((now - expirity) / (1000 * 60 * 60)).toFixed(0)}`
+                duration: `${((now.getTime() - expirity) / (1000 * 60 * 60)).toFixed(0)}`
             };
 
             await this.n8nService.savePoll(payload).catch((error) => error instanceof Error ? console.error(`${error.message}\n${error.stack}`) : console.error(`Erro desconhecido: ${JSON.stringify(error, null, 2)}`))

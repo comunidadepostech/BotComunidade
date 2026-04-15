@@ -1,9 +1,8 @@
-import { Router } from 'express';
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+import { WebhookController } from "../../controller/webhookController.ts";
 
-const sendLivePollRouter = Router();
-
-sendLivePollRouter.post('/', async (req, res) => {
-    await req.webhookController.SendLivePoll(req, res);
+export default (webhookController: WebhookController) => ({
+    "/api/v1/sendLivePoll": {
+        POST:   (req: Request) => webhookController.SendLivePoll(req)
+    },
 });
-
-export default sendLivePollRouter;

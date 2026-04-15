@@ -7,7 +7,7 @@ export default class DatabaseConnection {
 
     constructor() {}
 
-    async connect() {
+    async connect(): Promise<void> {
         if (!this.pool) {
             this.pool = mysql.createPool(MySQLdatabaseConfig)
             const connection = await this.pool.getConnection()
@@ -20,7 +20,7 @@ export default class DatabaseConnection {
         return this.pool;
     }
 
-    async endConnection() {
+    async endConnection(): Promise<void> {
         if (!this.pool) throw new Error("Banco não iniciado, tente chamar connect() primeiro.");
         await this.pool.end();
     }

@@ -2,12 +2,13 @@ import {
     ChatInputCommandInteraction,
     MessageFlags,
     PermissionFlagsBits,
-    SlashCommandBuilder
+    SlashCommandBuilder,
+    type SlashCommandOptionsOnlyBuilder
 } from "discord.js";
 import type {ICommand, ICommandContext} from "../../types/discord.interfaces.ts";
 
-export class disableCommand implements ICommand {
-    build() {
+export class DisableCommand implements ICommand {
+    build(): SlashCommandOptionsOnlyBuilder {
         return new SlashCommandBuilder()
             .setName("disable")
             .setDescription('Desabilita uma turma removendo o cargo da turma dos alunos')

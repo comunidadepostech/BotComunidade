@@ -5,6 +5,7 @@
     "moduleDetection": "force",
     "allowJs": false,
     "moduleResolution": "bundler",
+    "types": ["bun"],
 
     // Strictness
     "strict": true,
@@ -28,5 +29,7 @@
     "useDefineForClassFields": true,
     "forceConsistentCasingInFileNames": true,
     "noEmitOnError": true,
+    "emitDeclarationOnly": true,
+    "declaration": true
   }
 }

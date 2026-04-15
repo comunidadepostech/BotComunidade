@@ -1,12 +1,13 @@
 import {
     ChatInputCommandInteraction, MessageFlags,
     PermissionFlagsBits,
-    SlashCommandBuilder
+    SlashCommandBuilder,
+    type SlashCommandOptionsOnlyBuilder
 } from "discord.js";
 import type {ICommand, ICommandContext} from "../../types/discord.interfaces.ts";
 
-export class execCommand implements ICommand {
-    build() {
+export class ExecCommand implements ICommand {
+    build(): SlashCommandOptionsOnlyBuilder {
         return new SlashCommandBuilder()
             .setName("exec")
             .setDescription('Executa um comando do scheduler')
@@ -17,7 +18,9 @@ export class execCommand implements ICommand {
                     .setRequired(true)
                     .addChoices(
                         {name: 'Checagem de eventos do servidor', value: "Checagem de eventos do servidor"},
-                        {name: 'Contagem de membros', value: "Contagem de membros"}
+                        {name: 'Contagem de membros', value: "Contagem de membros"},
+                        {name: 'Contagem de membros online', value: "Contagem de membros online"},
+                        {name: 'Limpeza de mensagens de aviso', value: "Limpeza de mensagens de aviso"},
                     )
             )
     }
@@ -39,6 +42,15 @@ export class execCommand implements ICommand {
             case "Contagem de membros":
                 await context.schedulerService.handleMembersCount()
                 break
+            case "Contagem de membros online":
+                await context.schedulerService.handleOnlineMembersCount()
+                break
+            case "Limpeza de mensagens de aviso":
+                await context.schedulerService.handleEventWarningMessagesDelete()
+                break
+            default:
+                await interaction.editReply({content: "Comando desconhecido"})
+                return;
         }
 
         await interaction.editReply({content: `**${command}** executado com sucesso`})

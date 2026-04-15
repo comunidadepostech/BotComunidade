@@ -3,12 +3,13 @@ import {
     ChatInputCommandInteraction,
     PermissionFlagsBits,
     SlashCommandBuilder,
-    MessageFlags
+    MessageFlags,
+    type SlashCommandOptionsOnlyBuilder
 } from "discord.js";
 import type {ICommand, ICommandContext} from "../../types/discord.interfaces.ts";
 
-export class createclassCommand implements ICommand {
-    build() {
+export class CreateclassCommand implements ICommand {
+    build(): SlashCommandOptionsOnlyBuilder {
         return new SlashCommandBuilder()
             .setName("createclass")
             .setDescription('Cria uma nova turma')

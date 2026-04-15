@@ -2,12 +2,13 @@ import {
     ChatInputCommandInteraction,
     MessageFlags,
     PermissionFlagsBits,
-    SlashCommandBuilder
+    SlashCommandBuilder,
+    type SlashCommandOptionsOnlyBuilder
 } from "discord.js";
 import type {ICommand, ICommandContext} from "../../types/discord.interfaces.ts";
 
-export class eventCommand implements ICommand {
-    build() {
+export class EventCommand implements ICommand {
+    build(): SlashCommandOptionsOnlyBuilder {
         return new SlashCommandBuilder()
             .setName("event")
             .setDescription('Cria um evento')
@@ -55,7 +56,7 @@ export class eventCommand implements ICommand {
             )
     }
 
-    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext) {
+    async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void> {
         const topic = interaction.options.getString('topic')!;
         const startDate = interaction.options.getString('start-date')!;
         const startTime = interaction.options.getString('start-time')!;

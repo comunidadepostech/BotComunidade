@@ -9,7 +9,8 @@ export const discordClient = new Client({
         GatewayIntentBits.GuildScheduledEvents,
         GatewayIntentBits.GuildInvites,
         GatewayIntentBits.GuildMessagePolls,
-        GatewayIntentBits.GuildMessageReactions
+        GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.GuildPresences
     ],
     rest: {
         timeout: 10000,

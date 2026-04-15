@@ -1,9 +1,8 @@
-import { Router } from 'express';
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+import { WebhookController } from "../../controller/webhookController.ts";
 
-const sendWarning = Router();
-
-sendWarning.post('/', async (req, res) => {
-    await req.webhookController.sendWarning(req, res)
+export default (webhookController: WebhookController) => ({
+    "/api/v1/sendWarning": {
+        POST:   (req: Request) => webhookController.sendWarning(req)
+    },
 });
-
-export default sendWarning;
