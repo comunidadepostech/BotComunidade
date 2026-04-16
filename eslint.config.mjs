@@ -11,6 +11,9 @@ export default [
   ...tseslint.configs.recommended,
   sonarjs.configs.recommended,
   {
+    ignores: ["./assets/**", "./node_modules", "./bun.lock"]
+  },
+  {
     plugins: {
       import: importPlugin,
     },
