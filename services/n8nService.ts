@@ -48,7 +48,7 @@ export default class N8nService implements IN8nService {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': "Bearer " + env.N8N_WEBHOOKS_TOKEN
+                'token': env.N8N_WEBHOOKS_TOKEN
             },
             body: JSON.stringify(payload)
         });
