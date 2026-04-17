@@ -177,9 +177,9 @@ export class SchedulerService {
             const roleCounts: RoleCount[] = [];
 
             roles.forEach(role => {
-                if (role.name) roleCounts.push({
+                if (!role.name.search("Estudantes ")) roleCounts.push({
                     guildName: role.guild.name, 
-                    roleName: role.name, 
+                    roleName: role.name.split("Estudantes ")[1]!, 
                     count: members.filter(member => member.roles.cache.has(role.id)).size
                 });
             });
