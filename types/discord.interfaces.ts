@@ -28,8 +28,6 @@ export interface RoleCount {
 
 export interface EventState {
   notified: boolean;
-  maxParticipants: number;
-  reported: boolean;
   guildID: string;
 }
 

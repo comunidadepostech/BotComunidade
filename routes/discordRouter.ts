@@ -1,7 +1,7 @@
 import { Client, Events } from "discord.js";
 import DiscordController from "../controller/DiscordController.ts";
 
-export default function registerDiscordEvents(client: Client, controller: DiscordController) {
+export default function registerDiscordEvents(client: Client, controller: DiscordController): void {
     client.on(Events.ClientReady, (client) => controller.handleClientReadyEvent(client));
     client.on(Events.GuildCreate, (guild) => controller.handleGuildCreateEvent(guild));
     client.on(Events.Error, (error) => controller.handleErrorEvent(error));

@@ -62,7 +62,7 @@ export default class DiscordController {
         // Descobre o maior cargo do membro pela posição hierárquica
         const member = await message.guild.members.fetch(message.author.id);
         const roles = member.roles.cache.filter((role: Role) => role.id !== message.guild!.id);
-        const sortedRoles = roles.sort((a: Role, b: Role) => b.position - a.position);
+        const sortedRoles = roles.sort((role1: Role, role2: Role) => role2.position - role1.position);
 
         // Verifica se há pelo menos um cargo
         const firstRole = sortedRoles.first();
@@ -127,7 +127,9 @@ export default class DiscordController {
             discordService: this.discordService
         };
 
-        const command = this.commands.find(c => c.build().name === interaction.commandName);
+        const command = this.commands.find(
+            (command) => command.build().name === interaction.commandName,
+        );
         if (command) {
             try {
                 await command.execute(interaction, context);

@@ -24,7 +24,7 @@ export default class ClassSubService implements IDiscordClassService {
     constructor(private client: Client) {}
 
     private async ensureAdminRoles(guild: Guild): Promise<void> {
-        const existingRoles = new Set(guild.roles.cache.map((r: Role) => r.name));
+        const existingRoles = new Set(guild.roles.cache.map((role: Role) => role.name));
 
         const rolesToCreate = ADMIN_ROLES.filter((name) => !existingRoles.has(name));
 
@@ -49,7 +49,7 @@ export default class ClassSubService implements IDiscordClassService {
     ): Promise<CategoryChannel> {
         const permissionOverwrites = [
             ...ADMIN_ROLES.map((roleName) => ({
-                id: adminRoles.find((r) => r.name === roleName)!.id,
+                id: adminRoles.find((role) => role.name === roleName)!.id,
                 allow: ADMIN_PERMISSIONS,
                 deny: [],
             })),
