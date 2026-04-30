@@ -1,149 +1,178 @@
-// Fontes externas
-import {GlobalFonts} from "@napi-rs/canvas";
+// Dependências externas
+import { GlobalFonts } from '@napi-rs/canvas';
 import fs from 'node:fs';
 import path from 'node:path';
 
-// Fontes internas
-import DatabaseConnection from "./repositories/database/databaseConnection.ts";
-import LoggerService from "./infrastructure/loggerService.ts";
-import DatabaseFlagsRepository from "./repositories/database/databaseFlagsRepository.ts";
-import FeatureFlagsService from "./services/featureFlagsService.ts";
-import DiscordController from "./controller/DiscordController.ts";
-import ShutdownService from "./infrastructure/shutdownService.ts";
-import registerDiscordEvents from "./routes/discordRouter.ts";
-import {discordClient} from './infrastructure/discordClient.ts'
-import buildRoutes from "./routes/webhookRouter.ts";
-import DatabaseGuildsRepository from "./repositories/database/databaseGuildsRepository.ts";
-import DiscordService from "./services/discordService.ts";
-import LinkedinService from "./services/linkedinService.ts";
-import DatabaseCheckRepository from "./repositories/database/databaseCheck.ts";
-import Scheduler from "./infrastructure/scheduler.ts";
-import DatabaseWarningRepository from "./repositories/database/databaseWarningRepository.ts";
-import {SchedulerService} from "./services/schedulerService.ts";
-import {Guild} from "discord.js";
-import {env} from "./config/env.ts";
-import N8nService from "./services/n8nService.ts";
-import {WebhookController} from "./controller/webhookController.ts";
+// Dependências internas - Infraestrutura
+import LoggerService from './infrastructure/loggerService.ts';
+import { discordClient } from './infrastructure/discordClient.ts';
+import Scheduler from './infrastructure/scheduler.ts';
+import ShutdownService from './infrastructure/shutdownService.ts';
+import { DIContainer } from './infrastructure/diContainer.ts';
 
-// Types and Interfaces
-import type {ICommand} from "./types/discord.interfaces.ts";
+// Controladores
+import DiscordController from './controller/DiscordController.ts';
+import { WebhookController } from './controller/webhookController.ts';
 
+// Rotas
+import registerDiscordEvents from './routes/discordRouter.ts';
+import buildRoutes from './routes/webhookRouter.ts';
+
+// Tipos e Interfaces
+import type { ICommand } from './types/discord.interfaces.ts';
+import { env } from './config/env.ts';
+
+/**
+ * Inicialização da Aplicação
+ *
+ * Sequência de inicialização:
+ * 1. Configurar logging
+ * 2. Carregar recursos externos
+ * 3. Conectar ao Discord
+ * 4. Inicializar banco de dados e repositórios
+ * 5. Carregar comandos dinamicamente
+ * 6. Configurar container de Injeção de Dependência
+ * 7. Registrar manipuladores de eventos do Discord
+ * 8. Iniciar servidor de webhooks
+ * 9. Iniciar agendador (scheduler)
+ * 10. Configurar encerramento gracioso (graceful shutdown)
+ *
+ * SOLID: Inversão de Dependência - utiliza DIContainer para gerenciar todas as dependências
+ */
 async function bootstrap(): Promise<void> {
-    LoggerService.init()
-    GlobalFonts.registerFromPath("./assets/Coolvetica Hv Comp.otf", "normalFont")
+    LoggerService.init();
 
-    // Login do bot ao Discord
-    console.time("Login do bot no Discord")
-    const client = discordClient
-    await client.login(env.DISCORD_BOT_TOKEN)
-        .catch(() => {throw new Error("Falha ao conectar ao bot no Discord")})
-        .then(() => console.log("Bot conectado ao Discord"))
-    console.timeEnd("Login do bot no Discord")
+    // Carregar fontes personalizadas para renderização em canvas
+    GlobalFonts.registerFromPath('./assets/Coolvetica Hv Comp.otf', 'normalFont');
 
+    // Conectar o bot ao Discord
+    console.time('Discord login');
+    const client = discordClient;
+    await client
+        .login(env.DISCORD_BOT_TOKEN)
+        .catch(() => {
+            throw new Error('Failed to login to Discord');
+        })
+        .then(() => console.log('Connected to Discord'));
+    console.timeEnd('Discord login');
 
-    // Verificação dinâmica de comandos existentes
-    console.time("Carregamento de comandos")
+    // Carregar comandos slash dinamicamente
+    console.time('Loading commands');
     const commands: ICommand[] = [];
-    const commandsPath = path.join(__dirname, './controller/commands/');
-    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.ts'));
+    const commandsPath = path.join(process.cwd(), './controller/commands/');
+    const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith('.ts'));
 
     for (const file of commandFiles) {
-        const filePath = path.join(commandsPath, file);
-        const module = await import(filePath);
+        try {
+            const filePath = path.join(commandsPath, file);
+            const module = await import(filePath);
 
-        type CommandConstructor = new () => ICommand;
+            type CommandConstructor = new () => ICommand;
 
-        const CommandClass = Object.values(module).find(
-            (exp): exp is CommandConstructor =>
-                typeof exp === 'function' &&
-                'prototype' in exp &&
-                exp.prototype !== undefined &&
-                'execute' in (exp).prototype
-        );
+            const CommandClass = Object.values(module).find(
+                (exp): exp is CommandConstructor =>
+                    typeof exp === 'function' &&
+                    'prototype' in exp &&
+                    exp.prototype !== undefined &&
+                    'execute' in exp.prototype,
+            );
 
-        if (CommandClass) {
-            const commandInstance = new CommandClass();
-            commands.push(commandInstance);
-        } else {
-            console.warn(`Pulando ${file}: o arquivo não exporta uma classe válida com o método 'execute'`);
+            if (CommandClass) {
+                const commandInstance = new CommandClass();
+                commands.push(commandInstance);
+            } else {
+                console.warn(`Skipping ${file}: does not export a valid command class`);
+            }
+        } catch (error) {
+            console.error(
+                `Error loading command ${file}: ${error instanceof Error ? error.message : String(error)}`,
+            );
         }
     }
-    console.timeEnd("Carregamento de comandos")
+    console.timeEnd('Loading commands');
 
-    const databaseConnection = new DatabaseConnection()
-    const databaseCheckRepository = new DatabaseCheckRepository(databaseConnection)
-    const databaseFlagsRepository = new DatabaseFlagsRepository(databaseConnection)
-    const databaseWarningRepository = new DatabaseWarningRepository(databaseConnection)
-    const databaseGuildsRepository = new DatabaseGuildsRepository(databaseConnection)
+    // Inicializar o Container de Injeção de Dependência
+    console.time('Initializing services');
+    const container = new DIContainer(client);
+    await container.initialize();
+    const {
+        featureFlagsService,
+        discordService,
+        schedulerService,
+        flagsRepository,
+        guildsRepository,
+        n8nService,
+    } = container.getServices();
+    console.timeEnd('Initializing services');
 
-    // Inicialização do banco de dados e checagem de tabelas
-    await databaseConnection.connect()
-        .catch((error: Error) => {throw new Error(`Falha ao conectar ao banco de dados\n${error}`)})
-        .then(() => console.log("Conectado ao banco de dados"))
-
-    await databaseCheckRepository.checkSchemas()
-    await databaseGuildsRepository.syncGuilds()
-
-    await databaseFlagsRepository.checkEmptyFeatureFlags(client.guilds.cache.map((guild: Guild) => guild.id))
-        .then(() => console.log("Feature Flags verificadas"))
-
-
-    // Inicialização das featureFlags globais
-    console.time("Carregamento de feature flags no cache")
-    const featureFlagsService = new FeatureFlagsService(
-        await databaseFlagsRepository.getAllFeatureFlags(), 
-        databaseFlagsRepository
-    )
-    console.timeEnd("Carregamento de feature flags no cache")
-
-    const n8nService = new N8nService()
-    const schedulerService = new SchedulerService(client, featureFlagsService, n8nService, databaseWarningRepository)
-    const linkedinService = new LinkedinService()
-    const discordService = new DiscordService(client, linkedinService, featureFlagsService)
-    const webhookController = new WebhookController({client, featureFlagsService, discordService, databaseGuildsRepository})
-
+    // Criar controladores
     const discordController = new DiscordController(
-        discordService, 
-        schedulerService, 
-        featureFlagsService, 
-        databaseFlagsRepository, 
-        n8nService, 
-        commands, 
-        client
-    )
-    registerDiscordEvents(client, discordController)
+        discordService,
+        schedulerService,
+        featureFlagsService,
+        flagsRepository,
+        n8nService,
+        commands,
+        client,
+    );
 
-    console.time("Registro de comandos no Discord")
-    await discordService.commands.registerCommand(
-        client.guilds.cache.values().toArray(),
-        commands
-    ).then(() => {
-        console.log("Comandos registrados com sucesso")
-        console.timeEnd("Registro de comandos no Discord")
-    })
+    const webhookController = new WebhookController({
+        client,
+        featureFlagsService,
+        discordService,
+        guildsRepository,
+    });
 
-    // Inicialização do webhook
+    // Registrar manipuladores de eventos do Discord
+    registerDiscordEvents(client, discordController);
+
+    // Registrar comandos slash no Discord
+    console.time('Registering commands');
+    await discordService.commands
+        .registerCommand(Array.from(client.guilds.cache.values()), commands)
+        .then(() => {
+            console.log('Commands registered successfully');
+            console.timeEnd('Registering commands');
+        });
+
+    // Iniciar servidor de webhooks para integrações externas
+    console.time('Starting webhook server');
     Bun.serve({
         port: env.PRIMARY_WEBHOOK_PORT,
         routes: buildRoutes(webhookController),
-        fetch: () => new Response("Not Found", { status: 404 }),
+        fetch: () => new Response('Not Found', { status: 404 }),
     });
-    console.log("Webhook iniciado")
+    console.log('Webhook server started');
+    console.timeEnd('Starting webhook server');
 
+    // Iniciar agendador de tarefas (scheduler)
+    Scheduler.start(schedulerService);
+    console.log('Scheduler started');
 
-    Scheduler.start(schedulerService)
-    console.log("Scheduler iniciado")
+    // Configurar manipuladores de encerramento gracioso (graceful shutdown)
+    process.on('SIGINT', async () => {
+        await ShutdownService.shutdown(
+            client,
+            discordService.commands,
+            container.getDatabaseConnection(),
+        );
+    });
 
-    process.on('SIGINT', async () => await ShutdownService.shutdown(client, discordService.commands, databaseConnection));
-    process.on('SIGTERM', async () => await ShutdownService.shutdown(client, discordService.commands, databaseConnection));
+    process.on('SIGTERM', async () => {
+        await ShutdownService.shutdown(
+            client,
+            discordService.commands,
+            container.getDatabaseConnection(),
+        );
+    });
 }
 
-bootstrap().catch(error => {
+// Iniciar aplicação
+bootstrap().catch((error) => {
     if (error instanceof Error) {
-        console.error(`Erro fatal: ${error.message}\n${error.stack}`)
+        console.error(`Fatal error: ${error.message}\n${error.stack}`);
     } else {
-         console.error(`Erro fatal: ${error}`)
+        console.error(`Fatal error: ${error}`);
     }
-    process.exit(1)
-})
-
+    process.exit(1);
+});

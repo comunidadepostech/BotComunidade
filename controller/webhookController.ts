@@ -1,227 +1,327 @@
-import {STUDY_GROUP_CHANNEL_NAME, WARNING_CHANNEL_NAME} from "../constants/discordConstants.ts";
-import {defaultEventDescription} from "../constants/eventDescription.ts";
-import {ChannelType, Role, TextChannel, VoiceChannel, Client} from "discord.js";
-import {env} from "../config/env.ts";
-import type DiscordService from "../services/discordService.ts";
-import type FeatureFlagsService from "../services/featureFlagsService.ts";
-import type DatabaseGuildsRepository from "../repositories/database/databaseGuildsRepository.ts";
+import { STUDY_GROUP_CHANNEL_NAME, WARNING_CHANNEL_NAME } from '../constants/discordConstants.ts';
+import { defaultEventDescription } from '../constants/eventDescription.ts';
+import { ChannelType, Role, TextChannel, VoiceChannel, Client } from 'discord.js';
+import { env } from '../config/env.ts';
+import type { IDiscordService } from '../types/discord.interfaces.ts';
+import type IFeatureFlagsService from '../types/featureFlagsService.interface.ts';
+import type { IGuildsRepository } from '../types/repository.interfaces.ts';
+import { InputValidator, GuildValidator } from '../utils/validators.ts';
+import type { EventValidationInput } from '../utils/validators.ts';
+import { UnauthorizedError, ValidationError, NotFoundError } from '../types/errors.ts';
 
+/**
+ * WebhookController - Controlador enxuto para requisições de webhook
+ * Lida com requisições de API externa (N8n) que gerenciam operações do Discord
+ *
+ * Responsabilidades:
+ * - Validar requisições recebidas
+ * - Delegar para os serviços apropriados
+ * - Retornar respostas estruturadas
+ *
+ * Princípios SOLID:
+ * - Responsabilidade Única (Single Responsibility): Apenas roteia requisições de webhook
+ * - Inversão de Dependência (Dependency Inversion): Depende de interfaces de serviço
+ * - Aberto/Fechado (Open/Closed): Pode ser estendido com novos métodos de webhook
+ *
+ * Segurança:
+ * - Validação de token em todos os endpoints
+ * - Validação de entrada antes das chamadas de serviço
+ * - Mensagens de erro não expõem detalhes internos
+ */
 export class WebhookController {
     constructor(
-        private context: { 
-            client: Client, 
-            featureFlagsService: FeatureFlagsService, 
-            discordService: DiscordService,
-            databaseGuildsRepository: DatabaseGuildsRepository
-        }
+        private context: {
+            client: Client;
+            featureFlagsService: IFeatureFlagsService;
+            discordService: IDiscordService;
+            guildsRepository: IGuildsRepository;
+        },
     ) {}
 
+    /**
+     * Gerencia a criação de eventos externos via webhook
+     *
+     * Valida:
+     * - Token de webhook
+     * - Comprimento do nome do evento
+     * - Datas do evento (não no passado, término após o início)
+     * - Existência de servidor/canal
+     *
+     * @param req - Requisição com dados do evento
+     * @returns Resposta com status ou erro
+     */
     async EventManagement(req: Request): Promise<Response> {
-        const body = await req.json()
-
         try {
-            if (req.headers.get("token") !== env.WEBHOOK_TOKEN) {
-                return Response.json(
-                    {"message": "Invalid token"}, 
-                    {status: 401}
-                )
-            }
+            const body = (await req.json()) as {
+                nomeEvento: string;
+                data_hora: string;
+                fim: string;
+                turma: string;
+                link: string;
+                tipo: string;
+            };
 
-            if (body.nomeEvento.length > 100) {
-                return Response.json(
-                    {message: "O nome do evento passa o limite de 100 caracteres!"}, 
-                    {status: 400}
-                )
-            }
+            // Validar o token de webhook
+            InputValidator.validateWebhookToken(req.headers.get('token'), env.WEBHOOK_TOKEN);
 
-            if(new Date(body.data_hora).getTime() < Date.now()) {
-                return Response.json(
-                    {message: "Você não pode registrar um evento no passado!"}, 
-                    {status: 400}
-                )
-            }
+            // Validar a entrada do evento
+            const validationInput: EventValidationInput = {
+                eventName: body.nomeEvento,
+                startDate: body.data_hora,
+                endDate: body.fim,
+                courseCode: body.turma,
+                type: body.tipo,
+                link: body.link,
+            };
+            InputValidator.validateEventInput(validationInput);
 
-            if(new Date(body.fim).getTime() < new Date(body.data_hora).getTime()) {
-                return Response.json(
-                    {message: "Você não pode registrar um evento que acabara antes dele mesmo"}, 
-                    {status: 400}
-                )
+            // Normalizar o código do curso para encontrar o servidor
+            const normalizedCourseCode = GuildValidator.normalizeCourseCode(body.turma);
+            GuildValidator.validateNormalizedCourseCode(normalizedCourseCode);
+
+            const guildId = this.context.guildsRepository.getGuildIdByCourse(normalizedCourseCode);
+            if (!guildId) {
+                throw new NotFoundError(
+                    `Guild not found for course: ${body.turma}. Please ensure the course is configured.`,
+                    'Guild',
+                );
             }
 
             const client = this.context.client;
-            const eventService = this.context.discordService.events
-            const guildId = this.context.databaseGuildsRepository.getGuildIdByCourse(body.turma.replaceAll(/\d+/g, ''))
+            const guild = await client.guilds.fetch(guildId);
 
-            if (!guildId) {
-                console.error("Guilda não encontrada para a turma: " + body.turma + "\n" + JSON.stringify(body, null, 2))
-                return Response.json(
-                    {message: "Guilda não encontrada para a turma: " + body.turma + 
-                    "\n" + JSON.stringify(body, null, 2)}, {status: 500}
-                )
-            }
-
-            const guild = await client.guilds.fetch(guildId)
-
-            const description = defaultEventDescription[body.tipo]
-
+            // Encontrar a descrição do evento para este tipo de evento
+            const description =
+                defaultEventDescription[body.tipo as keyof typeof defaultEventDescription];
             if (!description) {
-                console.error("Nenhuma descrição foi encontrada para o tipo de evento a ser cadastrado: " + body.tipo)
-                return Response.json(
-                    {message: "O tipo de evento a ser cadastrado não é conhecido pelo Bot: " + body.tipo + " - reporte esse erro"}, 
-                    {status: 500}
-                )
+                throw new NotFoundError(
+                    `No description found for event type: ${body.tipo}`,
+                    'EventType',
+                );
             }
 
-            const channel = guild.channels.cache.find(channel =>
-                channel.name === STUDY_GROUP_CHANNEL_NAME + " " + body.turma &&
-                channel.type === ChannelType.GuildVoice &&
-                channel.parent?.name === body.turma
-            )
+            // Encontrar o canal do grupo de estudos para este curso
+            const channel = guild.channels.cache.find(
+                (guildChannel) =>
+                    guildChannel.name === STUDY_GROUP_CHANNEL_NAME + ' ' + body.turma &&
+                    guildChannel.type === ChannelType.GuildVoice &&
+                    guildChannel.parent?.name === body.turma,
+            );
 
             if (!channel) {
-                console.error("Nenhum canal de estudo foi encontrado para a turma: " + body.turma)
-                return Response.json(
-                    {message: "Nenhum canal de estudo foi encontrado para a turma: " + body.turma}, 
-                    {status: 500}
-                )
+                throw new NotFoundError(
+                    `Study group channel not found for course: ${body.turma}`,
+                    'Channel',
+                );
             }
 
-            await eventService.create({
-                topic: body.turma + " - " + body.nomeEvento,
-                description: description.replaceAll("{link}", body.link),
-                endDatetime: body.fim,
+            // Delegar para o serviço
+            await this.context.discordService.events.create({
+                topic: body.turma + ' - ' + body.nomeEvento,
+                description: description.replaceAll('{link}', body.link),
+                endDatetime: new Date(body.fim),
                 guildId: guild.id,
                 link: body.link,
-                source: "external",
-                startDatetime: body.data_hora,
-                type: body.tipo,
-                channel: channel as VoiceChannel
+                source: 'external',
+                startDatetime: new Date(body.data_hora),
+                type: body.tipo as 'Grupo de estudos' | 'Live' | 'Mentoria' | 'Hackaton',
+                channel: channel as VoiceChannel,
             });
 
-            return Response.json({ status: "sucesso" }, {status: 200})
+            return Response.json({ status: 'success' }, { status: 200 });
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'Erro desconhecido';
-            const stack = error instanceof Error ? error.stack : undefined;
-            console.error(message, stack)
-            return Response.json({ error: message }, {status: 500})
-
+            return this.handleError(error);
         }
     }
 
+    /**
+     * Envia o link de feedback da enquete ao vivo após o evento de transmissão ao vivo
+     *
+     * Valida:
+     * - Token de webhook
+     * - Formato do identificador do evento
+     * - Existência de servidor/cargo/canal
+     * - Flag de funcionalidade habilitada
+     *
+     * @param req - Requisição com o identificador do evento
+     * @returns Resposta com status
+     */
     async SendLivePoll(req: Request): Promise<Response> {
-        const body = await req.json()
-
-        if (req.headers.get("token") !== env.WEBHOOK_TOKEN) {
-            return Response.json(JSON.stringify({"message": "Invalid token"}), {status: 401})
-        }
-
-        const client = this.context.client;
-        const featureFlagsService = this.context.featureFlagsService
-        const messagingService = this.context.discordService.messages
-
-        if (!body.evento) {
-            console.error("Para envir a mensagem é necessário especificar o 'evento' com a turma e título do evento separados por ' - '");
-            return Response.json({error: "Para envir a mensagem é necessário especificar o 'evento' com a turma e título do evento separados por ' - '"}, {status: 500})
-        }
-
-        // Formata o nome da turma com o número da frente
-        const classNameWithNumber: string = body.evento.split(" - ")[0]
-
-        // Formata o nome da turma sem o número (para identificar o servidor)
-        const classNameWithoutNumber: string = classNameWithNumber.replaceAll(/\d+/g, '')
-
-        // Se o servidor não for encontrado ignora o evento e registra um warn
-        if (!this.context.databaseGuildsRepository.getGuildIdByCourse(classNameWithoutNumber)) {
-            console.warn(`Envio de link de feedback suprimido pois o evento não é válido: ${body.evento}`)
-            return Response.json({})
-        }
-
-        const guildId = this.context.databaseGuildsRepository.getGuildIdByCourse(classNameWithoutNumber)
-
-        if (!guildId) {
-            console.error("Guilda não encontrada para a turma: " + classNameWithoutNumber);
-            return Response.json({error: "Não foi possível encontrar a turma " + classNameWithoutNumber}, {status: 500})
-        }
-
-        // Tenta dar fetch na guild usando a nomenclatura da turma
-        const guild = await client.guilds.fetch(guildId);
-
-        // Verifica se o servidor tem a feature habilitada
-        if (!featureFlagsService.getFlag(guild.id, "enviar_forms_no_final_da_live")) {
-            console.warn(`Envio de link de feedback das lives desabilitado no servidor ${guild.name} - Envio cancelado`)
-            return Response.json({})
-        }
-
-        // Busca o cargo da turma
-        const role = guild.roles.cache.find((role: Role) => role.name === `Estudantes ${classNameWithNumber}`)
-
-        if (!role) {
-            console.error("Cargo da turma não encontrado");
-            return Response.json({error: "Cargo da turma não encontrado"}, {status: 500})
-        }
-
-        const channels = guild.channels.cache.filter(channel => channel.name === "💬│bate-papo").values()
-
-        for (const channel of channels) {
-            const parentName: string = guild.channels.cache.get(channel.parentId!)!.name // Busca o nome da turma nas categorias
-
-            if (!channel.isTextBased()) continue
-
-            if (parentName !== classNameWithNumber) continue
-
-            await messagingService.sendLivestreamPoll(channel as TextChannel, role)
-            return Response.json({status: "sucess"}, {status: 200})
-        }
-
-        console.error("Nenhum canal de avisos encontrado na turma");
-        return Response.json({error: "Nenhum canal de avisos encontrado na turma"}, {status: 500})
-    }
-
-    async sendWarning(req: Request): Promise<Response> {
-        const body = await req.json()
-        
         try {
-            if (req.headers.get("token") !== env.WEBHOOK_TOKEN) {
-                return Response.json({"message": "Invalid token"}, {status: 401})
+            const body = (await req.json()) as { evento?: string };
+
+            // Validar o token de webhook
+            InputValidator.validateWebhookToken(req.headers.get('token'), env.WEBHOOK_TOKEN);
+
+            // Validar o identificador do evento
+            InputValidator.validatePollInput(body.evento);
+
+            const classNameWithNumber = body.evento!.split(' - ')[0];
+            const classNameWithoutNumber = GuildValidator.normalizeCourseCode(
+                classNameWithNumber || '',
+            );
+
+            const guildId =
+                this.context.guildsRepository.getGuildIdByCourse(classNameWithoutNumber);
+            if (!guildId) {
+                console.warn(
+                    `Guild not found for course: ${classNameWithoutNumber}, poll send cancelled`,
+                );
+                return Response.json({});
             }
 
-            const messagingService = this.context.discordService.messages
+            const client = this.context.client;
+            const guild = await client.guilds.fetch(guildId);
 
-            const mensagem: string | undefined = body?.mensagem;
-            const turma: string | undefined = body?.turma;
+            // Verificar se a funcionalidade está habilitada
+            if (
+                !this.context.featureFlagsService.getFlag(guild.id, 'enviar_forms_no_final_da_live')
+            ) {
+                console.warn(`Poll sending disabled in guild: ${guild.name}`);
+                return Response.json({});
+            }
 
-            if (!mensagem || !turma) throw new Error("O aviso precisa de uma mensagem e turma para ser entregue!")
+            // Encontrar o cargo da turma
+            const role = guild.roles.cache.find(
+                (roleItem: Role) => roleItem.name === `Estudantes ${classNameWithNumber}`,
+            );
+            if (!role) {
+                throw new NotFoundError(
+                    `Class role not found for course: ${classNameWithNumber}`,
+                    'Role',
+                );
+            }
 
-            const id_do_servidor: string | undefined = this.context.databaseGuildsRepository.getGuildIdByCourse(turma.replaceAll(/\d+/g, ''));
-            
-            if (!id_do_servidor) throw new Error(`O servidor da turma ${turma} não foi encontrado, o mesmo já foi adicionado as constantes?`)
+            // Encontrar o canal de bate-papo
+            const channels = guild.channels.cache
+                .filter((channelItem) => channelItem.name === '💬│bate-papo')
+                .values();
 
-            const servidor = this.context.client.guilds.cache.get(id_do_servidor)
-            
-            if (!servidor) throw new Error(`O servidor da turma ${turma} não foi encontrado. O bot está nesse servidor?`)
-            
-            const canal = servidor.channels.cache.find(
-                channel => channel.parent?.name === turma && 
-                channel.name === WARNING_CHANNEL_NAME && 
-                channel.type === ChannelType.GuildText
-            )
-            
-            if (!canal) throw new Error(`O canal de avisos da turma ${turma} não foi encontrado!`)
+            for (const channel of channels) {
+                if (!channel.isTextBased()) {
+                    continue;
+                }
 
-            const cargo = servidor.roles.cache.find(role => role.name === "Estudantes " + turma)
-            
-            if (!cargo) throw new Error(`Cargo da turma ${turma} não foi encontrado!`)
+                const parentName = guild.channels.cache.get(channel.parentId!)?.name;
+                if (parentName !== classNameWithNumber) {
+                    continue;
+                }
 
-            if (!canal.isTextBased()) throw new Error("O canal encontrado não é um canal de texto")
-            
-            await messagingService.sendWarning({channel: canal as TextChannel, message: mensagem, role: cargo})
+                // Delegar para o serviço
+                await this.context.discordService.messages.sendLivestreamPoll(
+                    channel as TextChannel,
+                    role,
+                );
+                return Response.json({ status: 'success' }, { status: 200 });
+            }
 
-            return Response.json({})
+            throw new NotFoundError(
+                `Chat channel not found for course: ${classNameWithNumber}`,
+                'Channel',
+            );
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'Erro desconhecido';
-            const stack = error instanceof Error ? error.stack : undefined;
-            console.error(message, stack);
-            return Response.json({ error: message }, {status: 500})
+            return this.handleError(error);
         }
+    }
+
+    /**
+     * Envia mensagem de aviso/alerta para um curso específico
+     *
+     * Valida:
+     * - Token de webhook
+     * - Mensagem e código do curso fornecidos
+     * - Existência de servidor/canal/cargo
+     *
+     * @param req - Requisição com mensagem e código do curso
+     * @returns Resposta com status
+     */
+    async sendWarning(req: Request): Promise<Response> {
+        try {
+            const body = (await req.json()) as { mensagem?: string; turma?: string };
+
+            // Validar o token de webhook
+            InputValidator.validateWebhookToken(req.headers.get('token'), env.WEBHOOK_TOKEN);
+
+            // Validar a entrada de aviso
+            InputValidator.validateWarningInput(body.mensagem, body.turma);
+
+            const normalizedCourse = GuildValidator.normalizeCourseCode(body.turma!);
+            const guildId = this.context.guildsRepository.getGuildIdByCourse(normalizedCourse);
+
+            if (!guildId) {
+                throw new NotFoundError(`Guild not found for course: ${body.turma}`, 'Guild');
+            }
+
+            const guild = this.context.client.guilds.cache.get(guildId);
+            if (!guild) {
+                throw new NotFoundError(`Guild not in client cache: ${guildId}`, 'Guild');
+            }
+
+            // Encontrar o canal de aviso
+            const channel = guild.channels.cache.find(
+                (guildChannel) =>
+                    guildChannel.parent?.name === body.turma &&
+                    guildChannel.name === WARNING_CHANNEL_NAME &&
+                    guildChannel.type === ChannelType.GuildText,
+            );
+
+            if (!channel || !channel.isTextBased()) {
+                throw new NotFoundError(
+                    `Warning channel not found for course: ${body.turma}`,
+                    'Channel',
+                );
+            }
+
+            // Encontrar o cargo da turma
+            const role = guild.roles.cache.find(
+                (roleItem) => roleItem.name === 'Estudantes ' + body.turma,
+            );
+            if (!role) {
+                throw new NotFoundError(`Class role not found for course: ${body.turma}`, 'Role');
+            }
+
+            // Delegar para o serviço
+            await this.context.discordService.messages.sendWarning({
+                channel: channel as TextChannel,
+                message: body.mensagem!,
+                role,
+            });
+
+            return Response.json({});
+        } catch (error) {
+            return this.handleError(error);
+        }
+    }
+
+    /**
+     * Manipulador de erros centralizado
+     * Converte erros da aplicação em respostas HTTP
+     */
+    private handleError(error: unknown): Response {
+        if (error instanceof UnauthorizedError) {
+            return Response.json({ error: error.message }, { status: error.statusCode });
+        }
+
+        if (error instanceof ValidationError) {
+            return Response.json(
+                {
+                    error: error.message,
+                    details: error.fieldErrors,
+                },
+                { status: error.statusCode },
+            );
+        }
+
+        if (error instanceof NotFoundError) {
+            return Response.json({ error: error.message }, { status: error.statusCode });
+        }
+
+        if (error instanceof Error) {
+            console.error(`Webhook error: ${error.message}`);
+            return Response.json({ error: 'Internal server error' }, { status: 500 });
+        }
+
+        console.error(`Unknown webhook error: ${String(error)}`);
+        return Response.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

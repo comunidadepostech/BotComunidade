@@ -145,6 +145,7 @@ export class EchoCommand implements ICommand {
             time: 300_000, // 5 minutos de limite na tela de opções
         });
 
+        // eslint-disable-next-line sonarjs/cognitive-complexity
         collector.on('collect', async (interaction) => {
             if (interaction.customId === 'select_channel' && interaction.isChannelSelectMenu()) {
                 selectedChannel = interaction.channels.first() as TextChannel;

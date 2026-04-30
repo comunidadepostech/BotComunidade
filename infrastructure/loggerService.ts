@@ -2,21 +2,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import path from 'path';
 import fs from 'fs';
-import {env} from "../config/env.ts";
+import { env } from '../config/env.ts';
 
 export default class LoggerService {
     private static readonly logDir: string = path.join(process.cwd(), 'logs');
-    private static readonly logFileName: string = path.join(this.logDir, `log-${new Date().toISOString().split('T')[0]}.txt`);
+    private static readonly logFileName: string = path.join(
+        this.logDir,
+        `log-${new Date().toISOString().split('T')[0]}.txt`,
+    );
 
     // Inicia como null. Só vai receber um Stream se a env estiver ativa.
     private static logStream: fs.WriteStream | null = null;
 
     private static readonly colors = {
-        log: '\x1b[37m',   // white
-        error: '\x1b[31m', // red
-        debug: '\x1b[34m', // blue
-        warn: '\x1b[33m',  // yellow
-        info: '\x1b[32m'   // green
+        log: '\x1b[37m', // branco
+        error: '\x1b[31m', // vermelho
+        debug: '\x1b[34m', // azul
+        warn: '\x1b[33m', // amarelo
+        info: '\x1b[32m', // verde
     };
 
     private static readonly originalConsole = {
@@ -26,7 +29,7 @@ export default class LoggerService {
         warn: console.warn,
         info: console.info,
         time: console.time,
-        timeEnd: console.timeEnd
+        timeEnd: console.timeEnd,
     };
 
     private static isDebugMode(): boolean {
@@ -66,9 +69,9 @@ export default class LoggerService {
 
     private static handleLog(level: keyof typeof LoggerService.colors, args: any[]): void {
         // Converte objetos em JSON se necessário
-        const message = args.map(arg =>
-            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg
-        ).join(' ');
+        const message = args
+            .map((arg) => (typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg))
+            .join(' ');
 
         const timestamp = new Date().toISOString();
         const color = this.colors[level] || this.colors.log;
