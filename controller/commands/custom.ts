@@ -41,8 +41,8 @@ export class CustomCommand implements ICommand {
 
         // Coleta todos os anexos de imagem fornecidos em um array
         const attachments: Attachment[] = [];
-        for (let i = 1; i <= 4; i++) {
-            const file = interaction.options.getAttachment(`attachment${i}`);
+        for (let index = 1; index <= 4; index++) {
+            const file = interaction.options.getAttachment(`attachment${index}`);
             if (file) attachments.push(file);
         }
 

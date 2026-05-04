@@ -12,6 +12,5 @@ export const DEFAULT_FEATURE_FLAGS = Object.freeze({
     salvar_enquetes: false,
     enviar_mensagem_de_boas_vindas: false,
     enviar_forms_no_final_da_live: false,
-    coletar_dados_de_grupos_de_estudo: false,
     botao_compartilhar_no_linkedin: false
 })

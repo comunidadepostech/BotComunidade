@@ -51,8 +51,10 @@ export class EditCommand implements ICommand{
 
         try {
             const modalSubmit = await interaction.awaitModalSubmit({
-                filter: (i) => i.customId === `edit_modal_${targetMessage.id}` && i.user.id === interaction.user.id,
-                time: 300_000
+                filter: (modalInteraction) =>
+                    modalInteraction.customId === `edit_modal_${targetMessage.id}` &&
+                    modalInteraction.user.id === interaction.user.id,
+                time: 300_000,
             });
 
             const newContent = modalSubmit.fields.getTextInputValue('edited_content');

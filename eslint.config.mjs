@@ -11,6 +11,9 @@ export default [
   ...tseslint.configs.recommended,
   sonarjs.configs.recommended,
   {
+    ignores: ["./assets/**", "./node_modules", "./bun.lock"]
+  },
+  {
     plugins: {
       import: importPlugin,
     },
@@ -29,6 +32,7 @@ export default [
       "@typescript-eslint/explicit-function-return-type": "warn",
       "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
       "complexity": ["error", 15],
+      "id-length": ["error", { "min": 2 }],
       'import/no-restricted-paths': [
         'error',
         {
