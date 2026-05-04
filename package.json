@@ -44,8 +44,9 @@
     "typescript-eslint": "^8.58.1"
   },
   "scripts": {
-    "start": "bun main.ts",
-    "debug": "bun eslint . --cache --quiet && bun --inspect run start",
-    "prepare": "husky"
+      "start": "bun main.ts",
+      "test": "bun test",
+      "debug": "bun eslint . --cache --quiet && bun --inspect run start",
+      "prepare": "husky"
   }
 }
