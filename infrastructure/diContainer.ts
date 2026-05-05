@@ -12,6 +12,7 @@ import type {
     ICheckRepository,
     IGuildsRepository,
     IWarningRepository,
+    ICommandHashRepository,
     IRepositoryFactory,
 } from '../types/repository.interfaces.ts';
 import type { IDiscordService } from '../types/discord.interfaces.ts';
@@ -23,6 +24,7 @@ import DatabaseFlagsRepository from '../repositories/database/databaseFlagsRepos
 import DatabaseCheckRepository from '../repositories/database/databaseCheck.ts';
 import DatabaseGuildsRepository from '../repositories/database/databaseGuildsRepository.ts';
 import DatabaseWarningRepository from '../repositories/database/databaseWarningRepository.ts';
+import DatabaseCommandHashRepository from '../repositories/database/databaseCommandHashRepository.ts';
 import DiscordService from '../services/discordService.ts';
 import EventsSubService from '../services/discord/eventsSubService.ts';
 import MessagesSubService from '../services/discord/messagesSubService.ts';
@@ -61,6 +63,10 @@ class RepositoryFactory implements IRepositoryFactory {
     createWarningRepository(): IWarningRepository {
         return new DatabaseWarningRepository(this.databaseConnection);
     }
+
+    createCommandHashRepository(): ICommandHashRepository {
+        return new DatabaseCommandHashRepository(this.databaseConnection);
+    }
 }
 
 /**
@@ -83,6 +89,7 @@ export class DIContainer {
     private checkRepository: ICheckRepository | null = null;
     private guildsRepository: IGuildsRepository | null = null;
     private warningRepository: IWarningRepository | null = null;
+    private commandHashRepository: ICommandHashRepository | null = null;
     private featureFlagsService: IFeatureFlagsService | null = null;
     private discordService: IDiscordService | null = null;
     private schedulerService: ISchedulerService | null = null;
@@ -110,6 +117,7 @@ export class DIContainer {
         this.flagsRepository = this.repositoryFactory.createFlagsRepository();
         this.guildsRepository = this.repositoryFactory.createGuildsRepository();
         this.warningRepository = this.repositoryFactory.createWarningRepository();
+        this.commandHashRepository = this.repositoryFactory.createCommandHashRepository();
 
         // Sincronizar servidores (guilds)
         await this.guildsRepository.syncGuilds();
@@ -135,7 +143,7 @@ export class DIContainer {
         );
         const rolesSubService = new RolesSubService();
         const classSubService = new ClassSubService(this.client);
-        const commandsSubService = new CommandsSubService();
+        const commandsSubService = new CommandsSubService(this.commandHashRepository!);
 
         this.discordService = new DiscordService(
             eventsSubService,
@@ -217,6 +225,11 @@ export class DIContainer {
         return this.warningRepository!;
     }
 
+    getCommandHashRepository(): ICommandHashRepository {
+        this.throwIfNotInitialized(this.commandHashRepository, 'Command Hash Repository');
+        return this.commandHashRepository!;
+    }
+
     getFeatureFlagsService(): IFeatureFlagsService {
         this.throwIfNotInitialized(this.featureFlagsService, 'Feature Flags Service');
         return this.featureFlagsService!;
@@ -248,6 +261,7 @@ export class DIContainer {
         checkRepository: ICheckRepository;
         guildsRepository: IGuildsRepository;
         warningRepository: IWarningRepository;
+        commandHashRepository: ICommandHashRepository;
         featureFlagsService: IFeatureFlagsService;
         discordService: IDiscordService;
         schedulerService: ISchedulerService;
@@ -260,6 +274,7 @@ export class DIContainer {
             checkRepository: this.getCheckRepository(),
             guildsRepository: this.getGuildsRepository(),
             warningRepository: this.getWarningRepository(),
+            commandHashRepository: this.getCommandHashRepository(),
             featureFlagsService: this.getFeatureFlagsService(),
             discordService: this.getDiscordService(),
             schedulerService: this.getSchedulerService(),

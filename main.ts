@@ -22,6 +22,9 @@ import buildRoutes from './routes/webhookRouter.ts';
 import type { ICommand } from './types/discord.interfaces.ts';
 import { env } from './config/env.ts';
 
+// Serviços
+import CommandHashService from './services/commandHashService.ts';
+
 /**
  * Inicialização da Aplicação
  *
@@ -37,7 +40,7 @@ import { env } from './config/env.ts';
  * 9. Iniciar agendador (scheduler)
  * 10. Configurar encerramento gracioso (graceful shutdown)
  *
- * SOLID: Inversão de Dependência - utiliza DIContainer para gerenciar todas as dependências
+ * Utiliza DIContainer para gerenciar todas as dependências
  */
 async function bootstrap(): Promise<void> {
     LoggerService.init();
@@ -59,8 +62,10 @@ async function bootstrap(): Promise<void> {
     // Carregar comandos slash dinamicamente
     console.time('Loading commands');
     const commands: ICommand[] = [];
+    const commandHashes: Record<string, string> = {};
     const commandsPath = path.join(process.cwd(), './controller/commands/');
     const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith('.ts'));
+    const hashService = new CommandHashService();
 
     for (const file of commandFiles) {
         try {
@@ -79,6 +84,11 @@ async function bootstrap(): Promise<void> {
 
             if (CommandClass) {
                 const commandInstance = new CommandClass();
+                const commandName = commandInstance.build().name;
+
+                // Calcular hash do arquivo usando o nome real do comando
+                commandHashes[commandName] = hashService.calculateFileHash(filePath);
+
                 commands.push(commandInstance);
             } else {
                 console.warn(`Skipping ${file}: does not export a valid command class`);
@@ -129,7 +139,7 @@ async function bootstrap(): Promise<void> {
     // Registrar comandos slash no Discord
     console.time('Registering commands');
     await discordService.commands
-        .registerCommand(Array.from(client.guilds.cache.values()), commands)
+        .registerCommand(Array.from(client.guilds.cache.values()), commands, commandHashes)
         .then(() => {
             console.log('Commands registered successfully');
             console.timeEnd('Registering commands');
@@ -153,7 +163,6 @@ async function bootstrap(): Promise<void> {
     process.on('SIGINT', async () => {
         await ShutdownService.shutdown(
             client,
-            discordService.commands,
             container.getDatabaseConnection(),
         );
     });
@@ -161,7 +170,6 @@ async function bootstrap(): Promise<void> {
     process.on('SIGTERM', async () => {
         await ShutdownService.shutdown(
             client,
-            discordService.commands,
             container.getDatabaseConnection(),
         );
     });

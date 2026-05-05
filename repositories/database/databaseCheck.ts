@@ -21,24 +21,37 @@ export default class DatabaseCheckRepository implements ICheckRepository {
      * Tabelas criadas:
      * - featureFlags: Armazena as alternâncias de funcionalidades (feature toggles) por servidor
      * - discord_event_warnings: Rastreia mensagens de aviso de eventos para limpeza
+     * - command_hashes: Armazena hashes SHA256 dos arquivos de comando para detectar mudanças
      */
     async checkSchemas(): Promise<void> {
         try {
             const pool = this.databaseConnection.getPool();
 
             // Criar a tabela featureFlags se ela não existir
-            await pool.query(`CREATE TABLE IF NOT EXISTS featureFlags (
-        guild_id VARCHAR(22) PRIMARY KEY,
-        flags JSON NOT NULL
-      );`);
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS featureFlags (
+                    guild_id VARCHAR(22) PRIMARY KEY,
+                    flags JSON NOT NULL
+                );`
+            );
 
             // Criar a tabela discord_event_warnings se ela não existir
-            await pool.query(`CREATE TABLE IF NOT EXISTS discord_event_warnings (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        channel_id VARCHAR(19) NOT NULL,
-        message_id VARCHAR(19) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );`);
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS discord_event_warnings (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    channel_id VARCHAR(19) NOT NULL,
+                    message_id VARCHAR(19) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );`
+            );
+
+            // Criar a tabela command_hashes se ela não existir
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS command_hashes (
+                    command_name VARCHAR(255) PRIMARY KEY,
+                    file_hash VARCHAR(64) NOT NULL
+                );`
+            );
 
             console.log('Database schema check completed successfully');
         } catch (error) {

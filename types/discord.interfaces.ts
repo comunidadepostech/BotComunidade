@@ -13,6 +13,7 @@ import {
 import type { SlashCommandOptionsOnlyBuilder } from 'discord.js';
 import type ISchedulerService from './schedulerService.interface.ts';
 import type IFeatureFlagsService from './featureFlagsService.interface.ts';
+import type { CommandHashMap } from './commandHash.types.ts';
 import type { CommandEventDto, ExternalSourceEventDto } from '../dtos/event.dtos.ts';
 import type { BroadcastMessageDto } from '../dtos/broadcastMessage.dto.ts';
 import type SendWarningDto from '../dtos/sendWarning.dto.ts';
@@ -67,7 +68,11 @@ export interface IDiscordService {
 
 export interface IDiscordCommandsService {
     clearCommands(guilds: Guild[]): Promise<void>;
-    registerCommand(guilds: Guild[], commands: ICommand[]): Promise<void>;
+    registerCommand(
+        guilds: Guild[],
+        commands: ICommand[],
+        filesystemHashes?: CommandHashMap,
+    ): Promise<void>;
 }
 
 export interface IDiscordClassService {

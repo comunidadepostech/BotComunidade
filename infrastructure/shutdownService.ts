@@ -1,6 +1,5 @@
 import type { IDatabaseConnection } from '../types/repository.interfaces.ts';
 import { Client } from 'discord.js';
-import type { IDiscordCommandsService } from '../types/discord.interfaces.ts';
 
 /**
  * ShutdownService - Gerencia o encerramento gracioso da aplicação
@@ -8,12 +7,8 @@ import type { IDiscordCommandsService } from '../types/discord.interfaces.ts';
  * Responsabilidades:
  * - Limpar comandos do Discord
  * - Fechar conexões com o banco de dados
- * - Limpar recursos do cliente do Discord
+ * - Encerra o cliente do Discord
  * - Encerrar o processo
- *
- * SOLID:
- * - Responsabilidade Única: Apenas lida com operações de encerramento
- * - Inversão de Dependência: Usa interfaces para dependências
  */
 export default class ShutdownService {
     /**
@@ -22,14 +17,12 @@ export default class ShutdownService {
      *
      * Passos:
      * 1. Remover todos os ouvintes de eventos
-     * 2. Limpar comandos de todos os servidores (guilds)
-     * 3. Fechar conexões com o banco de dados
-     * 4. Destruir o cliente do Discord
-     * 5. Encerrar o processo
+     * 2. Fechar conexões com o banco de dados
+     * 3. Destruir o cliente do Discord
+     * 4. Encerrar o processo
      */
     public static async shutdown(
         client: Client,
-        commandService: IDiscordCommandsService,
         databaseConnection: IDatabaseConnection,
     ): Promise<void> {
         try {
@@ -38,10 +31,6 @@ export default class ShutdownService {
             // Remover todos os ouvintes para evitar novos eventos
             client.removeAllListeners();
             console.log('Removed event listeners');
-
-            // Limpar comandos de todos os servidores
-            await commandService.clearCommands(Array.from(client.guilds.cache.values()));
-            console.log('Commands cleared from guilds');
 
             // Fechar conexão com o banco de dados
             await databaseConnection.endConnection();

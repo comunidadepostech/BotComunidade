@@ -6,6 +6,7 @@
 
 import type { Pool } from 'mysql2/promise';
 import type { GlobalFlags } from './featureFlags.types.ts';
+import type { CommandHashMap } from './commandHash.types.ts';
 
 /**
  * Interface para gerenciamento de conexão com o banco de dados
@@ -136,6 +137,45 @@ export interface WarningRecord {
 }
 
 /**
+ * Interface para gerenciamento de hashes de comandos
+ * Armazena e recupera hashes de arquivos de comando para detectar mudanças
+ */
+export interface ICommandHashRepository {
+    /**
+     * Recupera todos os hashes de comandos do banco de dados
+     * Retorna um mapa de comando_name -> file_hash
+     */
+    getAllCommandHashes(): Promise<CommandHashMap>;
+
+    /**
+     * Salva o hash de um comando no banco de dados
+     */
+    saveCommandHash(commandName: string, fileHash: string): Promise<void>;
+
+    /**
+     * Salva múltiplos hashes de comando de uma vez
+     */
+    saveCommandHashes(hashes: CommandHashMap): Promise<void>;
+
+    /**
+     * Deleta o hash de um comando
+     * Chamado quando um comando é removido
+     */
+    deleteCommandHash(commandName: string): Promise<void>;
+
+    /**
+     * Deleta múltiplos hashes de comando
+     */
+    deleteCommandHashes(commandNames: string[]): Promise<void>;
+
+    /**
+     * Limpa todos os hashes de comando
+     * Útil para reset completo
+     */
+    clearAllCommandHashes(): Promise<void>;
+}
+
+/**
  * Interface Factory para criar instâncias de repositório
  * Centraliza a criação de repositórios e o gerenciamento de dependências
  */
@@ -159,4 +199,9 @@ export interface IRepositoryFactory {
      * Cria e retorna uma instância do repositório de avisos
      */
     createWarningRepository(): IWarningRepository;
+
+    /**
+     * Cria e retorna uma instância do repositório de hashes de comandos
+     */
+    createCommandHashRepository(): ICommandHashRepository;
 }
