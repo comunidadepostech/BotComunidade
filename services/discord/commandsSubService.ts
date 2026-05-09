@@ -1,21 +1,21 @@
 import type { ICommand, IDiscordCommandsService } from '../../types/discord.interfaces.ts';
 import type { ICommandHashRepository } from '../../types/repository.interfaces.ts';
 import type { CommandHashMap } from '../../types/commandHash.types.ts';
-import { Guild } from 'discord.js';
+import { Client } from 'discord.js';
 
 export default class CommandsSubService implements IDiscordCommandsService {
     constructor(private commandHashRepository?: ICommandHashRepository) {}
 
-    async clearCommands(guilds: Guild[]): Promise<void> {
-        await Promise.all(guilds.map((guild) => guild.commands.set([])));
+    async clearCommands(client: Client): Promise<void> {
+        await client.application?.commands.set([]);
     }
 
     /**
      * Registra comandos, opcionalmente filtrando por hashes
      * Se filesystemHashes for fornecido, apenas comandos modificados serão atualizados
      */
-    async registerCommand(
-        guilds: Guild[],
+    async registerCommands(
+        client: Client,
         commands: ICommand[],
         filesystemHashes?: CommandHashMap,
     ): Promise<void> {
@@ -38,12 +38,12 @@ export default class CommandsSubService implements IDiscordCommandsService {
             // Filtrar comandos para registrar
             commandBuilds = toRegister.map((cmd) => cmd.build());
 
-            console.log(
-                `Registering ${commandBuilds.length}/${commands.length} commands`,
-            );
+            console.log(`Registering ${commandBuilds.length}/${commands.length} commands`);
         }
 
-        await Promise.all(guilds.map((guild) => guild.commands.set(commandBuilds)));
+        for (const command of commandBuilds) {
+            await client.application?.commands.create(command);
+        }
     }
 
     /**
@@ -84,9 +84,7 @@ export default class CommandsSubService implements IDiscordCommandsService {
             }
 
             // Encontrar comandos deletados (existem no DB mas não no filesystem)
-            const toDelete = Object.keys(dbHashes).filter(
-                (name) => !commandNames.has(name),
-            );
+            const toDelete = Object.keys(dbHashes).filter((name) => !commandNames.has(name));
 
             return { toRegister, toDelete };
         } catch (error) {

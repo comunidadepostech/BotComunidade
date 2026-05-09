@@ -7,6 +7,7 @@ import type {
     IDiscordClassService,
     IDiscordCommandsService,
 } from '../types/discord.interfaces.ts';
+import type { Client } from 'discord.js';
 
 /**
  * DiscordService Facade Tests
@@ -24,33 +25,38 @@ describe('DiscordService Facade', () => {
 
     beforeEach(() => {
         // Initialize mock sub-services with mock functions
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         mockEvents = {
             create: mock(() => Promise.resolve()),
             delete: mock(() => Promise.resolve()),
-        } as unknown as IDiscordEventService;
+        } as any as IDiscordEventService;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         mockMessages = {
             broadcast: mock(() => Promise.resolve()),
             sendWarning: mock(() => Promise.resolve()),
             sendLivestreamPoll: mock(() => Promise.resolve()),
             sendWelcomeMessage: mock(() => Promise.resolve()),
             createPoll: mock(() => Promise.resolve()),
-        } as unknown as IDiscordMessageService;
+        } as any as IDiscordMessageService;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         mockRoles = {
             delete: mock(() => Promise.resolve()),
             removeFromUser: mock(() => Promise.resolve()),
-        } as unknown as IDiscordRoleService;
+        } as any as IDiscordRoleService;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         mockClass = {
-            create: mock(() => Promise.resolve({ role: {} as any, message: 'created' })),
-            disable: mock(() => Promise.resolve()),
-        } as unknown as IDiscordClassService;
+            create: mock(() => Promise.resolve({ role: {} as unknown, message: 'created' })),
+            disable: mock((): Promise<void> => Promise.resolve()),
+        } as any as IDiscordClassService;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         mockCommands = {
             clearCommands: mock(() => Promise.resolve()),
-            registerCommand: mock(() => Promise.resolve()),
-        } as unknown as IDiscordCommandsService;
+            registerCommands: mock(() => Promise.resolve()),
+        } as any as IDiscordCommandsService;
 
         // Instantiate the service with injected mocks
         service = new DiscordService(mockEvents, mockMessages, mockRoles, mockClass, mockCommands);
@@ -66,6 +72,7 @@ describe('DiscordService Facade', () => {
 
     describe('Behavioral Assertions', () => {
         it('should correctly delegate calls to the events sub-service', async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const dto = { topic: 'New Workshop', guildId: '123' } as any;
             await service.events.create(dto);
 
@@ -74,6 +81,7 @@ describe('DiscordService Facade', () => {
         });
 
         it('should correctly delegate calls to the messages sub-service', async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const dto = { message: 'Alert!', role: 'Student' } as any;
             await service.messages.sendWarning(dto);
 
@@ -83,18 +91,23 @@ describe('DiscordService Facade', () => {
 
         it('should propagate errors from sub-services to the caller', async () => {
             const error = new Error('Discord API Error');
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (mockRoles.delete as any).mockImplementationOnce(() => Promise.reject(error));
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             expect(service.roles.delete({} as any)).rejects.toThrow('Discord API Error');
         });
 
         it('should return complex values from sub-services correctly', async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const expectedResult = {
                 role: { id: 'role-1' } as any,
                 message: 'Class successfully created',
             };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (mockClass.create as any).mockImplementationOnce(() => Promise.resolve(expectedResult));
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const result = await service.class.create({} as any);
 
             expect(result).toEqual(expectedResult);
@@ -102,7 +115,9 @@ describe('DiscordService Facade', () => {
         });
 
         it('should allow chaining or multiple calls to different sub-services', async () => {
-            await service.commands.clearCommands([]);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const mockClient = {} as any;
+            await service.commands.clearCommands(mockClient as Client);
             await service.events.delete('guild-1', 'event-1');
 
             expect(mockCommands.clearCommands).toHaveBeenCalled();

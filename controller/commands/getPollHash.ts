@@ -3,7 +3,9 @@ import {
     ApplicationCommandType,
     ContextMenuCommandBuilder,
     type MessageContextMenuCommandInteraction,
-    MessageFlags
+    MessageFlags,
+    InteractionContextType,
+    PermissionFlagsBits
 } from "discord.js";
 import generatePollHash from "../../utils/generatePollHash.ts";
 
@@ -12,6 +14,8 @@ export class GetPollHash implements ICommand {
         return new ContextMenuCommandBuilder()
             .setName('Obter hash dessa enquete')
             .setType(ApplicationCommandType.Message)
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .setContexts(InteractionContextType.Guild);
     }
 
     async execute(interaction: MessageContextMenuCommandInteraction, context: ICommandContext): Promise<void> {

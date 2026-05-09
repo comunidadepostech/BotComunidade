@@ -4,6 +4,7 @@ import {
     PermissionFlagsBits,
     SlashCommandBuilder,
     MessageFlags,
+    InteractionContextType,
     type SlashCommandOptionsOnlyBuilder,
 } from 'discord.js';
 import type { ICommand, ICommandContext } from '../../types/discord.interfaces.ts';
@@ -23,7 +24,8 @@ export class CreateclassCommand implements ICommand {
                     .setDescription('Canal de faq da nova turma (obrigatório para novas turmas)')
                     .setRequired(true)
                     .addChannelTypes([ChannelType.GuildText]),
-            );
+            )
+            .setContexts(InteractionContextType.Guild);
     }
 
     async execute(

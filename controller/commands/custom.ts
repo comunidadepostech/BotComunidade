@@ -4,6 +4,7 @@ import {
     TextChannel,
     MessageFlags,
     Attachment,
+    InteractionContextType,
     type SlashCommandOptionsOnlyBuilder
 } from 'discord.js';
 import type {ICommand} from "../../types/discord.interfaces.ts";
@@ -22,6 +23,7 @@ export class CustomCommand implements ICommand {
             .addAttachmentOption(option => option.setName('attachment2').setDescription('Segundo anexo').setRequired(false))
             .addAttachmentOption(option => option.setName('attachment3').setDescription('Terceiro anexo').setRequired(false))
             .addAttachmentOption(option => option.setName('attachment4').setDescription('Quarto anexo').setRequired(false))
+            .setContexts(InteractionContextType.Guild);
     }
 
     async execute(interaction: ChatInputCommandInteraction): Promise<void> {

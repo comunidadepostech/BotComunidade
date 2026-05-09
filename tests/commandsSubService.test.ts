@@ -3,18 +3,21 @@ import CommandsSubService from '../services/discord/commandsSubService.ts';
 import type { ICommand } from '../types/discord.interfaces.ts';
 import type { ICommandHashRepository } from '../types/repository.interfaces.ts';
 import type { CommandHashMap } from '../types/commandHash.types.ts';
-import { Guild } from 'discord.js';
+import { Client } from 'discord.js';
 
 describe('CommandsSubService', () => {
     let service: CommandsSubService;
     let mockRepository: ICommandHashRepository;
-    let mockGuilds: Guild[];
+    let mockClient: Client;
     let commandSetCalled = false;
-    let lastSetCommands: ICommand[] | null = null;
+    let commandCreateCalled = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let createdCommands: any[] = [];
 
     beforeEach(() => {
         commandSetCalled = false;
-        lastSetCommands = null;
+        commandCreateCalled = false;
+        createdCommands = [];
 
         // Mock para o repositório
         mockRepository = {
@@ -29,56 +32,63 @@ describe('CommandsSubService', () => {
             saveCommandHash: mock(() => Promise.resolve()),
             deleteCommandHash: mock(() => Promise.resolve()),
             clearAllCommandHashes: mock(() => Promise.resolve()),
-        } as unknown as ICommandHashRepository;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any as ICommandHashRepository;
 
         service = new CommandsSubService(mockRepository);
 
-        // Mock para as guilds
-        mockGuilds = [
-            {
+        // Mock para o client
+        mockClient = {
+            application: {
                 commands: {
-                    set: mock((commands: ICommand[]) => {
+                    set: mock(() => {
                         commandSetCalled = true;
-                        lastSetCommands = commands;
+                        return Promise.resolve();
+                    }),
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    create: mock((command: any) => {
+                        commandCreateCalled = true;
+                        createdCommands.push(command);
                         return Promise.resolve();
                     }),
                 },
-            } as unknown as Guild,
-        ];
+            },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any as Client;
     });
 
-    describe('registerCommand', () => {
+    describe('registerCommands', () => {
         it('should register all commands when no hashes are provided', async () => {
             const commands: ICommand[] = [
                 {
                     build: mock(() => ({ name: 'cmd1' })),
-                    execute: mock(() => Promise.resolve()),
+                    execute: mock((): Promise<void> => Promise.resolve()),
                 } as unknown as ICommand,
                 {
                     build: mock(() => ({ name: 'cmd2' })),
-                    execute: mock(() => Promise.resolve()),
+                    execute: mock((): Promise<void> => Promise.resolve()),
                 } as unknown as ICommand,
             ];
 
-            await service.registerCommand(mockGuilds, commands);
+            await service.registerCommands(mockClient, commands);
 
-            expect(commandSetCalled).toBe(true);
-            expect(lastSetCommands).toHaveLength(2);
+            expect(commandCreateCalled).toBe(true);
+            expect(createdCommands).toHaveLength(2);
         });
 
         it('should filter modified commands when hashes are provided', async () => {
             const commands: ICommand[] = [
                 {
                     build: mock(() => ({ name: 'command1' })),
-                    execute: mock(() => Promise.resolve()),
+                    execute: mock((): Promise<void> => Promise.resolve()),
                 } as unknown as ICommand,
                 {
                     build: mock(() => ({ name: 'command2' })),
-                    execute: mock(() => Promise.resolve()),
+                    execute: mock((): Promise<void> => Promise.resolve()),
                 } as unknown as ICommand,
                 {
                     build: mock(() => ({ name: 'new_command' })),
-                    execute: mock(() => Promise.resolve()),
+                    execute: mock((): Promise<void> => Promise.resolve()),
                 } as unknown as ICommand,
             ];
 
@@ -88,18 +98,18 @@ describe('CommandsSubService', () => {
                 new_command: 'hash_new', // new
             };
 
-            await service.registerCommand(mockGuilds, commands, filesystemHashes);
+            await service.registerCommands(mockClient, commands, filesystemHashes);
 
             // Deve registrar apenas command2 e new_command (2 modificados)
-            expect(commandSetCalled).toBe(true);
-            expect(lastSetCommands).toHaveLength(2);
+            expect(commandCreateCalled).toBe(true);
+            expect(createdCommands).toHaveLength(2);
         });
 
         it('should remove deleted commands', async () => {
             const commands: ICommand[] = [
                 {
                     build: mock(() => ({ name: 'command1' })),
-                    execute: mock(() => Promise.resolve()),
+                    execute: mock((): Promise<void> => Promise.resolve()),
                 } as unknown as ICommand,
             ];
 
@@ -116,7 +126,7 @@ describe('CommandsSubService', () => {
 
             service = new CommandsSubService(mockRepository);
 
-            await service.registerCommand(mockGuilds, commands, filesystemHashes);
+            await service.registerCommands(mockClient, commands, filesystemHashes);
 
             // Deve ter deletado command2
             expect(deletedCommands).toContain('command2');
@@ -124,16 +134,14 @@ describe('CommandsSubService', () => {
 
         it('should register all commands when hash comparison fails', async () => {
             // Mock de erro
-            mockRepository.getAllCommandHashes = mock(() =>
-                Promise.reject(new Error('DB Error')),
-            );
+            mockRepository.getAllCommandHashes = mock(() => Promise.reject(new Error('DB Error')));
 
             service = new CommandsSubService(mockRepository);
 
             const commands: ICommand[] = [
                 {
                     build: mock(() => ({ name: 'cmd1' })),
-                    execute: mock(() => Promise.resolve()),
+                    execute: mock((): Promise<void> => Promise.resolve()),
                 } as unknown as ICommand,
             ];
 
@@ -141,21 +149,19 @@ describe('CommandsSubService', () => {
                 cmd1: 'hash123',
             };
 
-            await service.registerCommand(mockGuilds, commands, filesystemHashes);
+            await service.registerCommands(mockClient, commands, filesystemHashes);
 
             // Em caso de erro, deve registrar todos os comandos
-            expect(commandSetCalled).toBe(true);
-            expect(lastSetCommands).toHaveLength(1);
+            expect(commandCreateCalled).toBe(true);
+            expect(createdCommands).toHaveLength(1);
         });
     });
 
     describe('clearCommands', () => {
-        it('should clear all commands from all guilds', async () => {
-            await service.clearCommands(mockGuilds);
+        it('should clear all commands from the application', async () => {
+            await service.clearCommands(mockClient);
 
             expect(commandSetCalled).toBe(true);
-            expect(lastSetCommands).toEqual([]);
         });
     });
 });
-

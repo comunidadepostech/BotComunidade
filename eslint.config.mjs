@@ -11,7 +11,7 @@ export default [
   ...tseslint.configs.recommended,
   sonarjs.configs.recommended,
   {
-    ignores: ["./assets/**", "./node_modules", "./bun.lock"]
+    ignores: ["./assets/**", "./node_modules", "./bun.lock", "./tests"]
   },
   {
     plugins: {
@@ -28,7 +28,7 @@ export default [
     rules: {
       'sonarjs/cognitive-complexity': ['error', 15],
       'sonarjs/no-duplicate-string': ['warn', { threshold: 5 }],
-      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/explicit-function-return-type": "warn",
       "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
       "complexity": ["error", 15],

@@ -4,6 +4,7 @@ import {
     MessageFlags,
     PermissionFlagsBits,
     SlashCommandBuilder,
+    InteractionContextType,
     type SlashCommandOptionsOnlyBuilder
 } from "discord.js";
 
@@ -15,6 +16,7 @@ export class UpdateFlagCommand implements ICommand {
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
             .addStringOption(option => option.setName("flag").setDescription("Nome da feature flag").setRequired(true))
             .addBooleanOption(option => option.setName("value").setDescription("Novo estado da feature flag").setRequired(true))
+            .setContexts(InteractionContextType.Guild);
     }
 
     async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void> {

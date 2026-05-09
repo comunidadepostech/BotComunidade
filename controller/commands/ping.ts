@@ -3,6 +3,7 @@ import {
     MessageFlags,
     PermissionFlagsBits,
     SlashCommandBuilder,
+    InteractionContextType,
     type SlashCommandOptionsOnlyBuilder
 } from "discord.js";
 import type {ICommand} from "../../types/discord.interfaces.ts";
@@ -13,6 +14,7 @@ export class PingCommand implements ICommand {
             .setName("ping")
             .setDescription('Responde com Pong!')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .setContexts(InteractionContextType.Guild);
     }
 
     async execute(interaction: ChatInputCommandInteraction): Promise<void> {

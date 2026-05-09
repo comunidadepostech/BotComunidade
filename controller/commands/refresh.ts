@@ -1,8 +1,9 @@
 import type {ICommand, ICommandContext} from "../../types/discord.interfaces.ts";
 import {
-    ChatInputCommandInteraction, MessageFlags,
+    ChatInputCommandInteraction,
     PermissionFlagsBits,
     SlashCommandBuilder,
+    InteractionContextType,
     type SlashCommandOptionsOnlyBuilder
 } from "discord.js";
 
@@ -12,14 +13,13 @@ export class RefreshCommand implements ICommand {
             .setName("refresh")
             .setDescription('Recarrega os comandos do bot para caso eles não apareçam em algum servidor')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .setContexts(InteractionContextType.Guild);
     }
 
     async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void> {
-        await interaction.deferReply({flags: MessageFlags.Ephemeral})
         await interaction.client.guilds.fetch()
-        const guilds = interaction.client.guilds.cache.values().toArray()
-        await context.discordService.commands.clearCommands(guilds)
-        await context.discordService.commands.registerCommand(guilds, context.commands)
-        await interaction.editReply({content: "Comandos recarregados"})
+        await interaction.reply({content: "Os comandos estão sendo recarregados, isso não deve demorar."})
+        await context.discordService.commands.clearCommands(context.client)
+        await context.discordService.commands.registerCommands(context.client, context.commands)
     }
 }

@@ -2,6 +2,7 @@ import {
     ChatInputCommandInteraction, MessageFlags,
     PermissionFlagsBits,
     SlashCommandBuilder,
+    InteractionContextType,
     type SlashCommandOptionsOnlyBuilder
 } from "discord.js";
 import type {ICommand, ICommandContext} from "../../types/discord.interfaces.ts";
@@ -23,6 +24,7 @@ export class ExecCommand implements ICommand {
                         {name: 'Limpeza de mensagens de aviso', value: "Limpeza de mensagens de aviso"},
                     )
             )
+            .setContexts(InteractionContextType.Guild);
     }
 
     async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void> {

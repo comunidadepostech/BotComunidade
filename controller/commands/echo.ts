@@ -13,6 +13,7 @@ import {
     TextChannel,
     TextInputBuilder,
     TextInputStyle,
+    InteractionContextType,
     type SlashCommandOptionsOnlyBuilder,
     type InteractionResponse,
 } from 'discord.js';
@@ -38,7 +39,8 @@ export class EchoCommand implements ICommand {
                     .setName('attachment-2')
                     .setDescription('Segundo anexo (opcional)')
                     .setRequired(false),
-            );
+            )
+            .setContexts(InteractionContextType.Guild);
     }
 
     async execute(

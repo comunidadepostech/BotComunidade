@@ -6,6 +6,7 @@ import {
     PermissionFlagsBits,
     SlashCommandBuilder,
     TextChannel,
+    InteractionContextType,
     type SlashCommandOptionsOnlyBuilder,
 } from 'discord.js';
 
@@ -15,6 +16,7 @@ export class PollCommand implements ICommand {
             .setName('poll')
             .setDescription('Cria uma enquete interativa')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .setContexts(InteractionContextType.Guild)
             .addStringOption((option) =>
                 option
                     .setName('question')

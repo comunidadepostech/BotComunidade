@@ -138,12 +138,10 @@ async function bootstrap(): Promise<void> {
 
     // Registrar comandos slash no Discord
     console.time('Registering commands');
-    await discordService.commands
-        .registerCommand(Array.from(client.guilds.cache.values()), commands, commandHashes)
-        .then(() => {
-            console.log('Commands registered successfully');
-            console.timeEnd('Registering commands');
-        });
+    await discordService.commands.registerCommands(client, commands, commandHashes).then(() => {
+        console.log('Commands registered successfully');
+        console.timeEnd('Registering commands');
+    });
 
     // Iniciar servidor de webhooks para integrações externas
     console.time('Starting webhook server');
@@ -161,17 +159,11 @@ async function bootstrap(): Promise<void> {
 
     // Configurar manipuladores de encerramento gracioso (graceful shutdown)
     process.on('SIGINT', async () => {
-        await ShutdownService.shutdown(
-            client,
-            container.getDatabaseConnection(),
-        );
+        await ShutdownService.shutdown(client, container.getDatabaseConnection());
     });
 
     process.on('SIGTERM', async () => {
-        await ShutdownService.shutdown(
-            client,
-            container.getDatabaseConnection(),
-        );
+        await ShutdownService.shutdown(client, container.getDatabaseConnection());
     });
 }
 

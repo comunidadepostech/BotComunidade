@@ -3,7 +3,8 @@ import {
     MessageFlags,
     PermissionFlagsBits,
     SlashCommandBuilder,
-    type SlashCommandOptionsOnlyBuilder
+    type SlashCommandOptionsOnlyBuilder,
+    InteractionContextType
 } from "discord.js";
 import type {ICommand, ICommandContext} from "../../types/discord.interfaces.ts";
 
@@ -18,6 +19,7 @@ export class DisableCommand implements ICommand {
                     .setDescription('Cargo a ser desabilitado')
                     .setRequired(true)
             )
+            .setContexts(InteractionContextType.Guild);
     }
 
     async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void> {

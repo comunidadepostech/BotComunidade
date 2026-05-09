@@ -7,6 +7,7 @@ import {
     MessageFlags,
     PermissionFlagsBits,
     SlashCommandBuilder,
+    InteractionContextType,
     type SlashCommandOptionsOnlyBuilder,
 } from 'discord.js';
 import type { ICommand } from '../../types/discord.interfaces.ts';
@@ -16,7 +17,8 @@ export class EventCommand implements ICommand {
         return new SlashCommandBuilder()
             .setName('help')
             .setDescription('Exibe uma mensagem de ajuda')
-            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .setContexts(InteractionContextType.Guild);
     }
 
     async execute(

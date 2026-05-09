@@ -3,7 +3,9 @@ import {
     ContextMenuCommandBuilder,
     ApplicationCommandType,
     MessageFlags,
-    MessageContextMenuCommandInteraction
+    MessageContextMenuCommandInteraction,
+    InteractionContextType,
+    PermissionFlagsBits
 } from "discord.js";
 import type {ICommandContext} from "../../types/discord.interfaces.ts";
 
@@ -12,6 +14,8 @@ export class EndPollCommand implements ICommand{
         return new ContextMenuCommandBuilder()
             .setName('Encerrar enquete')
             .setType(ApplicationCommandType.Message)
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .setContexts(InteractionContextType.Guild);
     }
 
     async execute(interaction: MessageContextMenuCommandInteraction, context: ICommandContext): Promise<void> {

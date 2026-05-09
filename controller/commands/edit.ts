@@ -7,7 +7,9 @@ import {
     ModalBuilder,
     TextInputBuilder,
     TextInputStyle,
-    ActionRowBuilder
+    ActionRowBuilder,
+    InteractionContextType,
+    PermissionFlagsBits
 } from "discord.js";
 import type {ModalActionRowComponentBuilder} from "discord.js";
 import type {ICommandContext} from "../../types/discord.interfaces.ts";
@@ -17,6 +19,8 @@ export class EditCommand implements ICommand{
         return new ContextMenuCommandBuilder()
             .setName('Editar mensagem')
             .setType(ApplicationCommandType.Message)
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .setContexts(InteractionContextType.Guild);
     }
 
     async execute(interaction: MessageContextMenuCommandInteraction, context: ICommandContext): Promise<void> {

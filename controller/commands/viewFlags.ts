@@ -4,6 +4,7 @@ import {
     MessageFlags,
     PermissionFlagsBits,
     SlashCommandBuilder,
+    InteractionContextType,
     type SlashCommandOptionsOnlyBuilder
 } from "discord.js";
 
@@ -13,6 +14,7 @@ export class ViewFlagsCommand implements ICommand {
             .setName("viewflags")
             .setDescription('Retorna as feature flags do Bot e seus estados no servidor atual')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .setContexts(InteractionContextType.Guild);
     }
 
     async execute(interaction: ChatInputCommandInteraction, context: ICommandContext): Promise<void> {

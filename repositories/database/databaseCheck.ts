@@ -53,6 +53,14 @@ export default class DatabaseCheckRepository implements ICheckRepository {
                 );`
             );
 
+            // Criar a tabela guilds se ela não existir
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS guilds (
+                    guild_id VARCHAR(19) NOT NULL,
+                    guild_name VARCHAR(100) NOT NULL
+                );`
+            );
+
             console.log('Database schema check completed successfully');
         } catch (error) {
             throw new DatabaseError(

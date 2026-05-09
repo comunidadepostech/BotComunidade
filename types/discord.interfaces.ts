@@ -1,7 +1,6 @@
 import {
     Client,
     ContextMenuCommandBuilder,
-    Guild,
     GuildMember,
     Role,
     TextChannel,
@@ -67,12 +66,8 @@ export interface IDiscordService {
 }
 
 export interface IDiscordCommandsService {
-    clearCommands(guilds: Guild[]): Promise<void>;
-    registerCommand(
-        guilds: Guild[],
-        commands: ICommand[],
-        filesystemHashes?: CommandHashMap,
-    ): Promise<void>;
+    clearCommands(client: Client): Promise<void>;
+    registerCommands(client: Client, commands: ICommand[], filesystemHashes?: CommandHashMap): Promise<void>;
 }
 
 export interface IDiscordClassService {
