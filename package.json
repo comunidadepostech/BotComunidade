@@ -41,7 +41,7 @@
         "husky": "^9.1.7",
         "lint-staged": "^17.0.3",
         "prettier": "^3.8.3",
-        "typescript-eslint": "^8.59.2"
+        "typescript-eslint": "^8.59.3"
     },
     "scripts": {
         "start": "bun main.ts",
