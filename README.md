@@ -159,7 +159,7 @@ Cria uma visualização em JSON das flags que o bot tem.
 
 **Escopo:** Qualquer servidor
 
-Recarrega os comandos dos servidores para caso de erro.
+Recarrega os comandos do bot (usado para novos servidores sem ter que reiniciar a instância do bot)
 
 </details>
 
@@ -199,16 +199,6 @@ Para começar a contribuir nesse projeto primeiro é recomendado configurar o am
 8. Depois de tudo configurado você está pronto para iniciar o projeto usando `bun run start`
 
 *Dica: Ao modificar o código você pode testar e debugar usando `bun run test` e `bun run debug` respectivamente, lembre-se de que os testes serão feitos antes de qualquer commit então certifique-se de testar antes para não ser barrado. Além disso, use a branch dev para desenvolver e testar a aplicação antes de fazer um Pull Request para Main.
-
-## Usando Docker
-
-Usamos Docker para deploy por sua praticidade e facilidade de uso, para montar a imagem basta usar `docker compose up --build -d` assim a imagem será compilada e o container inicirá automaticamente.
-
-*Dica: Se estiver usando um MySQL em outro container ele não vai conseguir enxergar a conexão local.
-
-## Como montar um Pull Request
-
-Os Pull Requests para branch Main sempre devem conter no título a versão na qual está sendo enviada e a descrição do que aquela versão difere da original, isso serve como boa prática.
 
 ## Versionamento
 
