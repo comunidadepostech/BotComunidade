@@ -7,5 +7,5 @@ import vacancyRoutes from "./vacancy.routes.ts";
 export default (webhookController: WebhookController) => ({
     ...eventRoutes(webhookController),
     ...messageRoutes(webhookController),
-    ...vacancyRoutes(),
+    ...vacancyRoutes(webhookController),
 });

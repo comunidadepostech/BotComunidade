@@ -10,6 +10,10 @@ import {
     TextChannel,
     ComponentType,
     ButtonStyle,
+    ButtonBuilder,
+    ChannelType,
+    ForumChannel,
+    ActionRowBuilder,
 } from 'discord.js';
 import { createCanvas, Image, loadImage } from '@napi-rs/canvas';
 import path from 'node:path';
@@ -18,8 +22,11 @@ import type { BroadcastMessageDto } from '../../dtos/broadcastMessage.dto.ts';
 import type SendWarningDto from '../../dtos/sendWarning.dto.ts';
 import type SendWelcomeMessageDto from '../../dtos/sendWelcomeMessage.dto.ts';
 import type { PollMessageDto } from '../../dtos/pollMessage.dto.ts';
-import { ROLE_NAME_REPLACEMENT } from '../../constants/discordConstants.ts';
+import { ROLE_NAME_REPLACEMENT, VACANCY_CHANNEL_NAME } from '../../constants/discordConstants.ts';
 import { FIVE_MINUTES_IN_MILLISECONDS } from '../../constants/globalConstants.ts';
+import type VacancyMessageDto from '../../dtos/vacancyMessage.dto.ts';
+
+import type { IGuildsRepository } from '../../types/repository.interfaces.ts';
 
 /**
  * MessagesSubService - Lida com operações de mensagens do Discord
@@ -31,15 +38,6 @@ import { FIVE_MINUTES_IN_MILLISECONDS } from '../../constants/globalConstants.ts
  * - Criar enquetes com múltiplas opções
  * - Enviar mensagens de boas-vindas com avatares de usuários
  * - Enviar formulários de feedback de transmissões ao vivo
- *
- * Padrão de Projeto (Design Pattern): Injeção de Dependência através do construtor
- * Depende apenas do Client, não de serviços de lógica de negócio
- * Isso permite testes isolados e baixo acoplamento
- *
- * SOLID:
- * - Responsabilidade Única (Single Responsibility): Apenas lida com mensagens
- * - Inversão de Dependência (Dependency Inversion): Depende de tipos do Discord.js, não de lógica de negócio
- * - Aberto/Fechado (Open/Closed): Pode ser estendido para novos tipos de mensagens
  */
 export default class MessagesSubService implements IDiscordMessageService {
     /**
@@ -58,6 +56,7 @@ export default class MessagesSubService implements IDiscordMessageService {
         private client: Client,
         private featureFlagsService: IFeatureFlagsService,
         private linkedinService: ILinkedInService,
+        private guildsRepository: IGuildsRepository,
     ) {}
 
     /**
@@ -103,6 +102,113 @@ export default class MessagesSubService implements IDiscordMessageService {
                     .map((channel) => channel.send(payload)),
             ),
         );
+    }
+
+    /**
+     * Transmite uma vaga de emprego para todos os servidores correspondentes do(s) cluster(s)
+     */
+    async sendVacancyMessage(dto: VacancyMessageDto): Promise<void> {
+        // Construir o conteúdo da mensagem
+        const contentLines: string[] = [
+            `# ${dto.role}`,
+            `**🏢 Empresa:** ${dto.employer}`,
+            `**💼 Tipo de contrato:** ${dto.role_type}`,
+        ];
+
+        if (dto.salary) {
+            contentLines.push(`**💰 Salário:** ${dto.salary}`);
+        }
+
+        if (dto.role_level) {
+            contentLines.push(`**📈 Nível:** ${dto.role_level}`);
+        }
+
+        if (dto.locations.length > 0) {
+            contentLines.push(`**📍 Localização:** ${dto.locations.join(', ')}`);
+        }
+
+        if (dto.model) {
+            contentLines.push(`**🚗 Modelo:** ${dto.model}`);
+        }
+
+        if (dto.description) {
+            contentLines.push(`\n**🎯 Descrição da vaga:**\n${dto.description}`);
+        }
+
+        if (dto.skills) {
+            contentLines.push(`\n**💻 Principais Skills:**\n${dto.skills}`);
+        }
+        
+        contentLines.push(`\n*Publicado em: ${dto.pub_date} | Termina em: ${dto.end_date}*`);
+
+        // Construir os botões
+        const buttons: ButtonBuilder[] = [];
+
+        if (dto.how_to_apply) {
+            buttons.push(
+                new ButtonBuilder()
+                    .setStyle(ButtonStyle.Link)
+                    .setLabel('Candidate-se aqui')
+                    .setEmoji({ name: '📋' })
+                    .setURL(dto.how_to_apply),
+            );
+        }
+
+        buttons.push(
+            new ButtonBuilder()
+                .setStyle(ButtonStyle.Link)
+                .setLabel('Link da vaga')
+                .setEmoji({ name: '📎' })
+                .setURL(dto.ref_link),
+        );
+
+        // Construir o payload da mensagem
+        const components =
+            buttons.length > 0
+                ? [new ActionRowBuilder<ButtonBuilder>().addComponents(buttons)]
+                : [];
+
+        const payload = {
+            content: contentLines.join('\n'),
+            components,
+        };
+
+        // Verifica quais servidores (guilds) estão associados aos clusters da vaga
+        let guildIds: string[] = [];
+        dto.clusters.map((cluster) => {
+            const guilds = this.guildsRepository.getGuildIdsByCluster(cluster);
+            if (guilds.length === 0) return;
+            guildIds = [...guildIds, ...guilds];
+        });
+
+        // Envia a mensagem para cada servidor (guild) associado aos clusters da vaga
+        for (const guildId of guildIds) {
+            // Descobre a guild e o canal onde a mensagem será enviada
+            const guild = await this.client.guilds.fetch(guildId);
+            if (!guild) {
+                console.warn(`Guild not found ${guildId}`);
+                continue;
+            }
+
+            const channel = guild.channels.cache
+                .values()
+                .find(
+                    (channel) =>
+                        channel.type === ChannelType.GuildForum &&
+                        channel.name === VACANCY_CHANNEL_NAME,
+                ) as ForumChannel;
+            if (!channel) {
+                console.warn(
+                    `Forum channel "${VACANCY_CHANNEL_NAME}" not found in guild ${guildId}`,
+                );
+                continue;
+            }
+
+            await channel.threads.create({
+                name: `${dto.employer} - ${dto.role}`,
+                message: payload,
+            });
+        }
     }
 
     /**

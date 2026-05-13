@@ -19,6 +19,8 @@ import type SendWarningDto from '../dtos/sendWarning.dto.ts';
 import type SendWelcomeMessageDto from '../dtos/sendWelcomeMessage.dto.ts';
 import type ClassCreationDto from '../dtos/classCreation.dto.ts';
 import type { PollMessageDto } from '../dtos/pollMessage.dto.ts';
+import type VacancyMessageDto from '../dtos/vacancyMessage.dto.ts';
+
 
 export interface RoleCount {
     guildName: string;
@@ -91,6 +93,7 @@ export interface IDiscordMessageService {
     sendLivestreamPoll(targetChannel: TextChannel, role: Role): Promise<void>;
     sendWelcomeMessage(dto: SendWelcomeMessageDto): Promise<void>;
     createPoll(dto: PollMessageDto): Promise<void>;
+    sendVacancyMessage(dto: VacancyMessageDto): Promise<void>;
 }
 
 export interface IRawPacket {

@@ -6,8 +6,9 @@ import type { IDiscordService } from '../types/discord.interfaces.ts';
 import type IFeatureFlagsService from '../types/featureFlagsService.interface.ts';
 import type { IGuildsRepository } from '../types/repository.interfaces.ts';
 import { InputValidator, GuildValidator } from '../utils/validators.ts';
-import type { EventValidationInput } from '../utils/validators.ts';
+import type { EventValidationInput, VacancyValidationInput } from '../utils/validators.ts';
 import { UnauthorizedError, ValidationError, NotFoundError } from '../types/errors.ts';
+import type VacancyMessageDto from '../dtos/vacancyMessage.dto.ts';
 
 /**
  * WebhookController - Controlador enxuto para requisições de webhook
@@ -287,6 +288,67 @@ export class WebhookController {
                 role,
             });
 
+            return Response.json({});
+        } catch (error) {
+            return this.handleError(error);
+        }
+    }
+
+    /**
+     * Envia mensagem da vaga
+     *
+     * Valida:
+     * - Token de webhook
+     * - Cabeçalhos da requisição
+     * - Existência de servidor/canal/cargo
+     * - Cluster especificado
+     *
+     * @param req - Requisição com as informações da vaga
+     * @returns Resposta com status
+     */
+    async postVacancy(req: Request): Promise<Response> {
+        try {
+            const body = (await req.json()) as {
+                cargo: string;
+                tipo_de_emprego: string;
+                empregador: string;
+                modelo?: string;
+                descricao?: string;
+                _skills?: string;
+                localizacoes: string[];
+                _salario?: string;
+                data_de_publicacao: string;
+                data_de_termino: string;
+                referencia: string;
+                clusters: string[];
+                nivel_de_vaga?: string;
+                como_aplicar?: string;
+            };
+    
+            // Validar o token de webhook
+            InputValidator.validateWebhookToken(req.headers.get('token'), env.WEBHOOK_TOKEN);
+    
+            // Validar a entrada da vaga
+            const validationInput: VacancyValidationInput = {
+                role: body.cargo,
+                role_type: body.tipo_de_emprego,
+                employer: body.empregador,
+                model: body.modelo,
+                description: body.descricao,
+                skills: body._skills,
+                locations: body.localizacoes,
+                salary: body._salario,
+                pub_date: body.data_de_publicacao,
+                end_date: body.data_de_termino,
+                ref_link: body.referencia,
+                clusters: body.clusters,
+                role_level: body.nivel_de_vaga,
+                how_to_apply: body.como_aplicar,
+            };
+            InputValidator.validateVacancyInput(validationInput as VacancyMessageDto);
+
+            this.context.discordService.messages.sendVacancyMessage(validationInput);
+            
             return Response.json({});
         } catch (error) {
             return this.handleError(error);

@@ -22,6 +22,7 @@ export default class DatabaseCheckRepository implements ICheckRepository {
      * - featureFlags: Armazena as alternâncias de funcionalidades (feature toggles) por servidor
      * - discord_event_warnings: Rastreia mensagens de aviso de eventos para limpeza
      * - command_hashes: Armazena hashes SHA256 dos arquivos de comando para detectar mudanças
+     * - guilds: Armazena informações sobre os servidores do Discord (id, nome, clusters)
      */
     async checkSchemas(): Promise<void> {
         try {
@@ -57,7 +58,8 @@ export default class DatabaseCheckRepository implements ICheckRepository {
             await pool.query(`
                 CREATE TABLE IF NOT EXISTS guilds (
                     guild_id VARCHAR(19) NOT NULL,
-                    guild_name VARCHAR(100) NOT NULL
+                    guild_name VARCHAR(100) NOT NULL UNIQUE,
+                    clusters VARCHAR(255) NOT NULL
                 );`
             );
 

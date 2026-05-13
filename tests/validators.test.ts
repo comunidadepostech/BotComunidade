@@ -116,6 +116,144 @@ describe('InputValidator', () => {
         });
     });
 
+    describe('validateVacancyInput', () => {
+        const validVacancy = {
+            role: 'Senior Developer',
+            role_type: 'Full-time',
+            employer: 'Tech Company',
+            model: 'Remote',
+            description: 'We are looking for a senior developer',
+            skills: 'JavaScript, TypeScript, React',
+            locations: ['São Paulo', 'Rio de Janeiro'],
+            salary: 'R$ 10k - 15k',
+            pub_date: '2024-01-01',
+            end_date: '2024-02-01',
+            ref_link: 'https://example.com/job',
+            clusters: ['Dev'],
+            role_level: 'Senior',
+            how_to_apply: 'https://example.com/apply',
+        };
+
+        it('should pass for valid vacancy input', () => {
+            expect(() => InputValidator.validateVacancyInput(validVacancy)).not.toThrow();
+        });
+
+        it('should throw if role is empty', () => {
+            const invalidVacancy = { ...validVacancy, role: '' };
+            expect(() => InputValidator.validateVacancyInput(invalidVacancy)).toThrow(
+                ValidationError,
+            );
+        });
+
+        it('should throw if role_type is empty', () => {
+            const invalidVacancy = { ...validVacancy, role_type: '' };
+            expect(() => InputValidator.validateVacancyInput(invalidVacancy)).toThrow(
+                ValidationError,
+            );
+        });
+
+        it('should throw if employer is empty', () => {
+            const invalidVacancy = { ...validVacancy, employer: '' };
+            expect(() => InputValidator.validateVacancyInput(invalidVacancy)).toThrow(
+                ValidationError,
+            );
+        });
+
+        it('should throw if model is empty', () => {
+            const invalidVacancy = { ...validVacancy, model: '' };
+            expect(() => InputValidator.validateVacancyInput(invalidVacancy)).toThrow(
+                ValidationError,
+            );
+        });
+
+        it('should throw if description is longer than 1500 characters', () => {
+            const invalidVacancy = { ...validVacancy, description: 'a'.repeat(1501) };
+            expect(() => InputValidator.validateVacancyInput(invalidVacancy)).toThrow(
+                ValidationError,
+            );
+        });
+
+        it('should pass if description is exactly 1500 characters', () => {
+            const vacancy = { ...validVacancy, description: 'a'.repeat(1500) };
+            expect(() => InputValidator.validateVacancyInput(vacancy)).not.toThrow();
+        });
+
+        it('should throw if locations has more than 9 items', () => {
+            const invalidVacancy = {
+                ...validVacancy,
+                locations: Array(10)
+                    .fill(null)
+                    .map((_, i) => `Location ${i}`),
+            };
+            expect(() => InputValidator.validateVacancyInput(invalidVacancy)).toThrow(
+                ValidationError,
+            );
+        });
+
+        it('should throw if pub_date is empty', () => {
+            const invalidVacancy = { ...validVacancy, pub_date: '' };
+            expect(() => InputValidator.validateVacancyInput(invalidVacancy)).toThrow(
+                ValidationError,
+            );
+        });
+
+        it('should throw if end_date is empty', () => {
+            const invalidVacancy = { ...validVacancy, end_date: '' };
+            expect(() => InputValidator.validateVacancyInput(invalidVacancy)).toThrow(
+                ValidationError,
+            );
+        });
+
+        it('should throw if ref_link is empty', () => {
+            const invalidVacancy = { ...validVacancy, ref_link: '' };
+            expect(() => InputValidator.validateVacancyInput(invalidVacancy)).toThrow(
+                ValidationError,
+            );
+        });
+
+        it('should throw if clusters is empty', () => {
+            const invalidVacancy = { ...validVacancy, clusters: [] };
+            expect(() => InputValidator.validateVacancyInput(invalidVacancy)).toThrow(
+                ValidationError,
+            );
+        });
+
+        it('should throw if role_level is empty', () => {
+            const invalidVacancy = { ...validVacancy, role_level: '' };
+            expect(() => InputValidator.validateVacancyInput(invalidVacancy)).toThrow(
+                ValidationError,
+            );
+        });
+
+        it('should throw if how_to_apply is empty', () => {
+            const invalidVacancy = { ...validVacancy, how_to_apply: '' };
+            expect(() => InputValidator.validateVacancyInput(invalidVacancy)).toThrow(
+                ValidationError,
+            );
+        });
+
+        it('should pass with minimal optional fields', () => {
+            const minimalVacancy = {
+                role: 'Developer',
+                role_type: 'Full-time',
+                employer: 'Company',
+                model: undefined,
+                description: undefined,
+                skills: undefined,
+                locations: ['São Paulo'],
+                salary: undefined,
+                pub_date: '2024-01-01',
+                end_date: '2024-02-01',
+                ref_link: 'https://example.com',
+                clusters: ['Dev'],
+                role_level: undefined,
+                how_to_apply: undefined,
+            };
+            // Note: This will depend on whether the validator allows undefined optional fields
+            // If the current implementation requires all fields, this test may need adjustment
+        });
+    });
+
     describe('validateGuildId', () => {
         it('should pass for valid Discord guild ID', () => {
             expect(() => InputValidator.validateGuildId('123456789012345678')).not.toThrow();

@@ -18,6 +18,26 @@ export interface EventValidationInput {
 }
 
 /**
+ * Estrutura de dados de entrada para validação de vagas
+ */
+export interface VacancyValidationInput {
+    role: string;
+    role_type: string;
+    employer: string;
+    model: string | undefined;
+    description: string | undefined;
+    skills: string | undefined;
+    locations: string[];
+    salary: string | undefined;
+    pub_date: string;
+    end_date: string;
+    ref_link: string;
+    clusters: string[];
+    role_level: string | undefined;
+    how_to_apply: string | undefined;
+}
+
+/**
  * Resultado de validação genérico com informações de erro em nível de campo
  */
 export interface ValidationResult {
@@ -116,6 +136,65 @@ export class InputValidator {
 
         if (!courseCode?.trim()) {
             errors.courseCode = ['Course code is required'];
+        }
+
+        if (Object.keys(errors).length > 0) {
+            throw new ValidationError('Warning validation failed', errors);
+        }
+    }
+
+    /**
+     * Valida a entrada de vagas
+     */
+    static validateVacancyInput(input: VacancyValidationInput): void {
+        const errors: Record<string, string[]> = {};
+
+        if (!input.role?.trim()) {
+            errors.role = ['Role is required'];
+        }
+
+        if (!input.role_type?.trim()) {
+            errors.role_type = ['Role type is required'];
+        }
+
+        if (!input.employer?.trim()) {
+            errors.employer = ['Empployer is required'];
+        }
+
+        if (!input.model?.trim()) {
+            errors.model = ['Model is required'];
+        }
+
+        if (input.description.trim().length > 1500) {
+            errors.description = ['Description is too large'];
+        }
+
+        if (input.locations?.length > 9) {
+            errors.locations = ['The maximum number of locations is 9'];
+        }
+
+        if (!input.pub_date?.trim()) {
+            errors.pub_date = ['Publication date is required'];
+        }
+
+        if (!input.end_date?.trim()) {
+            errors.end_date = ['End date is required'];
+        }
+
+        if (!input.ref_link?.trim()) {
+            errors.ref_link = ['Reference link is required'];
+        }
+
+        if (input.clusters?.length === 0) {
+            errors.clusters = ['At least one cluster is required'];
+        }
+
+        if (!input.role_level?.trim()) {
+            errors.role_level = ['Role level is required'];
+        }
+
+        if (!input.how_to_apply?.trim()) {
+            errors.how_to_apply = ['How to apply is required'];
         }
 
         if (Object.keys(errors).length > 0) {

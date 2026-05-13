@@ -92,6 +92,21 @@ export interface IGuildsRepository {
      * Usado para mapear códigos de curso para servidores do Discord
      */
     getGuildIdByCourse(courseName: string): string | undefined;
+
+    /**
+     * Recupera o nome do curso para um ID de servidor específico
+     */
+    getGuildCourseById(guildId: string): string | undefined;
+
+    /**
+     * Recupera o(s) ID(s) do(s) servidor(es) para um cluster de cursos específico
+     */
+    getGuildIdsByCluster(cluster: string): string[];
+
+    /**
+     * Insere ou atualiza uma guild no banco de dados
+     */
+    addOrUpdateGuild(guildId: string, guildName: string, clusters: string): Promise<void>;
 }
 
 /**

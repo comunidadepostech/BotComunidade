@@ -120,7 +120,12 @@ export class DIContainer {
         this.commandHashRepository = this.repositoryFactory.createCommandHashRepository();
 
         // Sincronizar servidores (guilds)
-        await this.guildsRepository.syncGuilds();
+        try {
+            await this.guildsRepository.syncGuilds();
+        } catch (error) {
+            console.error('Guild synchronization failed:', error);
+            throw error;
+        }
 
         // Inicializar as flags de funcionalidade
         const allFlags = await this.flagsRepository.getAllFeatureFlags();
@@ -140,6 +145,7 @@ export class DIContainer {
             this.client,
             this.featureFlagsService,
             linkedinService,
+            this.guildsRepository
         );
         const rolesSubService = new RolesSubService();
         const classSubService = new ClassSubService(this.client);

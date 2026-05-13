@@ -4,6 +4,8 @@ import type { IChannelConfig } from '../types/discord.interfaces.ts';
 export const WELCOME_CHANNEL_NAME = '✨│boas-vindas';
 export const WARNING_CHANNEL_NAME = '🚨│avisos';
 export const STUDY_GROUP_CHANNEL_NAME = '📒│Sala de estudo';
+export const VACANCY_CHANNEL_NAME = '💼│vagas'
+
 export const STUDY_GROUP_POSSIBLE_NAMES = [
   'Sala de estudo',
   'Sala de estudos',
