@@ -8,7 +8,8 @@ import {
     PermissionFlagsBits,
     Role,
     TextChannel,
-    ThreadAutoArchiveDuration
+    ThreadAutoArchiveDuration,
+    type DefaultReactionEmoji
 } from "discord.js";
 
 import type {GuildBasedChannel, Channel} from "discord.js";
@@ -115,6 +116,8 @@ export default class ClassSubService implements IDiscordClassService {
         if (!forumChannel) return;
 
         await forumChannel.setAvailableTags(FORUM_TAGS.map((name) => ({ name, moderated: false })));
+
+        await forumChannel.setDefaultReactionEmoji({ name: "✅" } as DefaultReactionEmoji)
 
         await Promise.all(
             INITIAL_POSTS.map((post) =>
