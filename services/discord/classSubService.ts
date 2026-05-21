@@ -76,7 +76,7 @@ export default class ClassSubService implements IDiscordClassService {
         const promises = CHANNELS_CONFIG.map(async (config) => {
             const isVoiceChannel =
                 config.type === ChannelType.GuildVoice || config.type === ChannelType.GuildStageVoice;
-            const channelName = isVoiceChannel ? `${config.name.replace(/^(?:📒|🎙️)│/u, '')} ${className}` : config.name;
+            const channelName = isVoiceChannel ? `${config.name.replace(/^[📒🎙️]│/, '')} ${className}` : config.name;
 
             const channelData: GuildChannelCreateOptions  = {
                 name: channelName,
