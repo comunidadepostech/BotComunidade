@@ -165,8 +165,8 @@ export class InputValidator {
             errors.model = ['Model is required'];
         }
 
-        if (input.description.trim().length > 1500) {
-            errors.description = ['Description is too large'];
+        if (input.description.trim().length < 200) {
+            errors.description = ['Description is too small'];
         }
 
         if (input.locations?.length > 9) {
