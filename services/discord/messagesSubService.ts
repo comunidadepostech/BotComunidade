@@ -52,6 +52,63 @@ export default class MessagesSubService implements IDiscordMessageService {
      */
     private sentWarnings: Map<string, number> = new Map();
 
+    /**
+     * Divide um texto em blocos respeitando o limite de caracteres e quebras de linha
+     * Prefere quebrar em quebras de linha para não cortar palavras ao meio
+     */
+    private splitTextIntoChunks(text: string, maxLength: number = 2000): string[] {
+        if (text.length <= maxLength) {
+            return [text];
+        }
+
+        const chunks: string[] = [];
+        const lines = text.split('\n');
+        let currentChunk = '';
+
+        for (const line of lines) {
+            // Se uma linha única é maior que maxLength, precisamos quebrá-la mesmo assim
+            if (line.length > maxLength) {
+                if (currentChunk) {
+                    chunks.push(currentChunk);
+                    currentChunk = '';
+                }
+                // Quebrar a linha longa em palavras
+                const words = line.split(' ');
+                let wordChunk = '';
+                for (const word of words) {
+                    if ((wordChunk + word + ' ').length > maxLength) {
+                        if (wordChunk) {
+                            chunks.push(wordChunk.trim());
+                        }
+                        wordChunk = word + ' ';
+                    } else {
+                        wordChunk += word + ' ';
+                    }
+                }
+                if (wordChunk) {
+                    currentChunk = wordChunk.trim();
+                }
+            } else if ((currentChunk + line + '\n').length > maxLength) {
+                // Adicionar a linha atual causaria overflow
+                chunks.push(currentChunk);
+                currentChunk = line;
+            } else {
+                // Adicionar a linha ao chunk atual
+                if (currentChunk) {
+                    currentChunk += '\n' + line;
+                } else {
+                    currentChunk = line;
+                }
+            }
+        }
+
+        if (currentChunk) {
+            chunks.push(currentChunk);
+        }
+
+        return chunks;
+    }
+
     constructor(
         private client: Client,
         private featureFlagsService: IFeatureFlagsService,
@@ -106,45 +163,45 @@ export default class MessagesSubService implements IDiscordMessageService {
 
     /**
      * Transmite uma vaga de emprego para todos os servidores correspondentes do(s) cluster(s)
+     * Divide a descrição em múltiplas mensagens se necessário para respeitar o limite do Discord (2000 caracteres)
      */
     async sendVacancyMessage(dto: VacancyMessageDto): Promise<void> {
-        // Construir o conteúdo da mensagem
-        const contentLines: string[] = [
+        // Construir a parte antes da descrição
+        const beforeDescriptionLines: string[] = [
             `# ${dto.role}`,
             `**🏢 Empresa:** ${dto.employer}`,
             `**💼 Tipo de contrato:** ${dto.role_type}`,
         ];
 
         if (dto.salary) {
-            contentLines.push(`**💰 Salário:** ${dto.salary}`);
+            beforeDescriptionLines.push(`**💰 Salário:** ${dto.salary}`);
         }
 
         if (dto.role_level) {
-            contentLines.push(`**📈 Nível:** ${dto.role_level}`);
+            beforeDescriptionLines.push(`**📈 Nível:** ${dto.role_level}`);
         }
 
         if (dto.locations.length > 0) {
-            contentLines.push(`**📍 Localização:** ${dto.locations.join(', ')}`);
+            beforeDescriptionLines.push(`**📍 Localização:** ${dto.locations.join(', ')}`);
         }
 
         if (dto.model) {
-            contentLines.push(`**🚗 Modelo:** ${dto.model}`);
+            beforeDescriptionLines.push(`**🚗 Modelo:** ${dto.model}`);
         }
 
-        if (dto.description) {
-            contentLines.push(`\n**🎯 Descrição da vaga:**\n${dto.description}`);
-        }
+        // Construir a parte depois da descrição
+        const afterDescriptionLines: string[] = [];
 
         if (dto.skills) {
-            contentLines.push(`\n**💻 Principais Skills:**\n${dto.skills}`);
+            afterDescriptionLines.push(`**💻 Principais Skills:** ${dto.skills}`);
         }
-        
-        contentLines.push(`\n*Publicado em: ${dto.pub_date} | Termina em: ${dto.end_date}*`);
+
+        afterDescriptionLines.push(`*Publicado em: ${dto.pub_date} | Termina em: ${dto.end_date}*`);
 
         // Construir os botões
         const buttons: ButtonBuilder[] = [];
 
-        if (dto.how_to_apply) {
+        if (dto.how_to_apply && dto.how_to_apply.length <= 512) {
             buttons.push(
                 new ButtonBuilder()
                     .setStyle(ButtonStyle.Link)
@@ -154,24 +211,24 @@ export default class MessagesSubService implements IDiscordMessageService {
             );
         }
 
-        buttons.push(
-            new ButtonBuilder()
-                .setStyle(ButtonStyle.Link)
-                .setLabel('Link da vaga')
-                .setEmoji({ name: '📎' })
-                .setURL(dto.ref_link),
-        );
+        if (dto.ref_link && dto.ref_link.length <= 512) {
+            buttons.push(
+                new ButtonBuilder()
+                    .setStyle(ButtonStyle.Link)
+                    .setLabel('Link da vaga')
+                    .setEmoji({ name: '📎' })
+                    .setURL(dto.ref_link),
+            );
+        }
 
-        // Construir o payload da mensagem
+        // Construir o payload da mensagem inicial com os botões
         const components =
             buttons.length > 0
                 ? [new ActionRowBuilder<ButtonBuilder>().addComponents(buttons)]
                 : [];
 
-        const payload = {
-            content: contentLines.join('\n'),
-            components,
-        };
+        const beforeDescriptionContent = beforeDescriptionLines.join('\n');
+        const afterDescriptionContent = afterDescriptionLines.join('\n');
 
         // Verifica quais servidores (guilds) estão associados aos clusters da vaga
         let guildIds: string[] = [];
@@ -204,10 +261,47 @@ export default class MessagesSubService implements IDiscordMessageService {
                 continue;
             }
 
-            await channel.threads.create({
+            // Enviar a primeira mensagem com a parte antes da descrição
+            const firstMessage = await channel.threads.create({
                 name: `${dto.employer} - ${dto.role}`,
-                message: payload,
+                message: {
+                    content: beforeDescriptionContent,
+                },
             });
+
+            // Se há descrição, dividir em blocos e enviar
+            if (dto.description) {
+                const descriptionHeader = '**🎯 Descrição da vaga:**';
+                const descriptionChunks = this.splitTextIntoChunks(
+                    dto.description,
+                    2000 - descriptionHeader.length - 10,
+                );
+
+                for (const [index, chunk] of descriptionChunks.entries()) {
+                    // Adiciona o header apenas no primeiro chunk
+                    const content = index === 0 ? `${descriptionHeader}\n${chunk}` : chunk;
+                    await firstMessage.send(content);
+                }
+            }
+
+            // Enviar a parte depois da descrição com os botões
+            const finalPayload: {
+                content?: string;
+                components?: ActionRowBuilder<ButtonBuilder>[];
+            } = {};
+
+            if (afterDescriptionContent) {
+                finalPayload.content = `\n${afterDescriptionContent}`;
+            }
+
+            if (components.length > 0) {
+                finalPayload.components = components as ActionRowBuilder<ButtonBuilder>[];
+            }
+
+            if (Object.keys(finalPayload).length > 0) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                await firstMessage.send(finalPayload as any);
+            }
         }
     }
 
