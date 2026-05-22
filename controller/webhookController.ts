@@ -347,6 +347,13 @@ export class WebhookController {
             };
             InputValidator.validateVacancyInput(validationInput as VacancyMessageDto);
 
+            // Modifia o modelo de trabalho para português
+            if (validationInput.model) {
+                validationInput.model = validationInput.model.replace(/^onsite/i, 'Presencial');
+                validationInput.model = validationInput.model.replace(/^remote/i, 'Remoto');
+                validationInput.model = validationInput.model.replace(/^hybrid/i, 'Hibrido');
+            }
+
             this.context.discordService.messages.sendVacancyMessage(validationInput);
             
             return Response.json({});
