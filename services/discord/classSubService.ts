@@ -117,7 +117,7 @@ export default class ClassSubService implements IDiscordClassService {
 
         await forumChannel.setAvailableTags(FORUM_TAGS.map((name) => ({ name, moderated: false })));
 
-        await forumChannel.setDefaultReactionEmoji({ name: "✅" } as DefaultReactionEmoji)
+        // await forumChannel.setDefaultReactionEmoji({ name: "✅" } as DefaultReactionEmoji)
 
         await Promise.all(
             INITIAL_POSTS.map((post) =>
