@@ -16,6 +16,7 @@ import {
     InteractionContextType,
     type SlashCommandOptionsOnlyBuilder,
     type InteractionResponse,
+    MessageFlags,
 } from 'discord.js';
 import type { ICommand, ICommandContext } from '../../types/discord.interfaces.ts';
 import type { BroadcastMessageDto } from '../../dtos/broadcastMessage.dto.ts';
@@ -47,6 +48,14 @@ export class EchoCommand implements ICommand {
         interaction: ChatInputCommandInteraction,
         context: ICommandContext,
     ): Promise<void> {
+        if (!context.featureFlagsService.getFlag(interaction.guildId!, 'comando_echo')) {
+            await interaction.reply({
+                content: 'Erro interno',
+                flags: MessageFlags.Ephemeral,
+            });
+            return;
+        }
+
         // Captura os anexos da interação inicial
         const attachment1 = interaction.options.getAttachment('attachment');
         const attachment2 = interaction.options.getAttachment('attachment-2');
