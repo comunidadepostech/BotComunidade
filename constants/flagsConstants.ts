@@ -3,6 +3,7 @@ export const DEFAULT_FEATURE_FLAGS = Object.freeze({
     comando_createclass: false,
     comando_disable: false,
     comando_exec: false,
+    comando_echo: true,
 
     //eventos
     comecar_grupo_de_estudos_automaticamente: false,
