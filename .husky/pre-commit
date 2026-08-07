@@ -1,1 +1,7 @@
+#!/usr/bin/env bash
+set -e
+
 bun lint-staged
+if git diff --cached --name-only | grep -q "^prisma/"; then
+  bun test:migrations
+fi

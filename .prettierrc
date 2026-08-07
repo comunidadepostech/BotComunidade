@@ -1,7 +1,10 @@
 {
-    "printWidth": 100,
+    "printWidth": 120,
     "singleQuote": true,
     "semi": true,
     "trailingComma": "all",
-    "tabWidth": 4
+    "tabWidth": 4,
+    "[prisma]": {
+        "editor.defaultFormatter": "Prisma.prisma"
+    }
 }

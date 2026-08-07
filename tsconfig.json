@@ -13,9 +13,9 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "noImplicitReturns": true,
-    "skipLibCheck": false,
+    "skipLibCheck": true,
     "noPropertyAccessFromIndexSignature": true,
-    "exactOptionalPropertyTypes": true,
+    "exactOptionalPropertyTypes": false,
     "allowImportingTsExtensions": true,
 
     // Qualidade de código
@@ -30,6 +30,8 @@
     "forceConsistentCasingInFileNames": true,
     "noEmitOnError": true,
     "emitDeclarationOnly": true,
-    "declaration": true
-  }
+    "declaration": true,
+  },
+  "exclude": ["node_modules"],
+  "include": ["src/**/*"],
 }

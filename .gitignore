@@ -5,3 +5,5 @@ logs
 qodana.yaml
 .git
 .eslintcache
+.prisma
+prisma/generated

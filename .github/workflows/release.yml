@@ -1,0 +1,31 @@
+name: Bump Version and Tag
+
+# vMajor.Minor.Patch
+# feat!: Major
+# feat: Minor
+# fix: Patch
+# : Patch
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Bump version and push tag
+        uses: anothrNick/github-tag-action@1.64.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: true # Mantém o padrão 'v' antes do número
+          DEFAULT_BUMP: patch # Commit comum sem feat: ou fix:, ele assume que é um patch

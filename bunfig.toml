@@ -1,0 +1,8 @@
+[test]
+coverage = true
+coverageThreshold = 0.95
+root = "tests"
+onlyFailures = true
+
+[test.reporter]
+dots = true

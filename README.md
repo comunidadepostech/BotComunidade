@@ -1,211 +1,115 @@
 # Bot Comunidade Pos Tech
 
-Este é um bot Discord desenvolvido para gerir comunidades com funcionalidades úteis e comandos administrativos que visam otimizar e contribuir com determinadas tarefas da equipe.
+Um bot criado para ajudar a equipe de CMs da Pos Tech a executar tarefas comuns e rotineiras no Discord.
 
----
+# Configurando o bot
 
-## Comandos Disponíveis
+## Variáveis de ambiente
 
-> **Nota:** Todos os comandos abaixo requerem permissão de **Administrador**.
+Antes de iniciar o Bot, certifique-se de configurar as variáveis de ambiente necessárias no arquivo `.env` usando o arquivo `.env.example` como referência.
 
-<details>
-<summary><strong><code>/ping</code></strong> — Verifica o status do bot</summary>
+## Configurando servidores
 
-**Escopo:** Qualquer servidor
+Para garantir que o Bot funcione como esperado é de extrema importência que você configure os servidores no banco de dados corretamente, o bot automaticamente detecta quando está em servidores novos e adiciona o ID do servidor ao banco de dados mas você deve adicionar manualmente a sigla (Ex: ADJT) e os clusters daquele servidor separado por ", ".
 
-Verifica se o bot está online e respondendo. O bot responderá com "pong!" para confirmar que está funcionando perfeitamente.
+# Executando o projeto
 
-</details>
+## Produção
 
-<details>
-<summary><strong><code>/echo</code></strong> — Replica uma mensagem em canais</summary>
+### 1. Instala dependências do projeto
 
-**Escopo:** Qualquer servidor
+`bun i -p --frozen-lockfile`
 
-Replica uma mensagem para um ou todos os canais de todos os servidores.
+### 2. Aplica as migrações SQL pendentes no banco de dados de PROD
 
-**Parâmetros:**
+`bunx prisma migrate deploy`
 
-- `channel` *(obrigatório)*: Canal onde a mensagem será enviada.
-- `message` *(obrigatório)*: Conteúdo da mensagem (dica: use \n para pular linhas).
-- `Attachment1` *(opcional)*: Anexo 1.
-- `Attachment2` *(opcional)*: Anexo 2.
-- `only-for-this-channel` *(opcional, padrão: não)*: Se sim, o bot enviará a mensagem apenas para o canal especificado.
+### 3. Gera o Prisma Client com os tipos/métodos atualizados
 
-**Exemplo de uso:**
-/echo channel: #anúncios message: Olá a todos! Bem-vindos ao servidor!
+`bunx prisma generate`
 
-</details>
+### 4. Inicia a aplicação
 
-<details>
-<summary><strong><code>/poll</code></strong> — Cria uma enquete interativa</summary>
-
-**Escopo:** Qualquer servidor
-
-Cria uma enquete interativa com opções de votação personalizadas (até 10 opções).
-
-**Parâmetros:**
-
-- `question` *(obrigatório)*: A pergunta principal da enquete.
-- `option1` e `option2` *(obrigatórios)*: Primeira e segunda opções de voto.
-- `option3` a `option10` *(opcionais)*: Opções de voto extras.
-- `duration` *(opcional, padrão: 24h)*: Tempo que a enquete ficará ativa (em horas).
-- `multiple` *(opcional, padrão: false)*: Se Sim, permite que os usuários votem em várias opções.
-
-**Exemplo de uso:**
-/poll question: Qual seu dia preferido para eventos? duration: 1 option1: Sábado option2: Domingo allow-multiselect: Sim
-
-</details>
-
-<details>
-<summary><strong><code>/createclass</code></strong> — Cria estrutura para nova turma</summary>
-
-**Escopo:** Apenas servidores comuns *(Não suporta servidores de egressos, etc.)*
-
-Cria cargo, categoria, canais e configura as permissões para uma nova turma com um link de convite.
-
-**Parâmetros:**
-
-- `name` *(obrigatório)*: O nome (sigla) da nova turma (Ex: 1TESTE).
-- `faq-channel` *(obrigatório apenas para turmas)*: Menção do canal de FAQ que a nova turma deve seguir (Ex: #faq-2025).
-
-**Exemplo de uso:**
-/createclass name: 1TESTE faq-channel: #faq-2025
-
-</details>
-
-<details>
-<summary><strong><code>/event</code></strong> — Cria um evento agendado</summary>
-
-**Escopo:** Qualquer servidor
-
-Cria um evento oficial diretamente no servidor do Discord com banner e link associado.
-
-**Parâmetros:**
-
-- `topic` *(obrigatório)*: Tópico do evento.
-- `start-date` *(obrigatório)*: Data inicial do evento (YYYY-MM-DD).
-- `start-time` *(obrigatório)*: Hora inicial do evento (HH:MM, 24 horas).
-- `end-date` *(obrigatório)*: Data final do evento (YYYY-MM-DD).
-- `end-time` *(obrigatório)*: Hora final do evento (HH:MM, 24 horas).
-- `description` *(obrigatório)*: Descrição do evento (dica: use \n para pular linhas).
-- `link` *(obrigatório)*: Link relacionado ao evento (Ex: link do Meet/Zoom).
-- `background` *(obrigatório)*: Imagem de fundo/banner para o evento (anexo).
-
-**Exemplo de uso:**
-/event topic: Aula Magna start-date: 2025-11-01 start-time: 20:00 end-date: 2025-11-01 end-time: 22:00 description: Aula introdutória link: [https://teste.com](https://teste.com) background: [anexo_da_imagem]
-
-</details>
-
-<details>
-<summary><strong><code>/disable</code></strong> — Desabilita uma turma</summary>
-
-**Escopo:** Apenas servidores comuns
-
-Desativa as configurações e acessos referentes a uma turma específica do servidor.
-
-**Parâmetros:**
-
-- `role` *(obrigatório)*: Menção ao cargo da turma.
-
-**Exemplo de uso:**
-/disable role: @Estudantes 11SOAT
-
-</details>
-
-<details>
-<summary><strong><code>/exec</code></strong> — Executa evento do scheduler</summary>
-
-**Escopo:** 🏢 Apenas servidores comuns
-
-Força a execução de uma tarefa/evento agendado no scheduler do bot.
-
-**Parâmetros:**
-
-- `command` *(obrigatório)*: Comando/tarefa a ser executado.
-
-**Exemplo de uso:**
-/exec command: Checagem de eventos do servidor
-
-</details>
-
-<details>
-<summary><strong><code>/updateflag</code></strong> — Atualiza uma feature flag</summary>
-
-**Escopo:** Qualquer servidor
-
-Atualiza uma feature flag do bot (Dica: use ; para ativar ou desativar mais de uma flag).
-
-**Parâmetros:**
-
-- `id` *(obrigatório)*: ID da mensagem da enquete no Discord.
-
-**Exemplo de uso:**
-/updateflag flag: comando_exec;comando_disable value: true
-
-</details>
-
-<details>
-<summary><strong><code>/viewflags</code></strong> — Mostra as feature flags</summary>
-
-**Escopo:** Qualquer servidor
-
-Cria uma visualização em JSON das flags que o bot tem.
-
-</details>
-
-<details>
-<summary><strong><code>/refresh</code></strong> — Recarrega os comandos dos servidores</summary>
-
-**Escopo:** Qualquer servidor
-
-Recarrega os comandos do bot (usado para novos servidores sem ter que reiniciar a instância do bot)
-
-</details>
-
-## Estrutura principal do projeto
-
-```txt
-BotComunidade/
-├── assets/ <-- Imagens usadas no projeto
-├── config/ <-- Arquivos de configuração
-├── constants <-- Pasta onde é armazenado constantes usadas no projeto
-├── controller/
-│   ├── commands <-- Pasta onde contém os controllers de todos os comandos junto a sua configuração
-├── dtos <-- Pasta que contém os DTOs usados no projeto
-├── infrastructure/ <-- Detalhes de infraestrutura (Ex: scheduler, logger e etc.)
-├── repositories/
-│   ├── database/
-├── routes/
-│   ├── v1/ <-- Rotas v1 (legado)
-│   ├── v2/ <-- Rotas v2
-├── services/
-│   ├── discord/ <-- Subserviços do Discord
-├── tests/ <-- Testes
-├── types/ <-- Tipos e interfaces
-```
+`bun start`
 
 ## Desenvolvimento
 
-Para começar a contribuir nesse projeto primeiro é recomendado configurar o ambiente de desenvolvimento. Abaixo está os passos de como configurar o ambiente para a melhor experiência durante seu desenvolvimento:
+### 1. Instala dependências do projeto
 
-1. Use `git clone https://github.com/comunidadepostech/BotComunidade.git` para clonar o projeto.
-2. É fortemente recomendado o uso do [VS Code](https://code.visualstudio.com/download) para esse projeto, mas outras opções também são compativeis porém com limitações (Ex: Webstorm).
-3. Instale o Bun clicando [aqui](https://bun.com/docs/installation).
-4. Se estiver usando VS Code, instale as extenções recomendadas no arquivo **.vscode/extensions.json** (do contrário pule essa etapa), após a instalação use o comando `bun eslint . --cache` para criar o arquivo de cache do Eslint.
-5. Configure o arquivo **.env** usndo o arquivo **.env.example** como guia.
-6. Certifique-se de ter um container (ou similar) de um banco **MySQL** rodando na sua maquina para poder simular o banco em produção (sem isso o projeto não vai iniciar).
-7. Instale as dependências usando `bun install`
-8. Depois de tudo configurado você está pronto para iniciar o projeto usando `bun run start`
+`bun i -d --frozen-lockfile`
 
-*Dica: Ao modificar o código você pode testar e debugar usando `bun run test` e `bun run debug` respectivamente, lembre-se de que os testes serão feitos antes de qualquer commit então certifique-se de testar antes para não ser barrado. Além disso, use a branch dev para desenvolver e testar a aplicação antes de fazer um Pull Request para Main.
+### 2. Aplica as migrações SQL pendentes no banco de dados de DEV
 
-## Versionamento
+`bunx prisma migrate dev`
 
-Usamos [SemVer](https://semver.org/lang/pt-BR/) para versionar o projeto, abaixo mostro um exemplo de como versionar sua versão:
-```
-0.0.0
-│ │ ├── Bugfix e pequenas correções
-│ ├──── Novas features
-├────── Grandes atualizações
-```
+### 3. Gera o Prisma Client com os tipos/métodos atualizados
+
+`bunx prisma generate`
+
+### 4. Inicia a aplicação
+
+`bun dev`
+
+# Progresso de desenvolvimento atual
+
+- [x] inicialização
+  - [x] verificação dos comandos (hash e se diferente cadastrar novamente)
+  - [x] registro dos eventos
+  - [x] criação do webhook
+- [x] comandos
+  - [x] createClass
+  - [x] echo
+  - [x] edit
+  - [x] endPoll
+  - [x] event
+  - [x] exec
+  - [x] getPollHash
+  - [x] help
+  - [x] ping
+  - [x] poll
+  - [x] flags
+  - [x] invite
+- [x] eventos
+  - [x] clientReady
+  - [x] error
+  - [x] guildCreate
+  - [x] guildDelete
+  - [x] guildMemberAdd
+  - [x] interactionCreate
+  - [x] messageCreate
+  - [x] messageUpdate (poll)
+- [] Webhook
+  - [x] Criação de evento
+  - [] remoção de evento
+  - [x] Envio de enquete de live
+  - [x] Envio de mensagem programada
+  - [x] Envio de vagas
+- [x] N8N
+  - [x] salvamento de interações (mensagens)
+  - [x] salvamento de enquetes
+- [x] Scheduler
+  - [x] verificação de eventos
+  - [x] contagem de membros mensal
+  - [x] exclusão de avisos
+  - [x] limpeza de cache de eventos
+  - [x] contagem de membros a cada 15 minutos
+
+# Desenvolvimento
+
+## Informações gerais
+
+A Branch principal do projeto é a `main`, ela é bloqueada para aceitar pushes diretos a partir da versão v3, todas as alterações devem ser feitas em branches separadas e depois mescladas na `main` (Ex: feat/invite-command). 
+
+Para lançar atualizações basta abrir um Pull Request e de preferência garantir que o merge não criará commits novos (use --ff-only no merge) e delete a branch após o merge. As versões são contabilizadas automaticamente pelo (workflow de release)[.github/workflows/release.yml] então apenas certifique-se de nomear os commits com feat, fix, chore, e etc ((dica)[https://gist.github.com/johnstew/941676d525271359a4b2d7f1bf2cb421]).
+
+Você também pode criar Feature Flags usando a constante (DEFAULT_FEATURE_FLAGS)[src/utils/constants/flagsConstants.ts], ela é sincronizada automaticamente no banco de dados e pode ter seu valor atualizado por servidor usando o comando (/flags)[src/controllers/discord/commands/flags.command.ts].
+
+## Adicionando novos comandos
+
+Para adicionar um novo comando, crie uma nova classe que implemente as interfaces `ICommand` e `IController` e adicione-a à lista de comandos no `index.ts`. Essas classes se comportam como um controller e devem chamar o service correspondente que por sua vez deve primeiro ser declarado em src/types/services antes da implementação.
+
+Os comandos são atualizados no Discord conforme ocorre atualizações no `build()`, se não houver atualizações então ele se mantem o mesmo após reiniciar ou atualizar a instância.
+
+## Adicionando novos eventos (do Discord)
+
+Para adicionar um novo evento, crie uma nova classe que implemente a interface `IController` e adicione-a à lista de eventos no `index.ts`. Essa terá o mesmo comportamento que os comandos citados acima com a única diferença de que ela não precisa implementar o `build()`.

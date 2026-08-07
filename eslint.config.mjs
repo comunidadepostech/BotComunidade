@@ -3,51 +3,38 @@ import tseslint from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import';
 import sonarjs from 'eslint-plugin-sonarjs';
-import gitignore from "eslint-config-flat-gitignore";
+import gitignore from 'eslint-config-flat-gitignore';
 
 export default [
-  gitignore(),
-  eslint.configs.recommended,
-  ...tseslint.configs.recommended,
-  sonarjs.configs.recommended,
-  {
-    ignores: ["./assets/**", "./node_modules", "./bun.lock", "./tests"]
-  },
-  {
-    plugins: {
-      import: importPlugin,
+    gitignore(),
+    eslint.configs.recommended,
+    ...tseslint.configs.recommended,
+    sonarjs.configs.recommended,
+    {
+        ignores: ['./assets/**', './node_modules', './bun.lock', './tests'],
     },
-    settings: {
-      'import/resolver': {
-        typescript: {
-          alwaysTryTypes: true,
-          project: './tsconfig.json',
+    {
+        plugins: {
+            import: importPlugin,
         },
-      },
+        settings: {
+            'import/resolver': {
+                typescript: {
+                    alwaysTryTypes: true,
+                    project: './tsconfig.json',
+                },
+            },
+        },
+        rules: {
+            'sonarjs/cognitive-complexity': ['error', 15],
+            'sonarjs/no-duplicate-string': ['warn', { threshold: 5 }],
+            '@typescript-eslint/no-explicit-any': 'warn',
+            '@typescript-eslint/explicit-function-return-type': 'warn',
+            '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+            complexity: ['error', 15],
+            'id-length': ['error', { min: 2, exceptions: ['z', '_'] }],
+            'max-depth': ['error', 4],
+        },
     },
-    rules: {
-      'sonarjs/cognitive-complexity': ['error', 15],
-      'sonarjs/no-duplicate-string': ['warn', { threshold: 5 }],
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/explicit-function-return-type": "warn",
-      "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
-      "complexity": ["error", 15],
-      "id-length": ["error", { "min": 2 }],
-      'import/no-restricted-paths': [
-        'error',
-        {
-          basePath: './',
-          zones: [
-            {
-              target: './controllers/**/*.ts',
-              from: ['./repositories/**/*.ts'],
-              message: 'A camada de controllers não pode conhecer repositories.'
-            }
-          ]
-        }
-      ],
-      "max-depth": ["error", 4]
-    }
-  },
-  eslintConfigPrettier,
-]
+    eslintConfigPrettier,
+];

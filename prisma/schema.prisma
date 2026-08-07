@@ -1,0 +1,107 @@
+generator client {
+  provider   = "prisma-client"
+  output     = "./generated"
+  engineType = "client"
+  runtime    = "bun"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model classes {
+  class      String @unique(map: "class") @db.VarChar(100)
+  quantity   Int?   @db.UnsignedSmallInt
+  guild_name String @db.VarChar(100)
+}
+
+model command_hashes {
+  command_name String @id @db.VarChar(255)
+  file_hash    String @db.VarChar(64)
+}
+
+model discord_event_warnings {
+  message_id String @id @db.VarChar(19)
+  channel_id String @db.VarChar(19)
+  event_id   String @db.VarChar(19)
+}
+
+model featureFlags {
+  guild_id String @id @db.VarChar(22)
+  flags    Json?
+}
+
+model guilds {
+  guild_id   String  @db.VarChar(19)
+  guild_name String  @id @db.VarChar(100)
+  clusters   String? @db.VarChar(255)
+}
+
+model interactions {
+  message_id   String    @db.VarChar(30)
+  guild_name   String    @db.VarChar(100)
+  category     String?   @db.VarChar(30)
+  role_name    String?   @db.VarChar(100)
+  user_name    String    @db.VarChar(32)
+  channel_name String    @db.VarChar(100)
+  message      String    @db.VarChar(4000)
+  thread_name  String?   @db.VarChar(100)
+  dt           DateTime? @default(now()) @db.Timestamp(0)
+  id           Int       @id @default(autoincrement())
+
+  @@index([message_id], map: "idx_message_id")
+}
+
+model online_members {
+  dt       DateTime @id @db.DateTime(0)
+  quantity Int      @db.UnsignedSmallInt
+}
+
+model polls {
+  poll_hash        String?   @db.VarChar(40)
+  guild_name       String    @db.VarChar(100)
+  category         String    @db.VarChar(30)
+  poll_question    String    @db.VarChar(300)
+  response1_text   String    @db.VarChar(55)
+  response1_value  Int       @db.UnsignedSmallInt
+  response2_text   String    @db.VarChar(55)
+  response2_value  Int       @db.UnsignedSmallInt
+  response3_text   String?   @db.VarChar(55)
+  response3_value  Int?      @db.UnsignedSmallInt
+  response4_text   String?   @db.VarChar(55)
+  response4_value  Int?      @db.UnsignedSmallInt
+  response5_text   String?   @db.VarChar(55)
+  response5_value  Int?      @db.UnsignedSmallInt
+  response6_text   String?   @db.VarChar(55)
+  response6_value  Int?      @db.UnsignedSmallInt
+  response7_text   String?   @db.VarChar(55)
+  response7_value  Int?      @db.UnsignedSmallInt
+  response8_text   String?   @db.VarChar(55)
+  response8_value  Int?      @db.UnsignedSmallInt
+  response9_text   String?   @db.VarChar(55)
+  response9_value  Int?      @db.UnsignedSmallInt
+  response10_text  String?   @db.VarChar(55)
+  response10_value Int?      @db.UnsignedSmallInt
+  dt               DateTime? @default(now()) @db.Timestamp(0)
+  id               Int       @id @default(autoincrement())
+}
+
+model zoom_meetings {
+  title                      String   @db.VarChar(200)
+  department                 String?  @db.VarChar(50)
+  duration_in_minutes        Int      @db.UnsignedSmallInt
+  host_email                 String   @db.VarChar(254)
+  metting_creation_source    String   @db.VarChar(100)
+  metting_group              String?  @db.VarChar(200)
+  created_at                 DateTime @db.Timestamp(0)
+  started_at                 DateTime @db.Timestamp(0)
+  ended_at                   DateTime @db.Timestamp(0)
+  meeting_id                 String   @id @db.Char(11)
+  max_simultaneous_views     Int      @default(0) @db.UnsignedSmallInt
+  host_name                  String?  @db.VarChar(100)
+  max_entries                Int      @db.UnsignedSmallInt
+  meeting_type               String   @db.VarChar(7)
+  max_unique_views           Int      @db.UnsignedSmallInt
+  place                      String?  @db.VarChar(100)
+  total_participants_minutes Int      @db.UnsignedSmallInt
+}

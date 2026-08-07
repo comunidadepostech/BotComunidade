@@ -1,0 +1,1 @@
+export type N8NSaveMembersByRoleDTO = { guildName: string, roleName: string, count: number }[]
