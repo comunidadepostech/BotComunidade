@@ -38,8 +38,8 @@
         "typescript-eslint": "^8.65.0"
     },
     "scripts": {
-        "start": "bun src/index.ts",
-        "dev": "bun eslint --cache --quiet && bunx tsc --noEmit --pretty && bun --watch run src/index.ts",
+        "start": "bunx prisma generate && bun src/index.ts",
+        "dev": "bunx prisma generate && bun eslint --cache --quiet && bunx tsc --noEmit --pretty && bun run src/index.ts",
         "test:migrations": "docker run --name mysql-test -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=bot_test -p 3307:3306 -d mysql:latest && until docker exec mysql-test mysqladmin ping -h 127.0.0.1 --silent; do sleep 1; done && DATABASE_URL=\"mysql://root:root@localhost:3307/bot_test\" bunx prisma migrate deploy; status=$?; docker stop mysql-test && docker rm mysql-test && exit $status"
     }
 }
