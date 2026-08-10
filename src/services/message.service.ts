@@ -258,7 +258,7 @@ export default class MessageService implements IMessageService {
 
                 const messageId = await this.messageProvider.sendMessage(
                     targetChannel,
-                    `Boa noite, turma!! <@&${roleId}>\n\nPassando para lembrar vocês do nosso evento de hoje às ${event.scheduledStart.toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' })} 🚀\nacesse o card do evento [aqui](${event.url})`,
+                    `Boa noite, turma!! <@&${roleId}>\n\nPassando para lembrar vocês do nosso evento de hoje às ${event.scheduledStart.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })} 🚀\nacesse o card do evento [aqui](${event.url})`,
                 );
 
                 await this.warningRepository.saveWarningMessage(targetChannel.id, messageId, event.id);
@@ -280,7 +280,7 @@ export default class MessageService implements IMessageService {
 
                 const messageId = await this.messageProvider.sendMessage(
                     channel,
-                    `Boa noite, turma!! <@&${roleId}>\n\nPassando para lembrar vocês do nosso evento de hoje às ${event.scheduledStart.toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' })} 🚀\nacesse o card do evento [aqui](${event.url})`,
+                    `Boa noite, turma!! <@&${roleId}>\n\nPassando para lembrar vocês do nosso evento de hoje às ${event.scheduledStart.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })} 🚀\nacesse o card do evento [aqui](${event.url})`,
                 );
 
                 await this.warningRepository.saveWarningMessage(channel.id, messageId, event.id);
