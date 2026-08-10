@@ -59,7 +59,8 @@ export default class WebhookEventController implements IController {
 
                 const channelId = (await this.channelService.getAllChannelsByGuildId(guildId)).find(
                     (channel) =>
-                        channel.name === STUDY_GROUP_CHANNEL_NAME && channel.parent?.name === result.data.turma,
+                        channel.name === `${STUDY_GROUP_CHANNEL_NAME} ${result.data.turma}` && 
+                        channel.parent?.name === result.data.turma,
                 )?.id;
 
                 if (!channelId) {
@@ -97,13 +98,10 @@ export default class WebhookEventController implements IController {
             }
 
             if (req.method === 'DELETE') {
-                return new Response(
-                    JSON.stringify({ status: 'success', message: 'Not implemented' }),
-                    {
-                        status: 200,
-                        headers: { 'Content-Type': 'application/json' },
-                    },
-                );
+                return new Response(JSON.stringify({ status: 'success', message: 'Not implemented' }), {
+                    status: 200,
+                    headers: { 'Content-Type': 'application/json' },
+                });
             }
 
             return new Response(JSON.stringify({ status: 'error', error: 'Not Found' }), {
