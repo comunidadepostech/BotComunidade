@@ -260,7 +260,7 @@ export default class DiscordAdapter
         target: Channel,
         content: string,
         options?: {
-            attachments?: Attachment[];
+            attachment?: Attachment[];
             actions?: MessageAction[];
             replyTo: string;
         },
@@ -275,8 +275,8 @@ export default class DiscordAdapter
 
         const payload: any = { content };
 
-        if (options?.attachments && options.attachments.length > 0) {
-            payload.files = options.attachments;
+        if (options?.attachment && options.attachment.length > 0) {
+            payload.files = options.attachment;
         }
 
         if (options?.actions && options.actions.length > 0) {
