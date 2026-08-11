@@ -276,7 +276,26 @@ export default class DiscordAdapter
         const payload: any = { content };
 
         if (options?.attachment && options.attachment.length > 0) {
-            payload.files = options.attachment;
+            payload.files = options.attachment.map((file) => {
+                if (Buffer.isBuffer(file) || typeof file === 'string') {
+                    return file;
+                }
+
+                if (typeof file === 'object' && file !== null) {
+                    if ('attachment' in file || 'file' in file) {
+                        return file;
+                    }
+
+                    if ('url' in file && 'name' in file) {
+                        return {
+                            attachment: file.url,
+                            name: file.name,
+                        };
+                    }
+                }
+
+                return file;
+            });
         }
 
         if (options?.actions && options.actions.length > 0) {
