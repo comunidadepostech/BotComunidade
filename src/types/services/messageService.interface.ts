@@ -17,7 +17,7 @@ export default interface IMessageService {
      * @param content The content of the message
      * @param attachment Attachments of the message
      */
-    sendMessage(channel: Channel, content: string, options?: { attachments?: Attachment[], actions?: MessageAction[], replyTo?: string }): Promise<string>;
+    sendMessage(channel: Channel, content: string, options?: { attachment?: Attachment[], actions?: MessageAction[], replyTo?: string }): Promise<string>;
 
     /**
      * Sends a poll message to the specified channel or channels with the given poll data.
