@@ -8,6 +8,7 @@ import type IChannelService from '../../types/services/channelService.interface'
 import { CHAT_CHANNEL_NAME } from '../../utils/constants/discordConstants';
 import type IMessageService from '../../types/services/messageService.interface';
 import type IRoleService from '../../types/services/roleService.interface';
+import type IFeatureFlagsService from '../../types/services/featureFlagsService.interface';
 
 const schema = z.object({
     evento: z.string().nonempty(),
@@ -20,6 +21,7 @@ export default class WebhookLiveFormsController implements IController {
         private channelService: IChannelService,
         private messageService: IMessageService,
         private roleService: IRoleService,
+        private flagsService: IFeatureFlagsService,
     ) {}
 
     async handle(req: Request): Promise<Response> {
@@ -58,6 +60,9 @@ export default class WebhookLiveFormsController implements IController {
 
             const guildId = await this.guildService.getGuildIdByCourseName(className.replaceAll(/\d/g, ''));
 
+            if (!this.flagsService.isEnabled(guildId, 'enviar_forms_no_final_da_live'))
+                return new Response(JSON.stringify({ status: 'success', data: result.data }), { status: 200 });
+
             const channel = (await this.channelService.getAllChannelsByGuildId(guildId)).find(
                 (channel) => channel.name === CHAT_CHANNEL_NAME && channel.parent?.name === className,
             );
@@ -77,9 +82,12 @@ export default class WebhookLiveFormsController implements IController {
                     `<@&${roleId}>`,
             );
 
-            setTimeout(async () => {
-                await this.messageService.deleteMessage(channel.id, messageId)
-            }, env.LIVE_FORMS_DURATION_IN_MINUTES * 60 * 1000);
+            setTimeout(
+                async () => {
+                    await this.messageService.deleteMessage(channel.id, messageId);
+                },
+                env.LIVE_FORMS_DURATION_IN_MINUTES * 60 * 1000,
+            );
 
             return new Response(JSON.stringify({ status: 'success', data: result.data }), { status: 200 });
         } catch (error) {

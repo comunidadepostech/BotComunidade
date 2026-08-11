@@ -182,6 +182,7 @@ async function bootstrap(): Promise<void> {
         channelService,
         messageService,
         roleService,
+        featureFlagsService
     );
     const webhookVacancyController = new WebhookVacancyController(logger, messageService, channelService, guildService);
 
