@@ -8,8 +8,8 @@ import type IGuildService from '../../types/services/guildService.interface';
 import type IChannelService from '../../types/services/channelService.interface';
 import { STUDY_GROUP_CHANNEL_NAME } from '../../utils/constants/discordConstants';
 import { AppError } from '../../types/errors.types';
-import env from '../../config/env';
 import { join } from 'node:path';
+import { validateWebhookRequest } from '../../utils/webhook.helper';
 
 const postSchema = z.object({
     turma: z.string().nonempty().max(7),
@@ -39,32 +39,15 @@ export default class WebhookEventController implements IController {
 
     async handle(req: Request): Promise<Response> {
         try {
-            if (req.headers.get('Authorization') !== 'Bearer ' + env.WEBHOOK_TOKEN)
-                return new Response(
-                    JSON.stringify({ status: 'error', message: 'Not authorized or authorization missing' }),
-                    { status: 401 },
-                );
-
-            const body = await req.json();
-
             if (req.method === 'POST') {
-                const result = postSchema.safeParse(body);
+                const result = await validateWebhookRequest(req, postSchema, this.logger)
 
-                if (!result.success) {
-                    return new Response(JSON.stringify({ status: 'error', error: z.prettifyError(result.error) }), {
-                        status: 400,
-                        headers: { 'Content-Type': 'application/json' },
-                    });
-                }
-
-                this.logger.http('Received request', { body: result.data });
-
-                const guildId = await this.guildService.getGuildIdByCourseName(result.data.turma.replaceAll(/\d/g, ''));
+                const guildId = await this.guildService.getGuildIdByCourseName(result.turma.replaceAll(/\d/g, ''));
 
                 const channelId = (await this.channelService.getAllChannelsByGuildId(guildId)).find(
                     (channel) =>
-                        channel.name === `${STUDY_GROUP_CHANNEL_NAME} ${result.data.turma}` && 
-                        channel.parent?.name === result.data.turma,
+                        channel.name === `${STUDY_GROUP_CHANNEL_NAME} ${result.turma}` && 
+                        channel.parent?.name === result.turma,
                 )?.id;
 
                 if (!channelId) {
@@ -82,12 +65,12 @@ export default class WebhookEventController implements IController {
                 }
 
                 const eventId = await this.eventService.createEvent({
-                    name: result.data.nomeEvento,
-                    description: defaultEventDescription[result.data.tipo]!,
+                    name: result.nomeEvento,
+                    description: defaultEventDescription[result.tipo]!,
                     entityType: entityType.voice,
                     image: Buffer.from(this.backgroundImage),
-                    scheduledStartTime: result.data.data_hora,
-                    scheduledEndTime: result.data.fim,
+                    scheduledStartTime: result.data_hora,
+                    scheduledEndTime: result.fim,
                     channelId,
                     guilds: [guildId],
                 });
@@ -95,7 +78,7 @@ export default class WebhookEventController implements IController {
                 return new Response(
                     JSON.stringify({
                         status: 'success',
-                        data: { ...result.data, eventId: eventId[0], guildId: guildId },
+                        data: { ...result, eventId: eventId[0], guildId: guildId },
                     }),
                     {
                         status: 200,
@@ -105,21 +88,12 @@ export default class WebhookEventController implements IController {
             }
 
             if (req.method === 'DELETE') {
-                const result = deleteSchema.safeParse(body);
+                const result = await validateWebhookRequest(req, deleteSchema, this.logger);
 
-                if (!result.success) {
-                    return new Response(JSON.stringify({ status: 'error', error: z.prettifyError(result.error) }), {
-                        status: 400,
-                        headers: { 'Content-Type': 'application/json' },
-                    });
-                }
-
-                this.logger.http('Received request', { body: result.data });
-
-                await this.eventService.removeEvent(result.data.guildId, result.data.eventId)
+                await this.eventService.removeEvent(result.guildId, result.eventId)
 
                 return new Response(
-                    JSON.stringify({ status: 'success', data: result.data }),
+                    JSON.stringify({ status: 'success', data: result }),
                     {
                         status: 200,
                         headers: { 'Content-Type': 'application/json' },
