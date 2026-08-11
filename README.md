@@ -100,9 +100,9 @@ Para garantir que o Bot funcione como esperado é de extrema importência que vo
 
 A Branch principal do projeto é a `main`, ela é bloqueada para aceitar pushes diretos a partir da versão v3, todas as alterações devem ser feitas em branches separadas e depois mescladas na `main` (Ex: feat/invite-command). 
 
-Para lançar atualizações basta abrir um Pull Request e de preferência garantir que o merge não criará commits novos (use --ff-only no merge) e delete a branch após o merge. As versões são contabilizadas automaticamente pelo (workflow de release)[.github/workflows/release.yml] então apenas certifique-se de nomear os commits com feat, fix, chore, e etc ([dica](https://gist.github.com/johnstew/941676d525271359a4b2d7f1bf2cb421)).
+Para lançar atualizações basta abrir um Pull Request e de preferência garantir que o merge não criará commits novos (use --ff-only no merge) e delete a branch após o merge. As versões são contabilizadas automaticamente pelo [workflow de release](.github/workflows/release.yml) então apenas certifique-se de nomear os commits com feat, fix, chore, e etc ([dica](https://gist.github.com/johnstew/941676d525271359a4b2d7f1bf2cb421)).
 
-Você também pode criar Feature Flags usando a constante (DEFAULT_FEATURE_FLAGS)[src/utils/constants/flagsConstants.ts], ela é sincronizada automaticamente no banco de dados e pode ter seu valor atualizado por servidor usando o comando (/flags)[src/controllers/discord/commands/flags.command.ts].
+Você também pode criar Feature Flags usando a constante [DEFAULT_FEATURE_FLAGS](src/utils/constants/flagsConstants.ts), ela é sincronizada automaticamente no banco de dados e pode ter seu valor atualizado por servidor usando o comando (/flags)[src/controllers/discord/commands/flags.command.ts].
 
 ## Adicionando novos comandos
 
