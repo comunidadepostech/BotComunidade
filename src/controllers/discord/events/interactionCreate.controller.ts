@@ -32,26 +32,25 @@ export default class InteractionCreateEventController implements IController {
         try {
             await command.handle(interaction);
         } catch (error) {
+            const errorMessage =
+                `Erro inesperando ao executar ${interaction.commandName}, reporte esse erro.\n` +
+                '```' +
+                error +
+                '```';
+
             if (error instanceof AppError) {
                 this.logger.error(error.message, { stacktrace: error.stack });
                 if (!interaction.isRepliable()) return;
 
                 if (interaction.deferred) {
                     await interaction.editReply({
-                        content:
-                            `Erro inesperando ao executar ${interaction.isCommand.name}, reporte esse erro.\n` +
-                            '```' +
-                            error +
-                            '```',
+                        content: errorMessage,
                     });
+                    return;
                 }
 
                 await interaction.reply({
-                    content:
-                        `Erro inesperando ao executar ${interaction.isCommand.name}, reporte esse erro.\n` +
-                        '```' +
-                        error +
-                        '```',
+                    content: errorMessage,
                     flags: [MessageFlags.Ephemeral],
                 });
             } else {
