@@ -96,7 +96,7 @@ model zoom_meetings {
   created_at                 DateTime @db.Timestamp(0)
   started_at                 DateTime @db.Timestamp(0)
   ended_at                   DateTime @db.Timestamp(0)
-  meeting_id                 String   @id @db.Char(11)
+  meeting_id                 String   @db.Char(11)
   max_simultaneous_views     Int      @default(0) @db.UnsignedSmallInt
   host_name                  String?  @db.VarChar(100)
   max_entries                Int      @db.UnsignedSmallInt
@@ -104,4 +104,5 @@ model zoom_meetings {
   max_unique_views           Int      @db.UnsignedSmallInt
   place                      String?  @db.VarChar(100)
   total_participants_minutes Int      @db.UnsignedSmallInt
+  id                         Int      @id @default(autoincrement())
 }
