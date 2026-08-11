@@ -9,6 +9,7 @@ import { CHAT_CHANNEL_NAME } from '../../utils/constants/discordConstants';
 import type IMessageService from '../../types/services/messageService.interface';
 import type IRoleService from '../../types/services/roleService.interface';
 import type IFeatureFlagsService from '../../types/services/featureFlagsService.interface';
+import { validateWebhookRequest } from '../../utils/webhook.helper';
 
 const schema = z.object({
     evento: z.string().nonempty(),
@@ -26,33 +27,17 @@ export default class WebhookLiveFormsController implements IController {
 
     async handle(req: Request): Promise<Response> {
         try {
-            if (req.headers.get('Authorization') !== 'Bearer ' + env.WEBHOOK_TOKEN)
-                return new Response(
-                    JSON.stringify({ status: 'error', message: 'Not authorized or authorization missing' }),
-                    { status: 401 },
-                );
-
-            const body = await req.json();
-            const result = schema.safeParse(body);
-
-            if (!result.success) {
-                return new Response(JSON.stringify({ status: 'error', error: z.prettifyError(result.error) }), {
-                    status: 400,
-                    headers: { 'Content-Type': 'application/json' },
-                });
-            }
-
-            this.logger.http('Received request', { body: result.data });
+            const result = await validateWebhookRequest(req, schema, this.logger);
 
             // The controller starts here
 
-            const className = result.data.evento.split(' - ')[0];
+            const className = result.evento.split(' - ')[0];
 
             if (!className) {
                 return new Response(
                     JSON.stringify({
                         status: 'error',
-                        error: `Could not find any class in the event name: ${result.data.evento}`,
+                        error: `Could not find any class in the event name: ${result.evento}`,
                     }),
                     { status: 400 },
                 );
@@ -61,7 +46,7 @@ export default class WebhookLiveFormsController implements IController {
             const guildId = await this.guildService.getGuildIdByCourseName(className.replaceAll(/\d/g, ''));
 
             if (!this.flagsService.isEnabled(guildId, 'enviar_forms_no_final_da_live'))
-                return new Response(JSON.stringify({ status: 'success', data: result.data }), { status: 200 });
+                return new Response(JSON.stringify({ status: 'success', data: result }), { status: 200 });
 
             const channel = (await this.channelService.getAllChannelsByGuildId(guildId)).find(
                 (channel) => channel.name === CHAT_CHANNEL_NAME && channel.parent?.name === className,
@@ -89,7 +74,7 @@ export default class WebhookLiveFormsController implements IController {
                 env.LIVE_FORMS_DURATION_IN_MINUTES * 60 * 1000,
             );
 
-            return new Response(JSON.stringify({ status: 'success', data: result.data }), { status: 200 });
+            return new Response(JSON.stringify({ status: 'success', data: result }), { status: 200 });
         } catch (error) {
             if (error instanceof AppError) {
                 this.logger.error(error.message, { error });

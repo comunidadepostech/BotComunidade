@@ -2,12 +2,12 @@ import z from 'zod';
 import type IController from '../../types/interfaces/controller.interface';
 import type ILoggerService from '../../types/services/loggerService.interface';
 import { AppError } from '../../types/errors.types';
-import env from '../../config/env';
 import type IGuildService from '../../types/services/guildService.interface';
 import type IChannelService from '../../types/services/channelService.interface';
 import type IMessageService from '../../types/services/messageService.interface';
 import { WARNING_CHANNEL_NAME } from '../../utils/constants/discordConstants';
 import type IRoleService from '../../types/services/roleService.interface';
+import { validateWebhookRequest } from '../../utils/webhook.helper';
 
 const schema = z.object({
     turma: z.string().nonempty().max(7),
@@ -25,30 +25,12 @@ export default class WebhookMessageController implements IController {
 
     async handle(req: Request): Promise<Response> {
         try {
-            if (req.headers.get('Authorization') !== 'Bearer ' + env.WEBHOOK_TOKEN)
-                return new Response(
-                    JSON.stringify({ status: 'error', message: 'Not authorized or authorization missing' }),
-                    { status: 401 },
-                );
+            const result = await validateWebhookRequest(req, schema, this.logger);
 
-            const body = await req.json();
-            const result = schema.safeParse(body);
-
-            if (!result.success) {
-                return new Response(JSON.stringify({ status: 'error', error: z.prettifyError(result.error) }), {
-                    status: 400,
-                    headers: { 'Content-Type': 'application/json' },
-                });
-            }
-
-            this.logger.http('Received request', { body: result.data });
-
-            // The controller starts here
-
-            const guildId = await this.guildService.getGuildIdByCourseName(result.data.turma.replaceAll(/\d/g, ''));
+            const guildId = await this.guildService.getGuildIdByCourseName(result.turma.replaceAll(/\d/g, ''));
 
             const channel = (await this.channelService.getAllChannelsByGuildId(guildId)).find(
-                (channel) => channel.name === WARNING_CHANNEL_NAME && channel.parent?.name === result.data.turma,
+                (channel) => channel.name === WARNING_CHANNEL_NAME && channel.parent?.name === result.turma,
             );
 
             if (!channel) {
@@ -60,14 +42,14 @@ export default class WebhookMessageController implements IController {
                 );
             }
 
-            if (result.data.mensagem.includes('{cargo}')) {
-                const roleId = await this.roleService.getRoleIdByName(guildId, 'Estudantes ' + result.data.turma)
-                result.data.mensagem = result.data.mensagem.replaceAll('{cargo}', `<@&${roleId}>`);
+            if (result.mensagem.includes('{cargo}')) {
+                const roleId = await this.roleService.getRoleIdByName(guildId, 'Estudantes ' + result.turma)
+                result.mensagem = result.mensagem.replaceAll('{cargo}', `<@&${roleId}>`);
             }
 
-            await this.messageService.sendMessage(channel, result.data.mensagem);
+            await this.messageService.sendMessage(channel, result.mensagem);
 
-            return new Response(JSON.stringify({ status: 'success', data: result.data }), {
+            return new Response(JSON.stringify({ status: 'success', data: result }), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' },
             });

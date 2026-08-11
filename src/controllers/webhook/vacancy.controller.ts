@@ -2,13 +2,13 @@ import z from 'zod';
 import type IController from '../../types/interfaces/controller.interface';
 import type ILoggerService from '../../types/services/loggerService.interface';
 import { AppError } from '../../types/errors.types';
-import env from '../../config/env';
 import type IMessageService from '../../types/services/messageService.interface';
 import type IChannelService from '../../types/services/channelService.interface';
 import { VACANCY_CHANNEL_NAME } from '../../utils/constants/discordConstants';
 import type IGuildService from '../../types/services/guildService.interface';
 import type { Channel } from '../../types/channel.types';
 import type { MessageAction } from '../../types/component.types';
+import { validateWebhookRequest } from '../../utils/webhook.helper';
 
 const schema = z.object({
     cargo: z.string().nonempty(),
@@ -104,25 +104,7 @@ export default class WebhookVacancyController implements IController {
 
     async handle(req: Request): Promise<Response> {
         try {
-            if (req.headers.get('Authorization') !== 'Bearer ' + env.WEBHOOK_TOKEN)
-                return new Response(
-                    JSON.stringify({ status: 'error', message: 'Not authorized or authorization missing' }),
-                    { status: 401 },
-                );
-
-            const body = await req.json();
-            const result = schema.safeParse(body);
-
-            if (!result.success) {
-                return new Response(JSON.stringify({ status: 'error', error: z.prettifyError(result.error) }), {
-                    status: 400,
-                    headers: { 'Content-Type': 'application/json' },
-                });
-            }
-
-            this.logger.http('Received request', { body: result.data });
-
-            // The controller starts here
+            const result = await validateWebhookRequest(req, schema, this.logger);
 
             const {
                 cargo,
@@ -139,7 +121,7 @@ export default class WebhookVacancyController implements IController {
                 clusters,
                 nivel_de_vaga,
                 como_aplicar,
-            } = result.data;
+            } = result;
 
             const guildIds = await this.guildService.getGuildIdsByClusters(clusters);
             const channels: Channel[] = [];
