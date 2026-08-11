@@ -11,7 +11,7 @@ import { AppError } from '../../types/errors.types';
 import env from '../../config/env';
 import { join } from 'node:path';
 
-const schema = z.object({
+const postSchema = z.object({
     turma: z.string().nonempty().max(7),
     nomeEvento: z.string().nonempty().max(100),
     tipo: z.enum(['Grupo de estudos', 'Live', 'Hackaton', 'Mentoria']),
@@ -19,6 +19,11 @@ const schema = z.object({
     link: z.string().max(100),
     fim: z.coerce.date(),
 });
+
+const deleteSchema = z.object({
+    eventId: z.string().nonempty(),
+    guildId: z.string().nonempty()
+})
 
 export default class WebhookEventController implements IController {
     private backgroundImage: ArrayBuffer | null;
@@ -41,20 +46,19 @@ export default class WebhookEventController implements IController {
                 );
 
             const body = await req.json();
-            const result = schema.safeParse(body);
-
-            if (!result.success) {
-                return new Response(JSON.stringify({ status: 'error', error: z.prettifyError(result.error) }), {
-                    status: 400,
-                    headers: { 'Content-Type': 'application/json' },
-                });
-            }
-
-            this.logger.http('Received request', { body: result.data });
-
-            // The controller starts here
 
             if (req.method === 'POST') {
+                const result = postSchema.safeParse(body);
+
+                if (!result.success) {
+                    return new Response(JSON.stringify({ status: 'error', error: z.prettifyError(result.error) }), {
+                        status: 400,
+                        headers: { 'Content-Type': 'application/json' },
+                    });
+                }
+
+                this.logger.http('Received request', { body: result.data });
+
                 const guildId = await this.guildService.getGuildIdByCourseName(result.data.turma.replaceAll(/\d/g, ''));
 
                 const channelId = (await this.channelService.getAllChannelsByGuildId(guildId)).find(
@@ -89,7 +93,10 @@ export default class WebhookEventController implements IController {
                 });
 
                 return new Response(
-                    JSON.stringify({ status: 'success', data: { ...result.data, eventId: eventId[0] } }),
+                    JSON.stringify({
+                        status: 'success',
+                        data: { ...result.data, eventId: eventId[0], guildId: guildId },
+                    }),
                     {
                         status: 200,
                         headers: { 'Content-Type': 'application/json' },
@@ -98,10 +105,26 @@ export default class WebhookEventController implements IController {
             }
 
             if (req.method === 'DELETE') {
-                return new Response(JSON.stringify({ status: 'success', message: 'Not implemented' }), {
-                    status: 200,
-                    headers: { 'Content-Type': 'application/json' },
-                });
+                const result = deleteSchema.safeParse(body);
+
+                if (!result.success) {
+                    return new Response(JSON.stringify({ status: 'error', error: z.prettifyError(result.error) }), {
+                        status: 400,
+                        headers: { 'Content-Type': 'application/json' },
+                    });
+                }
+
+                this.logger.http('Received request', { body: result.data });
+
+                await this.eventService.removeEvent(result.data.guildId, result.data.eventId)
+
+                return new Response(
+                    JSON.stringify({ status: 'success', data: result.data }),
+                    {
+                        status: 200,
+                        headers: { 'Content-Type': 'application/json' },
+                    },
+                );
             }
 
             return new Response(JSON.stringify({ status: 'error', error: 'Not Found' }), {
