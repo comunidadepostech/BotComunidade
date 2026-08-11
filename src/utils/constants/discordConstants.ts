@@ -2,7 +2,7 @@ import { PermissionFlagsBits } from 'discord.js';
 
 export const WELCOME_CHANNEL_NAME = '✨│boas-vindas';
 export const WARNING_CHANNEL_NAME = '🚨│avisos';
-export const STUDY_GROUP_CHANNEL_NAME = '📒│Sala de estudo';
+export const STUDY_GROUP_CHANNEL_NAME = '📒│Sala de estudo {cargo}';
 export const VACANCY_CHANNEL_NAME = '💼│vagas';
 export const RECORDINGS_CHANNEL_NAME = '🎥│gravações';
 export const QUESTIONS_CHANNEL_NAME = '❓│dúvidas';
@@ -56,7 +56,7 @@ export const CLASS_CHANNELS = [
     { name: '‍💻│grupos-tech-challenge', type: 'text', position: 3 },
     { name: RECORDINGS_CHANNEL_NAME, type: 'text', position: 4, restrictStudents: true },
     { name: QUESTIONS_CHANNEL_NAME, type: 'forum', position: 5 },
-    { name: '🎙️│Dinâmica ao vivo', type: 'stage', position: 6 },
+    { name: '🎙️│Dinâmica ao vivo {cargo}', type: 'stage', position: 6 },
     { name: STUDY_GROUP_CHANNEL_NAME, type: 'voice', position: 7 },
 ];
 

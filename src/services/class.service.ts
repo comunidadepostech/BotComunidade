@@ -11,6 +11,7 @@ import {
     PROFESSOR_CHANNEL_PERMISSIONS,
     PROFESSOR_ROLE_NAMES,
     QUESTIONS_CHANNEL_NAME,
+    ROLE_NAME_REPLACEMENT,
     STUDENT_ROLE_PERMISSIONS,
     STUDENTS_NORMAL_CHANNEL_PERMISSIONS,
     STUDENTS_STRICT_CHANNEL_PERMISSIONS,
@@ -89,7 +90,7 @@ export default class ClassService implements IClassService {
         for (const channel of CLASS_CHANNELS) {
             const created = await this.channelProvider.createChannel({
                 guildId: guildId,
-                name: channel.name,
+                name: channel.name.replace(ROLE_NAME_REPLACEMENT, className),
                 type: channel.type as ChannelType,
                 parentId: category.id,
                 position: channel.position,
