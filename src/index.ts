@@ -264,7 +264,7 @@ async function bootstrap(): Promise<void> {
         }
 
         for (const command of commands) {
-            const commandHash = Bun.SHA256.hash(command.constructor.toString(), 'hex');
+            const commandHash = Bun.SHA256.hash(JSON.stringify(command.build().toJSON()), 'hex');
 
             const storedCommand = await commandHashRepository.getCommandByName(command.build().name);
 
