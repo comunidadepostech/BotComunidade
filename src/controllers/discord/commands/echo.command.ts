@@ -203,8 +203,8 @@ export default class EchoCommand implements ICommand, IController {
                     if (editSubmit.isFromMessage()) {
                         await editSubmit.update(renderUI());
                     }
-                } catch (error) {
-                    console.warn('Edição cancelada ou tempo esgotado ', error);
+                } catch {
+                    this.logger.warn('Edição cancelada ou tempo esgotado ');
                 }
             } else if (itr.customId === 'btn_send' && itr.isButton()) {
                 if (!selectedChannel) return; // Fallback
