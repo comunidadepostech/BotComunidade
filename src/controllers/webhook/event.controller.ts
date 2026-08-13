@@ -46,7 +46,7 @@ export default class WebhookEventController implements IController {
 
                 const channelId = (await this.channelService.getAllChannelsByGuildId(guildId)).find(
                     (channel) =>
-                        channel.name === `${STUDY_GROUP_CHANNEL_NAME} ${result.turma}` && 
+                        channel.name === `${STUDY_GROUP_CHANNEL_NAME.replace('{cargo}', result.turma)}` &&
                         channel.parent?.name === result.turma,
                 )?.id;
 
