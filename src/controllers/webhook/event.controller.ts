@@ -66,7 +66,7 @@ export default class WebhookEventController implements IController {
 
                 const eventId = await this.eventService.createEvent({
                     name: result.nomeEvento,
-                    description: defaultEventDescription[result.tipo]!,
+                    description: defaultEventDescription[result.tipo]!.replaceAll("{link}", result.link),
                     entityType: entityType.voice,
                     image: Buffer.from(this.backgroundImage),
                     scheduledStartTime: result.data_hora,
