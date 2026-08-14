@@ -46,7 +46,7 @@ export default class WebhookEventController implements IController {
 
                 const channelId = (await this.channelService.getAllChannelsByGuildId(guildId)).find(
                     (channel) =>
-                        channel.name === `${STUDY_GROUP_CHANNEL_NAME} ${result.turma}` && 
+                        channel.name === `${STUDY_GROUP_CHANNEL_NAME.replace('{cargo}', result.turma)}` &&
                         channel.parent?.name === result.turma,
                 )?.id;
 
@@ -66,7 +66,7 @@ export default class WebhookEventController implements IController {
 
                 const eventId = await this.eventService.createEvent({
                     name: `${result.turma} - ${result.nomeEvento}`,
-                    description: defaultEventDescription[result.tipo]!,
+                    description: defaultEventDescription[result.tipo]!.replaceAll("{link}", result.link),
                     entityType: entityType.voice,
                     image: Buffer.from(this.backgroundImage),
                     scheduledStartTime: result.data_hora,
