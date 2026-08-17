@@ -3,7 +3,7 @@ export const defaultEventDescription: { [key: string]: string } = {
         " \n" +
         "Temos um encontro marcado, onde você terá a oportunidade de compartilhar seus conhecimentos, discutir suas dificuldades e contribuir para um ambiente positivo de estudos. \n" +
         "\n" +
-        "Segue o link para a mentoria: {link}\n" +
+        "Segue o link para o grupo de estudos: {link}\n" +
         "\n" +
         "Não perca o bate papo do Grupo de Estudos!\n" +
         " \n" +
