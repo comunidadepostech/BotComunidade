@@ -31,7 +31,7 @@ export default class EventCommand implements ICommand, IController {
             )
             .addStringOption((option) => option.setName('end-time').setDescription('Hora (HH:mm)').setRequired(true))
             .addStringOption((option) =>
-                option.setName('description').setDescription('Descrição do evento').setRequired(true),
+                option.setName('description').setDescription('Descrição do evento (use \\n para pular a linha)').setRequired(true),
             )
             .addStringOption((option) =>
                 option.setName('link').setDescription('Link do evento ou localização').setRequired(true),
@@ -42,7 +42,7 @@ export default class EventCommand implements ICommand, IController {
             .addStringOption((option) =>
                 option
                     .setName('replicate-to')
-                    .setDescription('Define os servider em que o evento deve se replicar')
+                    .setDescription('Define os IDs dos servidores em que o evento deve se replicar (use ; sem espaço para separar)')
                     .setRequired(false),
             )
             .setContexts(InteractionContextType.Guild);
@@ -67,6 +67,8 @@ export default class EventCommand implements ICommand, IController {
             return;
         }
 
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
         const response = await fetch(background.url);
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
@@ -82,6 +84,6 @@ export default class EventCommand implements ICommand, IController {
             entityType: entityType.external
         });
 
-        await interaction.reply({ content: '✅ Evento criado com sucesso!', flags: MessageFlags.Ephemeral });
+        await interaction.editReply({ content: '✅ Evento criado com sucesso!' });
     }
 }
