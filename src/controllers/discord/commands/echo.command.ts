@@ -38,7 +38,7 @@ export default class EchoCommand implements ICommand, IController {
         return new SlashCommandBuilder()
             .setName('echo')
             .setDescription('Cria uma mensagem com quebras de linha reais e escolhe o destino após redigir.')
-            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
             .setContexts(InteractionContextType.Guild);
     }
 
