@@ -3,6 +3,7 @@ import type IController from '../../types/interfaces/controller.interface';
 import type ILoggerService from '../../types/services/loggerService.interface';
 import type IMemberService from '../../types/services/memberService.interface';
 import type IFeatureFlagsService from '../../types/services/featureFlagsService.interface';
+import { STUDENT_ROLE_NAME_PREFIX } from '../../utils/constants/discordConstants';
 
 export default class TotalMembersCountController implements IController {
     constructor(private logger: ILoggerService, private memberService: IMemberService, private client: Client, private flagsService: IFeatureFlagsService) {}
@@ -20,12 +21,18 @@ export default class TotalMembersCountController implements IController {
             for (const [roleId, total] of roles) {
                 const role = await completeGuild.roles.fetch(roleId);
 
-                if (!role!.name.split('Estudantes ')[1]) {
-                    this.logger.warn(`Skipped ${role!.name} because it doesn't fit the pattern ("Estudantes {className}")`)
-                    continue
+                if (!role!.name.split(STUDENT_ROLE_NAME_PREFIX + " ")[1]) {
+                    this.logger.warn(
+                        `Skipped ${role!.name} because it doesn't fit the pattern ("Estudantes {className}")`,
+                    );
+                    continue;
                 }
                 
-                await this.memberService.saveTotalMembers(role!.name.split('Estudantes ')[1]!, guild.name, total);
+                await this.memberService.saveTotalMembers(
+                    role!.name.split(STUDENT_ROLE_NAME_PREFIX + " ")[1]!,
+                    guild.name,
+                    total,
+                );
             }
         }
     }

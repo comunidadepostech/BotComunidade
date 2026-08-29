@@ -5,7 +5,7 @@ import env from '../../config/env';
 import { AppError, ChannelNotFoundError } from '../../types/errors.types';
 import type IGuildService from '../../types/services/guildService.interface';
 import type IChannelService from '../../types/services/channelService.interface';
-import { CHAT_CHANNEL_NAME } from '../../utils/constants/discordConstants';
+import { CHAT_CHANNEL_NAME, STUDENT_ROLE_NAME_PREFIX } from '../../utils/constants/discordConstants';
 import type IMessageService from '../../types/services/messageService.interface';
 import type IRoleService from '../../types/services/roleService.interface';
 import type IFeatureFlagsService from '../../types/services/featureFlagsService.interface';
@@ -54,7 +54,7 @@ export default class WebhookLiveFormsController implements IController {
 
             if (!channel) throw new ChannelNotFoundError(CHAT_CHANNEL_NAME, this.constructor.name);
 
-            const roleId = await this.roleService.getRoleIdByName(guildId, 'Estudantes ' + className);
+            const roleId = await this.roleService.getRoleIdByName(guildId, STUDENT_ROLE_NAME_PREFIX + className);
 
             const messageId = await this.messageService.sendMessage(
                 channel,

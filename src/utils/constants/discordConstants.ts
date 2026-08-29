@@ -18,6 +18,7 @@ export const STUDY_GROUP_POSSIBLE_NAMES = [
     'Sala de Estudos',
 ];
 export const ROLE_NAME_REPLACEMENT = '{cargo}';
+export const STUDENT_ROLE_NAME_PREFIX = 'Estudantes';
 
 export const PROFESSOR_CHANNEL_PERMISSIONS = {
     allow: [

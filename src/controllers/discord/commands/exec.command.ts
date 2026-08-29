@@ -13,6 +13,7 @@ import type OnlineMembersCountController from '../../scheduler/onlineMembersCoun
 import type TotalMembersCountController from '../../scheduler/totalMembersCount.controller.ts';
 import type EventVerificationController from '../../scheduler/eventVerification.controller.ts';
 import type EventMessageDeleteController from '../../scheduler/eventMessageDelete.controller.ts';
+import type DuplicatedStudentRolesController from '../../scheduler/duplicatedStudentRoles.controller.ts';
 
 export default class ExecCommand implements ICommand, IController {
     constructor(
@@ -20,7 +21,8 @@ export default class ExecCommand implements ICommand, IController {
         private onlineMemberCount: OnlineMembersCountController,
         private totalMembersCount: TotalMembersCountController,
         private eventVerification: EventVerificationController,
-        private eventMessageDelete: EventMessageDeleteController
+        private eventMessageDelete: EventMessageDeleteController,
+        private duplicatedStudentRoles: DuplicatedStudentRolesController
     ) {}
 
     build(): SlashCommandOptionsOnlyBuilder {
@@ -43,6 +45,10 @@ export default class ExecCommand implements ICommand, IController {
                         {
                             name: 'Limpeza de mensagens de aviso',
                             value: 'Limpeza de mensagens de aviso',
+                        },
+                        {
+                            name: 'Remoção de cargos de estudantes duplicados',
+                            value: 'Remoção de cargos de estudantes duplicados',
                         },
                     ),
             )
@@ -72,6 +78,9 @@ export default class ExecCommand implements ICommand, IController {
                 break;
             case 'Limpeza de mensagens de aviso':
                 await this.eventMessageDelete.handle()
+                break;
+            case 'Remoção de cargos de estudantes duplicados':
+                await this.duplicatedStudentRoles.handle()
                 break;
         }
 

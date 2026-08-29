@@ -5,7 +5,7 @@ import { AppError } from '../../types/errors.types';
 import type IGuildService from '../../types/services/guildService.interface';
 import type IChannelService from '../../types/services/channelService.interface';
 import type IMessageService from '../../types/services/messageService.interface';
-import { WARNING_CHANNEL_NAME } from '../../utils/constants/discordConstants';
+import { STUDENT_ROLE_NAME_PREFIX, WARNING_CHANNEL_NAME } from '../../utils/constants/discordConstants';
 import type IRoleService from '../../types/services/roleService.interface';
 import { validateWebhookRequest } from '../../utils/webhook.helper';
 
@@ -43,7 +43,10 @@ export default class WebhookMessageController implements IController {
             }
 
             if (result.mensagem.includes('{cargo}')) {
-                const roleId = await this.roleService.getRoleIdByName(guildId, 'Estudantes ' + result.turma)
+                const roleId = await this.roleService.getRoleIdByName(
+                    guildId,
+                    `${STUDENT_ROLE_NAME_PREFIX} ` + result.turma,
+                );
                 result.mensagem = result.mensagem.replaceAll('{cargo}', `<@&${roleId}>`);
             }
 

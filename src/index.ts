@@ -17,6 +17,7 @@ import EventMessageDeleteController from './controllers/scheduler/eventMessageDe
 import EventVerificationController from './controllers/scheduler/eventVerification.controller.ts';
 import OnlineMembersCountController from './controllers/scheduler/onlineMembersCount.controller.ts';
 import TotalMembersCountController from './controllers/scheduler/totalMembersCount.controller.ts';
+import DuplicatedStudentRolesController from './controllers/scheduler/duplicatedStudentRoles.controller.ts';
 import DatabaseConnection from './infrastructure/database/prisma/database.client.ts';
 import DiscordAdapter from './infrastructure/adapters/discord.adapter.ts';
 import WebhookLiveFormsController from './controllers/webhook/liveForms.controller.ts';
@@ -111,7 +112,7 @@ async function bootstrap(): Promise<void> {
     const hashingService = new HashingService();
     const memberService = new MemberService(memberRepository);
     const channelService = new ChannelService(discordAdapter);
-    const roleService = new RoleService(discordAdapter);
+    const roleService = new RoleService(discordAdapter, discordAdapter);
 
     // Sync the cache and check the flags
     await guildService.syncGuilds();
@@ -136,6 +137,13 @@ async function bootstrap(): Promise<void> {
         featureFlagsService,
     );
 
+    const duplicatedStudentRolesController = new DuplicatedStudentRolesController(
+        logger,
+        roleService,
+        discordClient,
+        featureFlagsService,
+    );
+
     // Slash commands
     const createClassCommand = new CreateclassCommand(featureFlagsService, classService);
     const echoCommand = new EchoCommand(messageService, logger);
@@ -148,6 +156,7 @@ async function bootstrap(): Promise<void> {
         totalMembersCountController,
         eventVerificationController,
         eventMessageDeleteController,
+        duplicatedStudentRolesController,
     );
     const getPollHashCommand = new GetPollHashMenuCommand(hashingService);
     const helpCommand = new HelpCommand();
@@ -303,6 +312,12 @@ async function bootstrap(): Promise<void> {
     Bun.cron(`*/${env.ONLINE_MEMBERS_COUNT_DELAY_IN_MINUTES} * * * *`, async () => {
         logger.info('Online members count executed by scheduler');
         await onlineMembersCountController
+            .handle()
+            .catch((error) => logger.error(error.message, { stacktrace: error.stack }));
+    });
+    Bun.cron('0 0 * * 0', async () => {
+        logger.info('Duplicated student roles removal executed by scheduler');
+        await duplicatedStudentRolesController
             .handle()
             .catch((error) => logger.error(error.message, { stacktrace: error.stack }));
     });

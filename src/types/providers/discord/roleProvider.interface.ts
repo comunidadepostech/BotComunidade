@@ -18,6 +18,15 @@ export default interface IRoleProvider {
     removeRole(guildId: string, roleId: string): Promise<void>;
 
     /**
+     * Remove one or more roles from a guild member.
+     *
+     * @param guildId Id of the guild
+     * @param memberId Id of the member
+     * @param roleIds Ids of the roles to remove from the member
+     */
+    removeRolesFromMember(guildId: string, memberId: string, roleIds: string[]): Promise<void>;
+
+    /**
      * Get a role ID by its name.
      *
      * @param guildId Id of the guild

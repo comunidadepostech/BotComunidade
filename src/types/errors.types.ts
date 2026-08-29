@@ -88,3 +88,9 @@ export class MessageNotFoundError extends AppError {
         super(`The message id ${messageId} was not found in ${channelNameOrId} during ${event} execution`);
     }
 }
+
+export class MemberNotFoundError extends AppError {
+    constructor(memberNameOrId: string, guildNameOrId: string, event: string) {
+        super(`Member ${memberNameOrId} was not found in ${guildNameOrId} during ${event} execution`);
+    }
+}
