@@ -12,6 +12,7 @@ import {
     PROFESSOR_ROLE_NAMES,
     QUESTIONS_CHANNEL_NAME,
     ROLE_NAME_REPLACEMENT,
+    STUDENT_ROLE_NAME_PREFIX,
     STUDENT_ROLE_PERMISSIONS,
     STUDENTS_NORMAL_CHANNEL_PERMISSIONS,
     STUDENTS_STRICT_CHANNEL_PERMISSIONS,
@@ -30,7 +31,7 @@ export default class ClassService implements IClassService {
         // Create a class role in the guild
         const classRole = await this.roleProvider.createRole({
             guildId,
-            roleName: `Estudantes ${className}`,
+            roleName: `${STUDENT_ROLE_NAME_PREFIX}s ${className}`,
             color: 3447003,
             hoist: true,
             mentionable: true,

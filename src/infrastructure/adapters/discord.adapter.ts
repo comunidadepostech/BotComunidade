@@ -24,6 +24,7 @@ import {
     GuildNotFoundError,
     IncompatibleChannelError,
     InvalidChannelTypeError,
+    MemberNotFoundError,
     MessageNotFoundError,
     RoleNotFoundError,
 } from '../../types/errors.types';
@@ -40,6 +41,7 @@ import type IChannelCreationDTO from '../../types/dtos/channelCreation.dto';
 import type IThreadProvider from '../../types/providers/discord/threadProvider.interface';
 import type { Event } from '../../types/event.type';
 import type { Message } from '../../types/message.type';
+import type { MemberWithRoles } from '../../types/member.type';
 import type { MessageAction } from '../../types/component.types';
 
 export default class DiscordAdapter
@@ -454,6 +456,34 @@ export default class DiscordAdapter
         if (!guild) throw new GuildNotFoundError(guildId, this.listMembers.name);
 
         return guild.members.cache.map((member) => ({ username: member.user.username, id: member.user.id }));
+    }
+
+    async listMembersWithRoles(guildId: string): Promise<MemberWithRoles[]> {
+        const guild = await this.client.guilds.fetch(guildId);
+
+        if (!guild) throw new GuildNotFoundError(guildId, this.listMembersWithRoles.name);
+
+        const members = await guild.members.fetch();
+
+        return members.map((member) => ({
+            id: member.id,
+            username: member.user.username,
+            roles: member.roles.cache
+                .filter((role) => role.id !== guild.roles.everyone.id)
+                .map((role) => ({ id: role.id, name: role.name, guild: { id: guild.id, name: guild.name } })),
+        }));
+    }
+
+    async removeRolesFromMember(guildId: string, memberId: string, roleIds: string[]): Promise<void> {
+        const guild = await this.client.guilds.fetch(guildId);
+
+        if (!guild) throw new GuildNotFoundError(guildId, this.removeRolesFromMember.name);
+
+        const member = await guild.members.fetch(memberId);
+
+        if (!member) throw new MemberNotFoundError(memberId, guild.name, this.removeRolesFromMember.name);
+
+        await member.roles.remove(roleIds);
     }
 
     async createRole(dto: RoleCreationDTO): Promise<Role> {

@@ -17,7 +17,7 @@ import type MessageSaveDTO from '../types/dtos/messageSave.dto';
 import type SavePollMessageDTO from '../types/dtos/savePollMessage.dto';
 import type IWarningRepository from '../types/repositories/warningRepository.interface';
 import type IRoleProvider from '../types/providers/discord/roleProvider.interface';
-import { WARNING_CHANNEL_NAME } from '../utils/constants/discordConstants';
+import { STUDENT_ROLE_NAME_PREFIX, WARNING_CHANNEL_NAME } from '../utils/constants/discordConstants';
 import env from '../config/env';
 import type { Event } from '../types/event.type';
 import type VacancyDTO from '../types/dtos/vacancy.dto';
@@ -242,7 +242,7 @@ export default class MessageService implements IMessageService {
 
                 const roleId = await this.roleProvider.getRoleIdByName(
                     event.location.guild.id,
-                    `Estudantes ${parentName}`,
+                    `${STUDENT_ROLE_NAME_PREFIX} ${parentName}`,
                 );
 
                 const targetChannel = (
@@ -275,7 +275,7 @@ export default class MessageService implements IMessageService {
 
                 const roleId = await this.roleProvider.getRoleIdByName(
                     event.guildId,
-                    `Estudantes ${channel.parent!.name}`,
+                    `${STUDENT_ROLE_NAME_PREFIX} ${channel.parent!.name}`,
                 );
 
                 const messageId = await this.messageProvider.sendMessage(
