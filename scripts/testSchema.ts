@@ -1,11 +1,9 @@
-import { readdir } from 'node:fs/promises';
-
 const CONTAINER = 'postgres-test';
 const PORT = 5434;
 const DATABASE_URL = `postgresql://root:root@localhost:${PORT}/bot_test`;
 
-async function run(cmd: string[]): Promise<number> {
-    const proc = Bun.spawn(cmd, { stdout: 'inherit', stderr: 'inherit' });
+async function run(cmd: string[], env?: Record<string, string>): Promise<number> {
+    const proc = Bun.spawn(cmd, { stdout: 'inherit', stderr: 'inherit', env: { ...process.env, ...env } });
 
     return await proc.exited;
 }
@@ -17,16 +15,6 @@ async function isReady(): Promise<boolean> {
     });
 
     return (await proc.exited) === 0;
-}
-
-async function hasOnDiskMigrations(): Promise<boolean> {
-    try {
-        const entries = await readdir('migrations/app', { withFileTypes: true });
-
-        return entries.some((entry) => entry.isDirectory() && entry.name !== 'refs');
-    } catch {
-        return false;
-    }
 }
 
 await run(['docker', 'rm', '-f', CONTAINER]);
@@ -63,23 +51,12 @@ try {
         await Bun.sleep(1000);
     }
 
-    const replayMigrations = await hasOnDiskMigrations();
-
-    console.log(
-        replayMigrations
-            ? '\n> Reproduzindo as migrações on-disk em ordem (db migrate)\n'
-            : '\n> Sem migrações on-disk; construindo o schema a partir do contrato (db init)\n',
-    );
-
-    const build = replayMigrations
-        ? ['bunx', 'prisma', 'db', 'migrate', '--yes', '--db', DATABASE_URL]
-        : ['bunx', 'prisma', 'db', 'init', '--yes', '--db', DATABASE_URL];
-
-    status = await run(build);
+    console.log('\n> Aplicando src/db/schema.ts no banco limpo (drizzle-kit push)\n');
+    status = await run(['bunx', 'drizzle-kit', 'push', '--force'], { DATABASE_URL });
 
     if (status === 0) {
-        console.log('\n> Conferindo o schema construído contra o contrato (db verify)\n');
-        status = await run(['bunx', 'prisma', 'db', 'verify', '--db', DATABASE_URL]);
+        console.log('\n> Round-trip de escrita/leitura em cada tabela\n');
+        status = await run(['bun', 'run', 'scripts/smokeTest.ts'], { DATABASE_URL });
     }
 } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));

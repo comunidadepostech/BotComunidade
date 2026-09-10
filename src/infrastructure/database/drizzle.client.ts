@@ -1,15 +1,13 @@
-import { db, type Database } from '../../../prisma/db.ts';
-import type ILoggerService from '../../../types/services/loggerService.interface.ts';
+import { sql } from 'drizzle-orm';
+import { db, pool, type Database } from '../../db/index.ts';
+import type ILoggerService from '../../types/services/loggerService.interface.ts';
 
 export default class DatabaseConnection {
     constructor(private logger: ILoggerService) {}
 
     async connect(): Promise<Database> {
         try {
-            const runtime = await db.connect();
-            const healthCheck = db.raw.sql`SELECT 1 AS ok`.returnsRow({ ok: 'pg/int4@1' }).build();
-
-            await runtime.execute(healthCheck);
+            await db.execute(sql`SELECT 1`);
 
             this.logger.info('Database connected');
         } catch (error) {
@@ -21,6 +19,6 @@ export default class DatabaseConnection {
     }
 
     async disconnect(): Promise<void> {
-        await db.close();
+        await pool.end();
     }
 }

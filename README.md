@@ -22,21 +22,23 @@ Para garantir que o Bot funcione como esperado é de extrema importência que vo
 
 ### 2. Aplica as migrações pendentes no banco de dados de PROD
 
-`bunx prisma db migrate`
+`bun run db:migrate`
 
 ### 3. Inicia a aplicação
 
 `bun start`
 
-## Desenvolvimento
+# Desenvolvimento
+
+## Configurando o projeto localmente
 
 ### 1. Instala dependências do projeto
 
 `bun i -d --frozen-lockfile`
 
-### 2. Sincroniza o banco de dados de DEV com o contrato
+### 2. Sincroniza o banco de dados de DEV com o schema
 
-`bunx prisma db update`
+`bunx drizzle-kit push`
 
 ### 3. Inicia a aplicação
 
@@ -44,17 +46,20 @@ Para garantir que o Bot funcione como esperado é de extrema importência que vo
 
 ## Alterando o schema
 
-O schema vive em `src/prisma/contract.prisma`. O ciclo é:
+O schema vive em `src/db/schema.ts` — é TypeScript comum, e é a mesma definição
+que o runtime usa nas queries. O ciclo é:
 
-1. Edita o contrato
-2. `bunx prisma contract emit` — regera `contract.json` e `contract.d.ts` (o hook de pre-commit cobra isso)
-3. `bunx prisma db update` — aplica no banco de DEV
-4. `bunx prisma migration plan --name <slug>` — gera a migração que vai para PROD
-5. `bun run test:schema` — reproduz as migrações num Postgres limpo em Docker e confere contra o contrato
+1. Edita `src/db/schema.ts`
+2. `bun run db:generate` — gera a migração SQL em `drizzle/` (o hook de pre-commit cobra isso)
+3. `bunx drizzle-kit push` — aplica no banco de DEV
+4. `bun run test:schema` — sobe um Postgres limpo em Docker, aplica o schema e roda um round-trip em cada repositório
 
-Comandos úteis: `bunx prisma migration status`, `bunx prisma db verify`.
+O baseline `drizzle/0000_*.sql` veio do `drizzle-kit pull` e foi tornado idempotente
+(`CREATE TABLE IF NOT EXISTS`): no banco de PROD, que já tinha as tabelas quando o
+projeto adotou o Drizzle, ele não cria nada e apenas se registra como aplicado; num
+banco vazio ele cria o schema inteiro. Os dois caminhos são cobertos pelo `test:schema`.
 
-# Desenvolvimento
+Comandos úteis: `bun run db:check` (consistência das migrações), `bunx drizzle-kit studio`.
 
 ## Informações gerais
 

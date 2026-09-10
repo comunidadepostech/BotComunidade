@@ -12,12 +12,10 @@
     "license": "ISC",
     "dependencies": {
         "@napi-rs/canvas": "^1.0.6",
-        "@prisma/cli-engine": "0.2.3",
-        "@prisma/orm-postgres": "8.0.0-rc.9",
         "discord.js": "^14.27.0",
         "dotenv": "^17.4.2",
-        "prisma": "8.0.0-rc.10",
-        "typescript": "^6.0.3",
+        "drizzle-orm": "0.45.2",
+        "pg": "^8.23.0",
         "winston": "^3.19.0",
         "zod": "^4.4.3"
     },
@@ -25,6 +23,8 @@
         "@eslint/js": "^10.0.1",
         "@types/bun": "^1.4.0",
         "@types/node": "^26.2.0",
+        "@types/pg": "^8.23.1",
+        "drizzle-kit": "0.31.10",
         "eslint": "^10.8.0",
         "eslint-config-flat-gitignore": "^2.3.0",
         "eslint-config-prettier": "^10.1.8",
@@ -34,13 +34,16 @@
         "husky": "^9.1.7",
         "lint-staged": "^17.3.0",
         "prettier": "^3.9.6",
+        "typescript": "^6.0.3",
         "typescript-eslint": "^8.67.0"
     },
     "scripts": {
         "prepare": "husky || true",
         "start": "bun src/index.ts",
-        "dev": "bunx prisma contract emit && bun eslint --cache --quiet && bunx tsc --noEmit --pretty && bun run src/index.ts",
-        "db:verify": "bunx prisma db verify",
+        "dev": "bun eslint --cache --quiet && bunx tsc --noEmit --pretty && bun run src/index.ts",
+        "db:generate": "bunx drizzle-kit generate",
+        "db:migrate": "bun run scripts/migrate.ts",
+        "db:check": "bunx drizzle-kit check",
         "test:schema": "bun run scripts/testSchema.ts"
     }
 }

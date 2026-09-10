@@ -6,7 +6,6 @@
         "usernamehw.errorlens",
         "YoavBls.pretty-ts-errors",
         "oven.bun-vscode",
-        "prisma.prisma",
         "tamasfe.even-better-toml"
     ]
 }

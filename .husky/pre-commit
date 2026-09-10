@@ -3,15 +3,20 @@ set -e
 
 bun lint-staged
 
-if git diff --cached --name-only | grep -qE '^(src/prisma/|prisma\.config\.ts$)'; then
-  if ! emit_output=$(bunx prisma contract emit --quiet 2>&1); then
-    echo "$emit_output" >&2
+if git diff --cached --name-only | grep -q '^src/db/schema\.ts$'; then
+  if ! generate_output=$(bunx drizzle-kit generate 2>&1); then
+    echo "$generate_output" >&2
     exit 1
   fi
 
-  if ! git diff --quiet -- src/prisma/contract.json src/prisma/contract.d.ts; then
-    echo "Artefatos do contrato desatualizados." >&2
-    echo "Rode 'bunx prisma contract emit' e inclua src/prisma/contract.json e src/prisma/contract.d.ts no commit." >&2
+  pend=$(
+    git diff --name-only -- drizzle/
+    git ls-files --others --exclude-standard -- drizzle/
+  )
+
+  if [ -n "$pend" ]; then
+    echo "Schema has changed without any migration!" >&2
+    echo "$pend" >&2
     exit 1
   fi
 fi
