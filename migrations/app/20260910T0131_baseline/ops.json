@@ -1,0 +1,451 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.classes",
+    "label": "Create table \"classes\"",
+    "summary": "Creates table \"classes\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "classes"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"classes\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"classes\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"classes\"",
+        "sql": "CREATE TABLE \"public\".\"classes\" (\n  \"class\" text NOT NULL,\n  \"guild_name\" text NOT NULL,\n  \"quantity\" int4\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"classes\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"classes\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.command_hashes",
+    "label": "Create table \"command_hashes\"",
+    "summary": "Creates table \"command_hashes\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "command_hashes"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"command_hashes\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"command_hashes\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"command_hashes\"",
+        "sql": "CREATE TABLE \"public\".\"command_hashes\" (\n  \"command_name\" text NOT NULL,\n  \"file_hash\" text NOT NULL,\n  CONSTRAINT \"command_hashes_pkey\" PRIMARY KEY (\"command_name\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"command_hashes\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"command_hashes\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.discord_event_warnings",
+    "label": "Create table \"discord_event_warnings\"",
+    "summary": "Creates table \"discord_event_warnings\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "discord_event_warnings"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"discord_event_warnings\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"discord_event_warnings\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"discord_event_warnings\"",
+        "sql": "CREATE TABLE \"public\".\"discord_event_warnings\" (\n  \"channel_id\" text NOT NULL,\n  \"event_id\" text NOT NULL,\n  \"message_id\" text NOT NULL,\n  CONSTRAINT \"discord_event_warnings_pkey\" PRIMARY KEY (\"message_id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"discord_event_warnings\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"discord_event_warnings\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.featureFlags",
+    "label": "Create table \"featureFlags\"",
+    "summary": "Creates table \"featureFlags\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "featureFlags"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"featureFlags\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"featureFlags\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"featureFlags\"",
+        "sql": "CREATE TABLE \"public\".\"featureFlags\" (\n  \"flags\" jsonb,\n  \"guild_id\" text NOT NULL,\n  CONSTRAINT \"featureFlags_pkey\" PRIMARY KEY (\"guild_id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"featureFlags\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"featureFlags\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.guilds",
+    "label": "Create table \"guilds\"",
+    "summary": "Creates table \"guilds\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "guilds"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"guilds\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"guilds\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"guilds\"",
+        "sql": "CREATE TABLE \"public\".\"guilds\" (\n  \"clusters\" text,\n  \"guild_id\" text NOT NULL,\n  \"guild_name\" text NOT NULL,\n  CONSTRAINT \"guilds_pkey\" PRIMARY KEY (\"guild_name\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"guilds\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"guilds\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.interactions",
+    "label": "Create table \"interactions\"",
+    "summary": "Creates table \"interactions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "interactions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"interactions\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"interactions\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"interactions\"",
+        "sql": "CREATE TABLE \"public\".\"interactions\" (\n  \"category\" text,\n  \"channel_name\" text NOT NULL,\n  \"dt\" timestamp(0) DEFAULT (now()),\n  \"guild_name\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"message\" text NOT NULL,\n  \"message_id\" text NOT NULL,\n  \"role_name\" text,\n  \"thread_name\" text,\n  \"user_name\" text NOT NULL,\n  CONSTRAINT \"interactions_pkey\" PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"interactions\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"interactions\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.online_members",
+    "label": "Create table \"online_members\"",
+    "summary": "Creates table \"online_members\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "online_members"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"online_members\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"online_members\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"online_members\"",
+        "sql": "CREATE TABLE \"public\".\"online_members\" (\n  \"dt\" timestamp(0) NOT NULL,\n  \"quantity\" int4 NOT NULL,\n  CONSTRAINT \"online_members_pkey\" PRIMARY KEY (\"dt\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"online_members\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"online_members\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.polls",
+    "label": "Create table \"polls\"",
+    "summary": "Creates table \"polls\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "polls"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"polls\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"polls\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"polls\"",
+        "sql": "CREATE TABLE \"public\".\"polls\" (\n  \"category\" text NOT NULL,\n  \"dt\" timestamp(0) DEFAULT (now()),\n  \"guild_name\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"poll_hash\" text,\n  \"poll_question\" text NOT NULL,\n  \"response10_text\" text,\n  \"response10_value\" int4,\n  \"response1_text\" text NOT NULL,\n  \"response1_value\" int4 NOT NULL,\n  \"response2_text\" text NOT NULL,\n  \"response2_value\" int4 NOT NULL,\n  \"response3_text\" text,\n  \"response3_value\" int4,\n  \"response4_text\" text,\n  \"response4_value\" int4,\n  \"response5_text\" text,\n  \"response5_value\" int4,\n  \"response6_text\" text,\n  \"response6_value\" int4,\n  \"response7_text\" text,\n  \"response7_value\" int4,\n  \"response8_text\" text,\n  \"response8_value\" int4,\n  \"response9_text\" text,\n  \"response9_value\" int4,\n  CONSTRAINT \"polls_pkey\" PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"polls\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"polls\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.zoom_meetings",
+    "label": "Create table \"zoom_meetings\"",
+    "summary": "Creates table \"zoom_meetings\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "zoom_meetings"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"zoom_meetings\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"zoom_meetings\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"zoom_meetings\"",
+        "sql": "CREATE TABLE \"public\".\"zoom_meetings\" (\n  \"created_at\" timestamp(0) NOT NULL,\n  \"department\" text,\n  \"duration_in_minutes\" int4 NOT NULL,\n  \"ended_at\" timestamp(0) NOT NULL,\n  \"host_email\" text NOT NULL,\n  \"host_name\" text,\n  \"id\" SERIAL NOT NULL,\n  \"max_entries\" int4 NOT NULL,\n  \"max_simultaneous_views\" int4 DEFAULT 0 NOT NULL,\n  \"max_unique_views\" int4 NOT NULL,\n  \"meeting_id\" text NOT NULL,\n  \"meeting_type\" text NOT NULL,\n  \"metting_creation_source\" text NOT NULL,\n  \"metting_group\" text,\n  \"place\" text,\n  \"started_at\" timestamp(0) NOT NULL,\n  \"title\" text NOT NULL,\n  \"total_participants_minutes\" int4 NOT NULL,\n  CONSTRAINT \"zoom_meetings_pkey\" PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"zoom_meetings\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"zoom_meetings\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.classes.class",
+    "label": "Add unique constraint on \"classes\" (class)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "class",
+        "table": "classes"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"class\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "class",
+          "public",
+          "\"public\".\"classes\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"class\"",
+        "sql": "ALTER TABLE \"public\".\"classes\" ADD CONSTRAINT \"class\" UNIQUE (\"class\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"class\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "class",
+          "public",
+          "\"public\".\"classes\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.interactions.idx_message_id",
+    "label": "Create index \"idx_message_id\" on \"interactions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "idx_message_id",
+        "table": "interactions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"idx_message_id\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"idx_message_id\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"idx_message_id\"",
+        "sql": "CREATE INDEX \"idx_message_id\" ON \"public\".\"interactions\" (\"message_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"idx_message_id\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"idx_message_id\""
+        ]
+      }
+    ]
+  }
+]

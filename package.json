@@ -12,16 +12,17 @@
     "license": "ISC",
     "dependencies": {
         "@napi-rs/canvas": "^1.0.6",
+        "@prisma/cli-engine": "0.2.3",
         "@prisma/orm-postgres": "8.0.0-rc.9",
         "discord.js": "^14.27.0",
         "dotenv": "^17.4.2",
+        "prisma": "8.0.0-rc.10",
         "typescript": "^6.0.3",
         "winston": "^3.19.0",
         "zod": "^4.4.3"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
-        "@prisma/cli-engine": "0.2.3",
         "@types/bun": "^1.4.0",
         "@types/node": "^26.2.0",
         "eslint": "^10.8.0",
@@ -33,12 +34,11 @@
         "husky": "^9.1.7",
         "lint-staged": "^17.3.0",
         "prettier": "^3.9.6",
-        "prisma": "8.0.0-rc.10",
         "typescript-eslint": "^8.67.0"
     },
     "scripts": {
-        "prepare": "husky",
-        "start": "bunx prisma contract emit && bun src/index.ts",
+        "prepare": "husky || true",
+        "start": "bun src/index.ts",
         "dev": "bunx prisma contract emit && bun eslint --cache --quiet && bunx tsc --noEmit --pretty && bun run src/index.ts",
         "db:verify": "bunx prisma db verify",
         "test:schema": "bun run scripts/testSchema.ts"
