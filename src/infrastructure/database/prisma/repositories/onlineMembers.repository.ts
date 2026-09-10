@@ -1,31 +1,29 @@
-import { PrismaClient } from '../../../../../prisma/generated/client.ts';
+import type { Database } from '../../../../prisma/db.ts';
 import type IMembersRepository from '../../../../types/repositories/members.repository.ts';
 
+const BRAZIL_TIME_ZONE = 'America/Sao_Paulo';
+
 export default class MembersRepository implements IMembersRepository {
-    constructor(private db: PrismaClient) {}
+    constructor(private db: Database) {}
 
     async saveOnlineMembers(total: number): Promise<void> {
-        await this.db.online_members.create({
-            data: {
-                quantity: total,
-                dt: new Date(new Date().getTime() - (3 * 60 * 60 * 1000)).toISOString().slice(0, -1) + '-03:00', // Brazil fuse ISO string
-            },
+        await this.db.orm.public.OnlineMembers.create({
+            quantity: total,
+            dt: Temporal.Now.plainDateTimeISO(BRAZIL_TIME_ZONE).round({ smallestUnit: 'second' }),
         });
     }
 
     async saveTotalMembers(className: string, total: number, guild_name: string): Promise<void> {
-        await this.db.classes.upsert({
-            where: {
+        await this.db.orm.public.Classes.upsert({
+            create: {
                 class: className,
+                guild_name: guild_name,
+                quantity: total,
             },
             update: {
                 quantity: total,
             },
-            create: {
-                class: className,
-                guild_name: guild_name,
-                quantity: total
-            },
+            conflictOn: { class: className },
         });
     }
 }

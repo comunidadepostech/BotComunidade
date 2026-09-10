@@ -76,7 +76,8 @@ async function bootstrap(): Promise<void> {
     await discordClient.login(env.DISCORD_BOT_TOKEN).then(() => logger.info('Connected to Discord'));
 
     // Create Prisma client
-    const prismaClient = await new DatabaseConnection(logger).connect();
+    const databaseConnection = new DatabaseConnection(logger);
+    const prismaClient = await databaseConnection.connect();
 
     // Create Repositories
     const featureFlagsRepository = new FeatureFlagsRepository(prismaClient);
@@ -363,7 +364,7 @@ async function bootstrap(): Promise<void> {
     process.on('SIGINT', async () => {
         discordClient.removeAllListeners();
         await discordClient.destroy();
-        await prismaClient.$disconnect();
+        await databaseConnection.disconnect();
         await webhook.stop();
         logger.info('Process terminated gracefully!');
         process.exit(0);
@@ -371,7 +372,7 @@ async function bootstrap(): Promise<void> {
     process.on('SIGTERM', async () => {
         discordClient.removeAllListeners();
         await discordClient.destroy();
-        await prismaClient.$disconnect();
+        await databaseConnection.disconnect();
         await webhook.stop();
         logger.info('Process terminated gracefully!');
         process.exit(0);

@@ -2,6 +2,16 @@
 set -e
 
 bun lint-staged
-if git diff --cached --name-only | grep -q "^prisma/"; then
-  bun test:migrations
+
+if git diff --cached --name-only | grep -qE '^(src/prisma/|prisma\.config\.ts$)'; then
+  if ! emit_output=$(bunx prisma contract emit --quiet 2>&1); then
+    echo "$emit_output" >&2
+    exit 1
+  fi
+
+  if ! git diff --quiet -- src/prisma/contract.json src/prisma/contract.d.ts; then
+    echo "Artefatos do contrato desatualizados." >&2
+    echo "Rode 'bunx prisma contract emit' e inclua src/prisma/contract.json e src/prisma/contract.d.ts no commit." >&2
+    exit 1
+  fi
 fi

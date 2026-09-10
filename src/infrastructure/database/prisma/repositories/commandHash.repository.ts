@@ -1,21 +1,21 @@
 import type ICommandHashRepository from '../../../../types/repositories/commandHashRepository.interface';
-import { PrismaClient } from '../../../../../prisma/generated/client.ts';
+import type { Database } from '../../../../prisma/db.ts';
 
 export default class CommandHashRepository implements ICommandHashRepository {
-    constructor(private db: PrismaClient) {}
+    constructor(private db: Database) {}
 
     async getAllCommands(): Promise<{ command_name: string; file_hash: string }[]> {
-        return await this.db.command_hashes.findMany();
+        return await this.db.orm.public.CommandHashes.select('command_name', 'file_hash').all();
     }
 
     async getCommandByName(commandName: string): Promise<{ command_name: string; file_hash: string } | null> {
-        return await this.db.command_hashes.findUnique({
-            where: { command_name: commandName },
+        return await this.db.orm.public.CommandHashes.select('command_name', 'file_hash').first({
+            command_name: commandName,
         });
     }
 
     async saveCommand(commandName: string, hash: string): Promise<void> {
-        await this.db.command_hashes.upsert({
+        await this.db.orm.public.CommandHashes.upsert({
             create: {
                 command_name: commandName,
                 file_hash: hash,
@@ -23,32 +23,22 @@ export default class CommandHashRepository implements ICommandHashRepository {
             update: {
                 file_hash: hash,
             },
-            where: {
-                command_name: commandName,
-            },
         });
     }
 
     async deleteCommand(commandName: string | string[]): Promise<void> {
-        await this.db.command_hashes.deleteMany({
-            where: {
-                command_name: Array.isArray(commandName) ? { in: commandName } : commandName,
-            },
-        });
+        const names = Array.isArray(commandName) ? commandName : [commandName];
+
+        await this.db.orm.public.CommandHashes.where((command) => command.command_name.in(names)).deleteAndCount();
     }
 
     async clearAllCommands(): Promise<void> {
-        await this.db.command_hashes.deleteMany({});
+        await this.db.orm.public.CommandHashes.where((command) => command.command_name.isNotNull()).deleteAndCount();
     }
 
     async updateCommand(commandName: string, hash: string): Promise<void> {
-        await this.db.command_hashes.update({
-            where: {
-                command_name: commandName,
-            },
-            data: {
-                file_hash: hash,
-            },
+        await this.db.orm.public.CommandHashes.where({ command_name: commandName }).update({
+            file_hash: hash,
         });
     }
 }

@@ -17,6 +17,7 @@
     "noPropertyAccessFromIndexSignature": true,
     "exactOptionalPropertyTypes": false,
     "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
 
     // Qualidade de código
     "allowUnreachableCode": false,
