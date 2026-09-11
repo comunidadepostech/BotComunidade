@@ -2,6 +2,21 @@
 set -e
 
 bun lint-staged
-if git diff --cached --name-only | grep -q "^prisma/"; then
-  bun test:migrations
+
+if git diff --cached --name-only | grep -q '^src/db/schema\.ts$'; then
+  if ! generate_output=$(bunx drizzle-kit generate 2>&1); then
+    echo "$generate_output" >&2
+    exit 1
+  fi
+
+  pend=$(
+    git diff --name-only -- drizzle/
+    git ls-files --others --exclude-standard -- drizzle/
+  )
+
+  if [ -n "$pend" ]; then
+    echo "Schema has changed without any migration!" >&2
+    echo "$pend" >&2
+    exit 1
+  fi
 fi

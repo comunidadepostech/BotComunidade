@@ -20,81 +20,46 @@ Para garantir que o Bot funcione como esperado é de extrema importência que vo
 
 `bun i -p --frozen-lockfile`
 
-### 2. Aplica as migrações SQL pendentes no banco de dados de PROD
+### 2. Aplica as migrações pendentes no banco de dados de PROD
 
-`bunx prisma migrate deploy`
+`bun run db:migrate`
 
-### 3. Gera o Prisma Client com os tipos/métodos atualizados
-
-`bunx prisma generate`
-
-### 4. Inicia a aplicação
+### 3. Inicia a aplicação
 
 `bun start`
 
-## Desenvolvimento
+# Desenvolvimento
+
+## Configurando o projeto localmente
 
 ### 1. Instala dependências do projeto
 
 `bun i -d --frozen-lockfile`
 
-### 2. Aplica as migrações SQL pendentes no banco de dados de DEV
+### 2. Sincroniza o banco de dados de DEV com o schema
 
-`bunx prisma migrate dev`
+`bunx drizzle-kit push`
 
-### 3. Gera o Prisma Client com os tipos/métodos atualizados
-
-`bunx prisma generate`
-
-### 4. Inicia a aplicação
+### 3. Inicia a aplicação
 
 `bun dev`
 
-# Progresso de desenvolvimento atual
+## Alterando o schema
 
-- [x] inicialização
-  - [x] verificação dos comandos (hash e se diferente cadastrar novamente)
-  - [x] registro dos eventos
-  - [x] criação do webhook
-- [x] comandos
-  - [x] createClass
-  - [x] echo
-  - [x] edit
-  - [x] endPoll
-  - [x] event
-  - [x] exec
-  - [x] getPollHash
-  - [x] help
-  - [x] ping
-  - [x] poll
-  - [x] flags
-  - [x] invite
-- [x] eventos
-  - [x] clientReady
-  - [x] error
-  - [x] guildCreate
-  - [x] guildDelete
-  - [x] guildMemberAdd
-  - [x] interactionCreate
-  - [x] messageCreate
-  - [x] messageUpdate (poll)
-- [x] Webhook
-  - [x] Criação de evento
-  - [x] remoção de evento
-  - [x] Envio de enquete de live
-  - [x] Envio de mensagem programada
-  - [x] Envio de vagas
-- [x] N8N
-  - [x] salvamento de interações (mensagens)
-  - [x] salvamento de enquetes
-- [x] Scheduler
-  - [x] verificação de eventos
-  - [x] contagem de membros mensal
-  - [x] exclusão de avisos
-  - [x] limpeza de cache de eventos
-  - [x] contagem de membros a cada 15 minutos
+O schema vive em `src/db/schema.ts` — é TypeScript comum, e é a mesma definição
+que o runtime usa nas queries. O ciclo é:
 
-# Desenvolvimento
+1. Edita `src/db/schema.ts`
+2. `bun run db:generate` — gera a migração SQL em `drizzle/` (o hook de pre-commit cobra isso)
+3. `bunx drizzle-kit push` — aplica no banco de DEV
+4. `bun run test:schema` — sobe um Postgres limpo em Docker, aplica o schema e roda um round-trip em cada repositório
+
+O baseline `drizzle/0000_*.sql` veio do `drizzle-kit pull` e foi tornado idempotente
+(`CREATE TABLE IF NOT EXISTS`): no banco de PROD, que já tinha as tabelas quando o
+projeto adotou o Drizzle, ele não cria nada e apenas se registra como aplicado; num
+banco vazio ele cria o schema inteiro. Os dois caminhos são cobertos pelo `test:schema`.
+
+Comandos úteis: `bun run db:check` (consistência das migrações), `bunx drizzle-kit studio`.
 
 ## Informações gerais
 

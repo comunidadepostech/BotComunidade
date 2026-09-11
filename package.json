@@ -11,22 +11,21 @@
     },
     "license": "ISC",
     "dependencies": {
-        "@napi-rs/canvas": "^1.0.8",
-        "@prisma/adapter-mariadb": "^7.9.1",
-        "@prisma/client": "^7.10.0",
+        "@napi-rs/canvas": "^1.0.6",
         "discord.js": "^14.27.0",
         "dotenv": "^17.4.2",
-        "mariadb": "^3.5.3",
-        "prisma": "^7.10.0",
-        "typescript": "^7.0.2",
+        "drizzle-orm": "0.45.2",
+        "pg": "^8.23.0",
         "winston": "^3.19.0",
         "zod": "^4.4.3"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
         "@types/bun": "^1.4.0",
-        "@types/node": "^26.4.0",
-        "eslint": "^10.9.0",
+        "@types/node": "^26.2.0",
+        "@types/pg": "^8.23.1",
+        "drizzle-kit": "0.31.10",
+        "eslint": "^10.8.0",
         "eslint-config-flat-gitignore": "^2.3.0",
         "eslint-config-prettier": "^10.1.8",
         "eslint-import-resolver-typescript": "^4.4.5",
@@ -35,11 +34,16 @@
         "husky": "^9.1.7",
         "lint-staged": "^17.4.1",
         "prettier": "^3.9.6",
+        "typescript": "^6.0.3",
         "typescript-eslint": "^8.67.0"
     },
     "scripts": {
-        "start": "bunx prisma generate && bun src/index.ts",
-        "dev": "bunx prisma generate && bun eslint --cache --quiet && bunx tsc --noEmit --pretty && bun run src/index.ts",
-        "test:migrations": "docker run --name mysql-test -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=bot_test -p 3307:3306 -d mysql:latest && until docker exec mysql-test mysqladmin ping -h 127.0.0.1 --silent; do sleep 1; done && DATABASE_URL=\"mysql://root:root@localhost:3307/bot_test\" bunx prisma migrate deploy; status=$?; docker stop mysql-test && docker rm mysql-test && exit $status"
+        "prepare": "husky || true",
+        "start": "bun src/index.ts",
+        "dev": "bun eslint --cache --quiet && bunx tsc --noEmit --pretty && bun run src/index.ts",
+        "db:generate": "bunx drizzle-kit generate",
+        "db:migrate": "bun run scripts/migrate.ts",
+        "db:check": "bunx drizzle-kit check",
+        "test:schema": "bun run scripts/testSchema.ts"
     }
 }

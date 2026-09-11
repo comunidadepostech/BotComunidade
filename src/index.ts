@@ -18,7 +18,7 @@ import EventVerificationController from './controllers/scheduler/eventVerificati
 import OnlineMembersCountController from './controllers/scheduler/onlineMembersCount.controller.ts';
 import TotalMembersCountController from './controllers/scheduler/totalMembersCount.controller.ts';
 import DuplicatedStudentRolesController from './controllers/scheduler/duplicatedStudentRoles.controller.ts';
-import DatabaseConnection from './infrastructure/database/prisma/database.client.ts';
+import DatabaseConnection from './infrastructure/database/drizzle.client.ts';
 import DiscordAdapter from './infrastructure/adapters/discord.adapter.ts';
 import WebhookLiveFormsController from './controllers/webhook/liveForms.controller.ts';
 import GuildMemberAddEventController from './controllers/discord/events/guildMemberAdd.controller.ts';
@@ -30,12 +30,13 @@ import WebhookMessageController from './controllers/webhook/message.controller.t
 import WebhookEventController from './controllers/webhook/event.controller.ts';
 import WebhookVacancyController from './controllers/webhook/vacancy.controller.ts';
 import { AppError } from './types/errors.types.ts';
+import { describeError } from './utils/error.helper.ts';
 import MessageService from './services/message.service.ts';
-import GuildsRepository from './infrastructure/database/prisma/repositories/guilds.repository.ts';
-import FeatureFlagsRepository from './infrastructure/database/prisma/repositories/featureFlags.repository.ts';
-import CommandHashRepository from './infrastructure/database/prisma/repositories/commandHash.repository.ts';
-import MessageRepository from './infrastructure/database/prisma/repositories/message.repository.ts';
-import WarningRepository from './infrastructure/database/prisma/repositories/warning.repository.ts';
+import GuildsRepository from './infrastructure/database/repositories/guilds.repository.ts';
+import FeatureFlagsRepository from './infrastructure/database/repositories/featureFlags.repository.ts';
+import CommandHashRepository from './infrastructure/database/repositories/commandHash.repository.ts';
+import MessageRepository from './infrastructure/database/repositories/message.repository.ts';
+import WarningRepository from './infrastructure/database/repositories/warning.repository.ts';
 import FeatureFlagsService from './services/featureFlags.service.ts';
 import ClassService from './services/class.service.ts';
 import GuildService from './services/guild.service.ts';
@@ -47,7 +48,7 @@ import HashingService from './services/hashing.service.ts';
 import MessageUpdateEventController from './controllers/discord/events/messageUpdate.controller.ts';
 import RawEventController from './controllers/discord/events/raw.controller.ts';
 import MemberService from './services/member.service.ts';
-import MembersRepository from './infrastructure/database/prisma/repositories/onlineMembers.repository.ts';
+import MembersRepository from './infrastructure/database/repositories/onlineMembers.repository.ts';
 import ChannelService from './services/channel.service.ts';
 import RoleService from './services/role.service.ts';
 import ReplyCommand from './controllers/discord/commands/reply.command.ts';
@@ -75,16 +76,17 @@ async function bootstrap(): Promise<void> {
     });
     await discordClient.login(env.DISCORD_BOT_TOKEN).then(() => logger.info('Connected to Discord'));
 
-    // Create Prisma client
-    const prismaClient = await new DatabaseConnection(logger).connect();
+    // Create database client
+    const databaseConnection = new DatabaseConnection(logger);
+    const database = await databaseConnection.connect();
 
     // Create Repositories
-    const featureFlagsRepository = new FeatureFlagsRepository(prismaClient);
-    const guildsRepository = new GuildsRepository(prismaClient);
-    const commandHashRepository = new CommandHashRepository(prismaClient);
-    const messageRepository = new MessageRepository(prismaClient);
-    const warningRepository = new WarningRepository(prismaClient);
-    const memberRepository = new MembersRepository(prismaClient);
+    const featureFlagsRepository = new FeatureFlagsRepository(database);
+    const guildsRepository = new GuildsRepository(database);
+    const commandHashRepository = new CommandHashRepository(database);
+    const messageRepository = new MessageRepository(database);
+    const warningRepository = new WarningRepository(database);
+    const memberRepository = new MembersRepository(database);
 
     // Create Adapters
     const discordAdapter = new DiscordAdapter(discordClient);
@@ -104,7 +106,7 @@ async function bootstrap(): Promise<void> {
         n8nAdapter,
         warningRepository,
         discordAdapter,
-        discordAdapter
+        discordAdapter,
     );
     const classService = new ClassService(discordAdapter, discordAdapter, discordAdapter, discordAdapter);
     const guildService = new GuildService(guildsRepository, featureFlagsRepository);
@@ -179,19 +181,25 @@ async function bootstrap(): Promise<void> {
         pollCommand,
         viewFlagsCommand,
         inviteCommand,
-        replyCommand
+        replyCommand,
     ];
 
     // Webhook
     const webhookEventController = new WebhookEventController(logger, eventService, guildService, channelService);
-    const webhookWarningController = new WebhookMessageController(logger, guildService, channelService, messageService, roleService);
+    const webhookWarningController = new WebhookMessageController(
+        logger,
+        guildService,
+        channelService,
+        messageService,
+        roleService,
+    );
     const webhookLiveFormsController = new WebhookLiveFormsController(
         logger,
         guildService,
         channelService,
         messageService,
         roleService,
-        featureFlagsService
+        featureFlagsService,
     );
     const webhookVacancyController = new WebhookVacancyController(logger, messageService, channelService, guildService);
 
@@ -363,7 +371,7 @@ async function bootstrap(): Promise<void> {
     process.on('SIGINT', async () => {
         discordClient.removeAllListeners();
         await discordClient.destroy();
-        await prismaClient.$disconnect();
+        await databaseConnection.disconnect();
         await webhook.stop();
         logger.info('Process terminated gracefully!');
         process.exit(0);
@@ -371,7 +379,7 @@ async function bootstrap(): Promise<void> {
     process.on('SIGTERM', async () => {
         discordClient.removeAllListeners();
         await discordClient.destroy();
-        await prismaClient.$disconnect();
+        await databaseConnection.disconnect();
         await webhook.stop();
         logger.info('Process terminated gracefully!');
         process.exit(0);
@@ -383,7 +391,9 @@ bootstrap().catch((error) => {
     if (error instanceof AppError) {
         logger.error(`Fatal error: ${error.message} ${error.stack}`);
     } else {
-        logger.error(`Fatal unknown error: ${error}`);
+        logger.error(`Fatal unknown error: ${describeError(error)}`, {
+            stacktrace: error instanceof Error ? error.stack : undefined,
+        });
         process.exit(1);
     }
 });
