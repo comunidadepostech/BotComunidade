@@ -30,6 +30,7 @@ import WebhookMessageController from './controllers/webhook/message.controller.t
 import WebhookEventController from './controllers/webhook/event.controller.ts';
 import WebhookVacancyController from './controllers/webhook/vacancy.controller.ts';
 import { AppError } from './types/errors.types.ts';
+import { describeError } from './utils/error.helper.ts';
 import MessageService from './services/message.service.ts';
 import GuildsRepository from './infrastructure/database/repositories/guilds.repository.ts';
 import FeatureFlagsRepository from './infrastructure/database/repositories/featureFlags.repository.ts';
@@ -105,7 +106,7 @@ async function bootstrap(): Promise<void> {
         n8nAdapter,
         warningRepository,
         discordAdapter,
-        discordAdapter
+        discordAdapter,
     );
     const classService = new ClassService(discordAdapter, discordAdapter, discordAdapter, discordAdapter);
     const guildService = new GuildService(guildsRepository, featureFlagsRepository);
@@ -180,19 +181,25 @@ async function bootstrap(): Promise<void> {
         pollCommand,
         viewFlagsCommand,
         inviteCommand,
-        replyCommand
+        replyCommand,
     ];
 
     // Webhook
     const webhookEventController = new WebhookEventController(logger, eventService, guildService, channelService);
-    const webhookWarningController = new WebhookMessageController(logger, guildService, channelService, messageService, roleService);
+    const webhookWarningController = new WebhookMessageController(
+        logger,
+        guildService,
+        channelService,
+        messageService,
+        roleService,
+    );
     const webhookLiveFormsController = new WebhookLiveFormsController(
         logger,
         guildService,
         channelService,
         messageService,
         roleService,
-        featureFlagsService
+        featureFlagsService,
     );
     const webhookVacancyController = new WebhookVacancyController(logger, messageService, channelService, guildService);
 
@@ -384,7 +391,9 @@ bootstrap().catch((error) => {
     if (error instanceof AppError) {
         logger.error(`Fatal error: ${error.message} ${error.stack}`);
     } else {
-        logger.error(`Fatal unknown error: ${error}`);
+        logger.error(`Fatal unknown error: ${describeError(error)}`, {
+            stacktrace: error instanceof Error ? error.stack : undefined,
+        });
         process.exit(1);
     }
 });
