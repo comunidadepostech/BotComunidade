@@ -14,19 +14,10 @@ const schema = z.object({
     cargo: z.string().nonempty(),
     tipo_de_emprego: z.enum(['Emprego (CLT)', 'Estágio', 'Trainee']),
     empregador: z.string().nonempty(),
-    modelo: z.enum(['onsite', 'hybrid', 'remote']).transform((value) => {
-        switch (value) {
-            case 'onsite':
-                return 'Presencial';
-            case 'hybrid':
-                return 'Híbrido';
-            case 'remote':
-                return 'Remoto';
-        }
-    }),
+    modelo: z.string().nonempty(),
     descricao: z.string().nonempty(),
     skills: z.string().nonempty(),
-    localizacoes: z.array(z.string().nonempty()),
+    local: z.string().nonempty(),
     _salario: z.string().optional(),
     data_de_publicacao: z.string().nonempty(),
     data_de_termino: z.string().nonempty(),
@@ -113,7 +104,7 @@ export default class WebhookVacancyController implements IController {
                 modelo,
                 descricao,
                 skills,
-                localizacoes,
+                local,
                 _salario,
                 data_de_publicacao,
                 data_de_termino,
@@ -148,7 +139,7 @@ export default class WebhookVacancyController implements IController {
             header.push(`**🏢 Empresa:** ${empregador}`);
             header.push(`**📅 Modelo:** ${modelo}`);
             header.push(`**🔑 Skills:** ${skills}`);
-            header.push(`**📍 Locais:** ${localizacoes}`);
+            header.push(`**📍 Locais:** ${local}`);
             if (_salario) header.push(`**💰 Salário:** ${_salario}`);
             header.push(`**📈 Nível de vaga:** ${nivel_de_vaga}`);
             header.push(`**📝 Veja a descrição da vaga abaixo**`);
