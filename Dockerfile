@@ -6,30 +6,26 @@ WORKDIR /app
 COPY package.json bun.lock* ./
 
 # Instala apenas dependências de produção usando cache do BuildKit
-RUN --mount=type=cache,target=/root/.bun/install/cache \
-    bun install --frozen-lockfile --production
+RUN --mount=type=cache,id=bun-cache,target=/root/.bun/install/cache bun install --frozen-lockfile --production
 
 # Stage 2: Execução final
 FROM oven/bun:1.4.2 AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-
-# Banco do modo SLIM (SLIM=true): fica dentro do volume /data para sobreviver a reinicios do container
 ENV SQLITE_PATH=/data/slim.sqlite
 
-# Copia dependências instaladas do stage anterior
-COPY --from=deps /app/node_modules ./node_modules
+# Prepara o diretório de dados para o SQLite
+RUN mkdir -p /data && chown -R bun:bun /data /app
 
-# Copia os arquivos do projeto com permissão para o usuário não-root 'bun'
+# Copia os arquivos do código-fonte primeiro
 COPY --chown=bun:bun . .
 
-# Prepara o diretório do volume com permissões corretas antes de declarar o VOLUME
-RUN mkdir -p /data && chown bun:bun /data
+# Copia dependências limpas do stage anterior (sobrepõe qualquer node_modules local)
+COPY --from=deps --chown=bun:bun /app/node_modules ./node_modules
 
-VOLUME [ "/data" ]
-
-#USER bun
+# Executa a aplicação como usuário não-root por segurança
+USER bun
 EXPOSE 9996
 
 CMD [ "bun", "run", "start" ]

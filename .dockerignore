@@ -4,5 +4,6 @@ logs
 qodana.yaml
 .git
 .eslintcache
-data
+/data
 .env
+*.sqlite
