@@ -1,0 +1,8 @@
+node_modules
+.idea
+logs
+qodana.yaml
+.git
+.eslintcache
+data
+.env

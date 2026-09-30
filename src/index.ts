@@ -18,7 +18,6 @@ import EventVerificationController from './controllers/scheduler/eventVerificati
 import OnlineMembersCountController from './controllers/scheduler/onlineMembersCount.controller.ts';
 import TotalMembersCountController from './controllers/scheduler/totalMembersCount.controller.ts';
 import DuplicatedStudentRolesController from './controllers/scheduler/duplicatedStudentRoles.controller.ts';
-import DatabaseConnection from './infrastructure/database/drizzle.client.ts';
 import DiscordAdapter from './infrastructure/adapters/discord.adapter.ts';
 import WebhookLiveFormsController from './controllers/webhook/liveForms.controller.ts';
 import GuildMemberAddEventController from './controllers/discord/events/guildMemberAdd.controller.ts';
@@ -32,23 +31,17 @@ import WebhookVacancyController from './controllers/webhook/vacancy.controller.t
 import { AppError } from './types/errors.types.ts';
 import { describeError } from './utils/error.helper.ts';
 import MessageService from './services/message.service.ts';
-import GuildsRepository from './infrastructure/database/repositories/guilds.repository.ts';
-import FeatureFlagsRepository from './infrastructure/database/repositories/featureFlags.repository.ts';
-import CommandHashRepository from './infrastructure/database/repositories/commandHash.repository.ts';
-import MessageRepository from './infrastructure/database/repositories/message.repository.ts';
-import WarningRepository from './infrastructure/database/repositories/warning.repository.ts';
 import FeatureFlagsService from './services/featureFlags.service.ts';
 import ClassService from './services/class.service.ts';
 import GuildService from './services/guild.service.ts';
 import EventService from './services/event.service.ts';
 import InviteCommand from './controllers/discord/commands/invite.command.ts';
 import NapiCanvasAdapter from './infrastructure/adapters/napiCanvas.adapter.ts';
-import N8nAdapter from './infrastructure/adapters/n8n.adapter.ts';
+import createPersistence from './infrastructure/persistence.factory.ts';
 import HashingService from './services/hashing.service.ts';
 import MessageUpdateEventController from './controllers/discord/events/messageUpdate.controller.ts';
 import RawEventController from './controllers/discord/events/raw.controller.ts';
 import MemberService from './services/member.service.ts';
-import MembersRepository from './infrastructure/database/repositories/onlineMembers.repository.ts';
 import ChannelService from './services/channel.service.ts';
 import RoleService from './services/role.service.ts';
 import ReplyCommand from './controllers/discord/commands/reply.command.ts';
@@ -65,33 +58,32 @@ async function bootstrap(): Promise<void> {
         intents: [
             GatewayIntentBits.Guilds,
             GatewayIntentBits.GuildMessages,
-            GatewayIntentBits.MessageContent,
-            GatewayIntentBits.GuildMembers,
+            //GatewayIntentBits.MessageContent,
+            //GatewayIntentBits.GuildMembers,
             GatewayIntentBits.GuildScheduledEvents,
             GatewayIntentBits.GuildInvites,
             GatewayIntentBits.GuildMessagePolls,
             GatewayIntentBits.GuildMessageReactions,
-            GatewayIntentBits.GuildPresences,
+            //GatewayIntentBits.GuildPresences,
         ],
     });
     await discordClient.login(env.DISCORD_BOT_TOKEN).then(() => logger.info('Connected to Discord'));
 
-    // Create database client
-    const databaseConnection = new DatabaseConnection(logger);
-    const database = await databaseConnection.connect();
-
-    // Create Repositories
-    const featureFlagsRepository = new FeatureFlagsRepository(database);
-    const guildsRepository = new GuildsRepository(database);
-    const commandHashRepository = new CommandHashRepository(database);
-    const messageRepository = new MessageRepository(database);
-    const warningRepository = new WarningRepository(database);
-    const memberRepository = new MembersRepository(database);
+    // Create the repositories and the n8n provider (PostgreSQL + n8n, or SQLite + no-ops when SLIM=true)
+    const {
+        featureFlagsRepository,
+        guildsRepository,
+        commandHashRepository,
+        messageRepository,
+        warningRepository,
+        memberRepository,
+        n8nAdapter,
+        disconnect: disconnectPersistence,
+    } = await createPersistence(logger);
 
     // Create Adapters
     const discordAdapter = new DiscordAdapter(discordClient);
     const napiCanvasAdapter = new NapiCanvasAdapter();
-    const n8nAdapter = new N8nAdapter(logger);
 
     // Create Services
     const featureFlagsService = new FeatureFlagsService(featureFlagsRepository, guildsRepository);
@@ -115,6 +107,21 @@ async function bootstrap(): Promise<void> {
     const memberService = new MemberService(memberRepository);
     const channelService = new ChannelService(discordAdapter);
     const roleService = new RoleService(discordAdapter, discordAdapter);
+
+    // SLIM starts with an empty SQLite and GuildCreate is not emitted for the guilds the bot was already in,
+    // so the current guilds are registered here (the flags are created by fillFlags() below)
+    if (env.SLIM) {
+        const joinedGuilds = await discordClient.guilds.fetch();
+        const registeredGuildIds = await guildService.registerMissingGuilds([...joinedGuilds.keys()]);
+
+        if (registeredGuildIds.length > 0) {
+            logger.warn(
+                `${registeredGuildIds.length} guild(s) registered in the SLIM database, ` +
+                    'set the abbreviation and the clusters if they are needed',
+                { guildIds: registeredGuildIds },
+            );
+        }
+    }
 
     // Sync the cache and check the flags
     await guildService.syncGuilds();
@@ -244,19 +251,22 @@ async function bootstrap(): Promise<void> {
         Events.InteractionCreate,
         (interaction) => discordInteractionCreateEventController.handle(interaction), // Error handling inside controller
     );
-    discordClient.on(Events.MessageCreate, (message) =>
-        discordMessageCreateEventController
-            .handle(message)
-            .catch((error) => logger.error(error.message, { stacktrace: error.stack })),
-    );
+    // Messages and polls are only listened to in order to be saved, which SLIM never does
+    if (!env.SLIM) {
+        discordClient.on(Events.MessageCreate, (message) =>
+            discordMessageCreateEventController
+                .handle(message)
+                .catch((error) => logger.error(error.message, { stacktrace: error.stack })),
+        );
+        discordClient.on(Events.MessageUpdate, (message) =>
+            discordMessageUpdateEventController
+                .handle(message)
+                .catch((error) => logger.error(error.message, { stacktrace: error.stack })),
+        );
+    }
     discordClient.on(Events.GuildDelete, (guild) =>
         discordGuildDeleteEventController
             .handle(guild)
-            .catch((error) => logger.error(error.message, { stacktrace: error.stack })),
-    );
-    discordClient.on(Events.MessageUpdate, (message) =>
-        discordMessageUpdateEventController
-            .handle(message)
             .catch((error) => logger.error(error.message, { stacktrace: error.stack })),
     );
     discordClient.on(Events.Raw, (packet) =>
@@ -305,21 +315,9 @@ async function bootstrap(): Promise<void> {
             .handle()
             .catch((error) => logger.error(error.message, { stacktrace: error.stack }));
     });
-    Bun.cron(`0 0 ${env.DAY_OF_THE_MONTH_FOR_MEMBERS_COUNT} * *`, async () => {
-        logger.info('Monthly members count executed by scheduler');
-        await totalMembersCountController
-            .handle()
-            .catch((error) => logger.error(error.message, { stacktrace: error.stack }));
-    });
     Bun.cron(`0 0 */${env.CLEAR_WARNING_MESSAGES_EVENT_DELAY_IN_HOURS} * *`, async () => {
         logger.info('Event messages clear executed by scheduler');
         await eventMessageDeleteController
-            .handle()
-            .catch((error) => logger.error(error.message, { stacktrace: error.stack }));
-    });
-    Bun.cron(`*/${env.ONLINE_MEMBERS_COUNT_DELAY_IN_MINUTES} * * * *`, async () => {
-        logger.info('Online members count executed by scheduler');
-        await onlineMembersCountController
             .handle()
             .catch((error) => logger.error(error.message, { stacktrace: error.stack }));
     });
@@ -329,6 +327,20 @@ async function bootstrap(): Promise<void> {
             .handle()
             .catch((error) => logger.error(error.message, { stacktrace: error.stack }));
     });
+    if (!env.SLIM) {
+        Bun.cron(`*/${env.ONLINE_MEMBERS_COUNT_DELAY_IN_MINUTES} * * * *`, async () => {
+            logger.info('Online members count executed by scheduler');
+            await onlineMembersCountController
+                .handle()
+                .catch((error) => logger.error(error.message, { stacktrace: error.stack }));
+        });
+        Bun.cron(`0 0 ${env.DAY_OF_THE_MONTH_FOR_MEMBERS_COUNT} * *`, async () => {
+            logger.info('Monthly members count executed by scheduler');
+            await totalMembersCountController
+                .handle()
+                .catch((error) => logger.error(error.message, { stacktrace: error.stack }));
+        });
+    }
 
     // Start webhook server
     const webhook = Bun.serve({
@@ -371,7 +383,7 @@ async function bootstrap(): Promise<void> {
     process.on('SIGINT', async () => {
         discordClient.removeAllListeners();
         await discordClient.destroy();
-        await databaseConnection.disconnect();
+        await disconnectPersistence();
         await webhook.stop();
         logger.info('Process terminated gracefully!');
         process.exit(0);
@@ -379,7 +391,7 @@ async function bootstrap(): Promise<void> {
     process.on('SIGTERM', async () => {
         discordClient.removeAllListeners();
         await discordClient.destroy();
-        await databaseConnection.disconnect();
+        await disconnectPersistence();
         await webhook.stop();
         logger.info('Process terminated gracefully!');
         process.exit(0);
