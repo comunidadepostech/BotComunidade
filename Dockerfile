@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package.json bun.lock* ./
 
 # Instala apenas dependências de produção usando cache do BuildKit
-RUN --mount=type=cache,id=bun-cache,target=/root/.bun/install/cache bun install --frozen-lockfile --production
+RUN bun install --frozen-lockfile --production
 
 # Stage 2: Execução final
 FROM oven/bun:1.4.2 AS runner
